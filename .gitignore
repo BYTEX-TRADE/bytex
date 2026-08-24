@@ -1,0 +1,38 @@
+## Build output
+bin/
+obj/
+out/
+artifacts/
+*.nupkg
+*.snupkg
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.swp
+*.DotSettings.user
+
+## Test and coverage output
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+## Local configuration and secrets
+*.local.json
+secrets.json
+.env
+.env.*
+
+## Data and runtime state
+data/
+logs/
+*.log
+
+## OS
+.DS_Store
+Thumbs.db
