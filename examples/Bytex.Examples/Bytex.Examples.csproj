@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Bytex.Core\Bytex.Core.csproj" />
+    <ProjectReference Include="..\..\src\Bytex.Indicators\Bytex.Indicators.csproj" />
+    <ProjectReference Include="..\..\src\Bytex.Data\Bytex.Data.csproj" />
+    <ProjectReference Include="..\..\src\Bytex.Backtest\Bytex.Backtest.csproj" />
+    <ProjectReference Include="..\..\src\Bytex.Live\Bytex.Live.csproj" />
+    <ProjectReference Include="..\..\src\Bytex.Adapters.Binance\Bytex.Adapters.Binance.csproj" />
+    <ProjectReference Include="..\..\src\Bytex.Adapters.Bybit\Bytex.Adapters.Bybit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,53 @@
+{
+  "kernel": {
+    "traderId": "LIVE-001",
+    "environment": "live",
+    "loadState": true,
+    "saveState": true,
+    "riskEngine": {
+      "maxOrderSubmitRate": 10,
+      "maxNotionalPerOrder": { "BTCUSDT-PERP.BYBIT": 5000 }
+    }
+  },
+  "dataClients": [
+    {
+      "factory": "BYBIT",
+      "clientId": "BYBIT",
+      "config": {
+        "productType": "linear",
+        "testnet": true,
+        "instrumentProvider": { "loadIds": ["BTCUSDT-PERP.BYBIT"] }
+      }
+    }
+  ],
+  "executionClients": [
+    {
+      "factory": "BYBIT",
+      "clientId": "BYBIT",
+      "config": {
+        "productType": "linear",
+        "testnet": true,
+        "instrumentProvider": { "loadIds": ["BTCUSDT-PERP.BYBIT"] },
+        "defaultTriggerType": "markPrice"
+      }
+    }
+  ],
+  "strategies": [
+    {
+      "providerId": "bytex.importable",
+      "name": "Bytex.Examples.Strategies.EmaCross",
+      "payload": {
+        "strategyId": "EmaCross-001",
+        "instrumentId": "BTCUSDT-PERP.BYBIT",
+        "barType": "BTCUSDT-PERP.BYBIT-1-MINUTE-LAST-EXTERNAL",
+        "fastPeriod": 5,
+        "slowPeriod": 13,
+        "tradeSize": 0.001
+      }
+    }
+  ],
+  "reconcileOnStart": true,
+  "reconciliationLookback": "1.00:00:00",
+  "cancelOrdersOnStop": true,
+  "closePositionsOnStop": false
+}
