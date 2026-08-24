@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/examples/">
+    <Project Path="examples/Bytex.Examples/Bytex.Examples.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Bytex.Adapters.Binance/Bytex.Adapters.Binance.csproj" />
+    <Project Path="src/Bytex.Adapters.Bybit/Bytex.Adapters.Bybit.csproj" />
+    <Project Path="src/Bytex.Adapters.Tardis/Bytex.Adapters.Tardis.csproj" />
+    <Project Path="src/Bytex.Backtest/Bytex.Backtest.csproj" />
+    <Project Path="src/Bytex.Cli/Bytex.Cli.csproj" />
+    <Project Path="src/Bytex.Core/Bytex.Core.csproj" />
+    <Project Path="src/Bytex.Data/Bytex.Data.csproj" />
+    <Project Path="src/Bytex.Indicators/Bytex.Indicators.csproj" />
+    <Project Path="src/Bytex.Live/Bytex.Live.csproj" />
+    <Project Path="src/Bytex.Persistence.Redis/Bytex.Persistence.Redis.csproj" />
+  </Folder>
+</Solution>
