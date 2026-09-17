@@ -386,7 +386,7 @@ public sealed class TradingNode : IAsyncDisposable
 /// <summary>
 /// Helpers for flattening strategies at shutdown without exposing protected strategy members.
 /// </summary>
-internal static class ShutdownHelper
+public static class ShutdownHelper
 {
     public static void Flatten(Strategy strategy, Kernel kernel, bool cancelOrders, bool closePositions)
     {
