@@ -13,6 +13,11 @@ project is organized and what is expected of a contribution.
   twice must produce identical output.
 - **Money is exact.** Never introduce `double`/`float` arithmetic on prices,
   quantities, or balances.
+- **Every change comes with tests.** A feature is merged together with tests
+  that exercise it; a bug fix is merged together with a test that fails
+  without the fix. The exceptions are changes nothing can meaningfully test
+  (documentation, comments, build scripts), and the pull request says so.
+  See [Tests](#tests).
 - **Design notes for decisions.** Any change that alters a public contract or
   an architectural boundary needs a short note under `docs/design/` describing
   the decision and its rationale.
@@ -30,8 +35,29 @@ project is organized and what is expected of a contribution.
    ```
 3. Follow the conventions enforced by `.editorconfig`. The build treats style
    rules as diagnostics; keep the build clean.
-4. Open a pull request with a clear description of *what* changed and *why*.
+4. Add or update tests for what you changed (see [Tests](#tests)).
+5. Open a pull request with a clear description of *what* changed and *why*.
    Link the related issue if there is one.
+
+## Tests
+
+Each package under `src/` has a test project under `tests/` with the same name
+and a `.Tests` suffix. CI runs all of them on Linux, macOS and Windows for
+every pull request.
+
+- **Expected values are derived independently**: by hand, from the venue's
+  documentation, or from a plain reference implementation inside the test
+  project. A test that asserts whatever the code currently returns protects
+  nothing.
+- **No network, no wall clock, no sleeping.** Use the test clock, scripted
+  market data, recorded payloads and fake clients. Tests that need a venue
+  testnet do not belong in the default run.
+- **Through the public API.** Tests use what a strategy or adapter author can
+  use.
+- **A known defect is a skipped test, not a missing one.** If a test exposes a
+  bug that the same pull request does not fix, keep the correct expectation,
+  mark it `Skip = "BUG: …"` with the issue number, and remove the skip in the
+  fix.
 
 ## Project structure
 
