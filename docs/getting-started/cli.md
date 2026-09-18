@@ -77,6 +77,18 @@ The node runs until `Ctrl+C`, then cancels orders and/or flattens positions
 according to `cancelOrdersOnStop` and `closePositionsOnStop` and disconnects.
 See [sandbox and live trading](first-live-node.md) for the configuration.
 
+Venue credentials are read from environment variables. To keep them out of the
+launching process, put them in a file and let the node load it itself:
+
+```bash
+bytex run --config live.json --env-file keys/bybit.env
+```
+
+The file holds `KEY=VALUE` lines; blank lines and lines starting with `#` are
+ignored, an `export ` prefix and surrounding quotes are accepted. The node logs
+how many variables it loaded, never their names or values. Keep the file
+readable only by the user that runs the node.
+
 ## Global options
 
 | Option | Effect |
