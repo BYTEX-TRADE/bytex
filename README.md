@@ -1,5 +1,12 @@
 <p align="center">
-  <img src="docs/assets/banner.jpg" alt="BYTEX: technology in motion, advantage in result" width="100%">
+  <img src="https://raw.githubusercontent.com/BYTEX-TRADE/bytex/main/docs/assets/banner.jpg" alt="BYTEX: technology in motion, advantage in result" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/BYTEX-TRADE/bytex/actions/workflows/ci.yml"><img src="https://github.com/BYTEX-TRADE/bytex/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/BYTEX-TRADE/bytex/releases"><img src="https://img.shields.io/github/v/release/BYTEX-TRADE/bytex?include_prereleases&label=release" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License: Apache-2.0"></a>
+  <img src="https://img.shields.io/badge/.NET-10-512BD4" alt=".NET 10">
 </p>
 
 # BYTEX
@@ -15,6 +22,11 @@ of composable components that are the same in every environment.
 > Status: pre-release. APIs may change between minor versions until 1.0, and
 > the venue adapters are beta until they complete verification against live
 > venues. Backtesting and sandbox trading are fully functional today.
+
+Every commit runs more than 2,600 tests on Linux, Windows and macOS. Known
+defects are tracked as [issues](https://github.com/BYTEX-TRADE/bytex/issues),
+each with a test that holds the correct expectation; see the
+[changelog](CHANGELOG.md) for what each release fixed.
 
 ## Why BYTEX
 
