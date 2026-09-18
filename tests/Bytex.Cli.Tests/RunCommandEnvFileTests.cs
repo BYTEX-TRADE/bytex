@@ -12,6 +12,11 @@ namespace Bytex.Cli.Tests;
 // and the credentials it actually uses are read from the request headers and verified through the signatures.
 public sealed class RunCommandEnvFileTests
 {
+    // `--duration` starts counting before the node connects, and a node cancelled while it is still starting exits
+    // with an error. The tests that need a complete start give it room for a slow machine; the node stops by itself
+    // when the time is up, so this is also how long each of them takes.
+    private const string RunFor = "00:00:06";
+
     private sealed class StubVenues : IAsyncDisposable
     {
         public StubVenues()
@@ -79,7 +84,7 @@ public sealed class RunCommandEnvFileTests
         string config = temp.File("node.json", venues.NodeConfig());
         string envFile = temp.File("keys.env", EnvFile.Replace("\n", "\r\n", StringComparison.Ordinal)); // Windows line endings must not end up inside values
 
-        CliResult result = await CliRunner.RunAsync(["--log-level", "Trace", "run", "--config", config, "--env-file", envFile, "--duration", "00:00:01"]);
+        CliResult result = await CliRunner.RunAsync(["--log-level", "Trace", "run", "--config", config, "--env-file", envFile, "--duration", RunFor]);
 
         Assert.True(result.ExitCode == 0, result.AllOutput);
 
@@ -120,7 +125,7 @@ public sealed class RunCommandEnvFileTests
         string config = temp.File("node.json", venues.NodeConfig());
         string envFile = temp.File("keys.env", EnvFile);
 
-        CliResult result = await CliRunner.RunAsync(["run", "-c", config, "--env-file", envFile, "--duration", "00:00:01"]);
+        CliResult result = await CliRunner.RunAsync(["run", "-c", config, "--env-file", envFile, "--duration", RunFor]);
 
         Assert.True(result.ExitCode == 0, result.AllOutput);
         Assert.Contains("Trading node TESTER-001 running", result.StdOut);
@@ -139,7 +144,7 @@ public sealed class RunCommandEnvFileTests
         string envFile = temp.File("keys.env", "BINANCE_API_KEY=file-key\nBINANCE_API_SECRET=file-secret\nBYBIT_API_KEY=file-bybit-key\n");
         Dictionary<string, string> inherited = new() { ["BYBIT_API_KEY"] = "inherited-bybit-key", ["BYBIT_API_SECRET"] = "inherited-bybit-secret" };
 
-        CliResult result = await CliRunner.RunAsync(["run", "--config", config, "--env-file", envFile, "--duration", "00:00:01"], environment: inherited);
+        CliResult result = await CliRunner.RunAsync(["run", "--config", config, "--env-file", envFile, "--duration", RunFor], environment: inherited);
 
         Assert.True(result.ExitCode == 0, result.AllOutput);
         RecordedRequest account = venues.Single("/api/v3/account");
