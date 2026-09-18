@@ -89,12 +89,20 @@ internal static class Program
     {
         Option<string> config = new("--config", "-c") { Description = "Path to a trading node configuration (JSON)", Required = true };
         Option<TimeSpan?> duration = new("--duration") { Description = "Stop automatically after this time (e.g. 00:02:00); default runs until interrupted" };
+        Option<string?> envFile = new("--env-file") { Description = "Load KEY=VALUE lines (venue credentials) into this process before starting; the file is read here, never by a launching host" };
         Command command = new("run", "Run a live or sandbox trading node until interrupted");
         command.Options.Add(config);
         command.Options.Add(duration);
+        command.Options.Add(envFile);
         command.SetAction(async (parseResult, ct) =>
         {
             using ILoggerFactory loggerFactory = CreateLogging(parseResult.GetValue(logLevel)!);
+            if (parseResult.GetValue(envFile) is { } envPath)
+            {
+                int loaded = EnvFile.Load(envPath);
+                loggerFactory.CreateLogger("bytex").LogInformation("Loaded {Count} variables from {Path}", loaded, envPath);
+            }
+
             PluginRegistry registry = CreateRegistry(parseResult.GetValue(plugins));
             string json = await File.ReadAllTextAsync(parseResult.GetValue(config)!, ct).ConfigureAwait(false);
             TradingNodeConfig nodeConfig = JsonSerializer.Deserialize<TradingNodeConfig>(json, BytexJson.Options) ?? throw new InvalidOperationException("Invalid node configuration.");
