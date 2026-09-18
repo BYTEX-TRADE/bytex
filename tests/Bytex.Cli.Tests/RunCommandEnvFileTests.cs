@@ -13,9 +13,42 @@ namespace Bytex.Cli.Tests;
 public sealed class RunCommandEnvFileTests
 {
     // `--duration` starts counting before the node connects, and a node cancelled while it is still starting exits
-    // with an error. The tests that need a complete start give it room for a slow machine; the node stops by itself
-    // when the time is up, so this is also how long each of them takes.
-    private const string RunFor = "00:00:06";
+    // with an error. How long a start takes depends on the machine and on what else it is running, so a run that was
+    // cut short is repeated with more time against a fresh stub venue; the assertions are made on the run that came up.
+    private static readonly string[] RunTimes = ["00:00:03", "00:00:15", "00:01:00"];
+
+    private sealed record NodeRun(StubVenues Venues, CliResult Result) : IAsyncDisposable
+    {
+        public ValueTask DisposeAsync() => Venues.DisposeAsync();
+    }
+
+    private static async Task<NodeRun> RunNodeAsync(
+        TempDirectory temp,
+        Func<StubVenues, string> nodeConfig,
+        string envFileContent,
+        string[]? globalOptions = null,
+        string configFlag = "--config",
+        IReadOnlyDictionary<string, string>? environment = null)
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            StubVenues venues = new();
+            string config = temp.File("node.json", nodeConfig(venues));
+            string envFile = temp.File("keys.env", envFileContent);
+            CliResult result = await CliRunner.RunAsync(
+                [.. globalOptions ?? [], "run", configFlag, config, "--env-file", envFile, "--duration", RunTimes[attempt]],
+                environment: environment,
+                timeout: TimeSpan.FromMinutes(3));
+
+            bool cutShort = result.ExitCode != 0 && !result.StdOut.Contains("Trading node TESTER-001 running", StringComparison.Ordinal);
+            if (!cutShort || attempt == RunTimes.Length - 1)
+            {
+                return new NodeRun(venues, result);
+            }
+
+            await venues.DisposeAsync();
+        }
+    }
 
     private sealed class StubVenues : IAsyncDisposable
     {
@@ -79,12 +112,11 @@ public sealed class RunCommandEnvFileTests
     [Fact]
     public async Task The_node_uses_credentials_parsed_from_the_env_file_by_the_documented_rules_and_never_prints_them()
     {
-        await using StubVenues venues = new();
         using TempDirectory temp = new();
-        string config = temp.File("node.json", venues.NodeConfig());
-        string envFile = temp.File("keys.env", EnvFile.Replace("\n", "\r\n", StringComparison.Ordinal)); // Windows line endings must not end up inside values
+        string envFile = EnvFile.Replace("\n", "\r\n", StringComparison.Ordinal); // Windows line endings must not end up inside values
 
-        CliResult result = await CliRunner.RunAsync(["--log-level", "Trace", "run", "--config", config, "--env-file", envFile, "--duration", RunFor]);
+        await using NodeRun run = await RunNodeAsync(temp, v => v.NodeConfig(), envFile, globalOptions: ["--log-level", "Trace"]);
+        (StubVenues venues, CliResult result) = run;
 
         Assert.True(result.ExitCode == 0, result.AllOutput);
 
@@ -120,12 +152,10 @@ public sealed class RunCommandEnvFileTests
     [Fact]
     public async Task The_node_connects_reconciles_runs_for_the_duration_and_shuts_down_cleanly()
     {
-        await using StubVenues venues = new();
         using TempDirectory temp = new();
-        string config = temp.File("node.json", venues.NodeConfig());
-        string envFile = temp.File("keys.env", EnvFile);
 
-        CliResult result = await CliRunner.RunAsync(["run", "-c", config, "--env-file", envFile, "--duration", RunFor]);
+        await using NodeRun run = await RunNodeAsync(temp, v => v.NodeConfig(), EnvFile, configFlag: "-c");
+        (StubVenues venues, CliResult result) = run;
 
         Assert.True(result.ExitCode == 0, result.AllOutput);
         Assert.Contains("Trading node TESTER-001 running", result.StdOut);
@@ -138,13 +168,16 @@ public sealed class RunCommandEnvFileTests
     [Fact]
     public async Task Credentials_written_in_the_configuration_win_over_the_env_file_and_the_file_replaces_inherited_variables()
     {
-        await using StubVenues venues = new();
         using TempDirectory temp = new();
-        string config = temp.File("node.json", venues.NodeConfig(", \"apiKey\": \"config-key\", \"apiSecret\": \"config-secret\"", bybitTestnet: false));
-        string envFile = temp.File("keys.env", "BINANCE_API_KEY=file-key\nBINANCE_API_SECRET=file-secret\nBYBIT_API_KEY=file-bybit-key\n");
+        const string envFile = "BINANCE_API_KEY=file-key\nBINANCE_API_SECRET=file-secret\nBYBIT_API_KEY=file-bybit-key\n";
         Dictionary<string, string> inherited = new() { ["BYBIT_API_KEY"] = "inherited-bybit-key", ["BYBIT_API_SECRET"] = "inherited-bybit-secret" };
 
-        CliResult result = await CliRunner.RunAsync(["run", "--config", config, "--env-file", envFile, "--duration", RunFor], environment: inherited);
+        await using NodeRun run = await RunNodeAsync(
+            temp,
+            v => v.NodeConfig(", \"apiKey\": \"config-key\", \"apiSecret\": \"config-secret\"", bybitTestnet: false),
+            envFile,
+            environment: inherited);
+        (StubVenues venues, CliResult result) = run;
 
         Assert.True(result.ExitCode == 0, result.AllOutput);
         RecordedRequest account = venues.Single("/api/v3/account");
