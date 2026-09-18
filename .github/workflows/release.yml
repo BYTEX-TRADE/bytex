@@ -60,10 +60,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          prerelease=""
-          case "$VERSION" in 0.*|*-*) prerelease="--prerelease" ;; esac
-          gh release create "$GITHUB_REF_NAME" artifacts/packages/*.nupkg artifacts/packages/*.snupkg \
-            --title "BYTEX $VERSION" --notes-file release-notes.md $prerelease
+          prerelease="false"
+          case "$VERSION" in *-*) prerelease="true" ;; esac
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" --title "BYTEX $VERSION" --notes-file release-notes.md --prerelease="$prerelease" --draft=false
+            gh release upload "$GITHUB_REF_NAME" artifacts/packages/*.nupkg artifacts/packages/*.snupkg --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" artifacts/packages/*.nupkg artifacts/packages/*.snupkg \
+              --title "BYTEX $VERSION" --notes-file release-notes.md --prerelease="$prerelease"
+          fi
+          if [ "$prerelease" = "false" ]; then
+            gh release edit "$GITHUB_REF_NAME" --latest
+          fi
 
       - name: Push the packages to NuGet
         if: env.NUGET_API_KEY != ''
