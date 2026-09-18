@@ -67,3 +67,26 @@ inputs twice produces identical events and results.
 `engine.Reset()` clears orders, positions, accounts, and the clock but keeps
 venues, instruments, data, and strategies, so parameter sweeps can reuse one
 engine. `ClearData()` and `ClearStrategies()` drop those too.
+
+## Known limitations
+
+The simulator is a model, and these are the places where it is simpler than a
+venue. Read results with them in mind.
+
+- **Orders fill whole.** There are no partial fills. An `Ioc` order therefore
+  behaves like `Fok`, an iceberg's display quantity never slices the order, and
+  a market-to-limit order never leaves a remainder.
+- **No market impact.** A fill does not consume liquidity or move the price, so
+  an order of any size fills at the same price as a small one. Results for
+  sizes that are large against the instrument's real depth are optimistic.
+- **Queue position is not modelled.** Whether a resting limit fills when the
+  market only touches its price is decided by `ProbFillOnLimit`, not by the
+  order's place in the queue.
+- **The path inside a bar is an assumption.** With bar data the venue sees
+  four prices per bar in the order given by `BarExecution`. When a stop and a
+  target both sit inside one bar, which of them fills first follows that
+  assumed order, not what the market did. Use quote or trade ticks where the
+  answer matters.
+- **Two bar execution modes.** `OhlcPath` and `CloseOnly` are the only ones.
+- **Day orders.** `TimeInForce.Day` is accepted but has no session end to
+  expire at; it rests until filled or cancelled.
