@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/banner.jpg" alt="BYTEX: technology in motion, advantage in result" width="100%">
+</p>
+
 # BYTEX
 
 **An event-driven algorithmic trading engine for .NET — one strategy, from backtest to live.**
