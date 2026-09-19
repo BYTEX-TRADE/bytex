@@ -20,6 +20,10 @@
 `AtTheOpen`, `AtTheClose`. With `ManageGtdExpiry` the strategy cancels GTD
 orders locally when they expire; otherwise the venue must support GTD.
 
+In a backtest or sandbox, `Day` has no session end to expire at, and every
+order fills whole, so `Ioc` behaves like `Fok` and `displayQuantity` does not
+slice the order. See [known limitations](backtesting.md#known-limitations).
+
 ## Instructions
 
 - `postOnly` — reject instead of crossing the book.
