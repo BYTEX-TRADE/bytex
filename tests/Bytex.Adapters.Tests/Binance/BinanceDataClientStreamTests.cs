@@ -66,7 +66,14 @@ public sealed class BinanceDataClientStreamTests
             client.AttachSink(sink);
             await client.ConnectAsync(CancellationToken.None).WaitAsync(Wait.Timeout);
             WsSession session = await server.NextSessionAsync();
-            WsSession? market = type == BinanceAccountType.UsdMFutures ? await server.NextSessionAsync() : null;
+            WsSession? market = null;
+            if (type == BinanceAccountType.UsdMFutures)
+            {
+                // The server hands sessions over as their handshakes finish, which is not always the order the client opened them in.
+                WsSession other = await server.NextSessionAsync();
+                (session, market) = session.Path.StartsWith("/market", StringComparison.Ordinal) ? (other, session) : (session, other);
+            }
+
             return new Rig(server, kernel, client, sink, session, market);
         }
 
