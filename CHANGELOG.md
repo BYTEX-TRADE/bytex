@@ -14,6 +14,14 @@ change public APIs; a patch version only fixes.
   client now opens the `/public` and `/market` routes and sends each
   subscription to the one that serves it (#7).
 
+### Changed
+
+- The requirements catalog now marks as Roadmap what the engine does not do
+  yet: increment checks in the risk engine (R4.13), partial fills (R8.24),
+  extra bar execution modes (R8.25), DAY expiry in simulation (R8.26),
+  streaming catalog reads (R9.7), the catalog `info` command (R9.8), and
+  headerless or quoted CSV (R9.9).
+
 ## [0.1.0] - 2026-09-19
 
 The first tagged release of the engine.
