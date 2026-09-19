@@ -109,7 +109,7 @@ public sealed class BinanceExecutionReportTests
         Assert.Equal(expected, report.OrderType);
     }
 
-    [Fact(Skip = "BUG: MapOrderType ignores the account type; on futures TAKE_PROFIT is the LIMIT take-profit the adapter itself sends for LimitIfTouched, but it is reported back as MarketIfTouched")]
+    [Fact]
     public async Task A_futures_TAKE_PROFIT_order_is_reported_as_the_LimitIfTouched_it_was_submitted_as()
     {
         await using BinanceExecRig rig = new(BinanceAccountType.UsdMFutures);

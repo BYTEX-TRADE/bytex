@@ -145,7 +145,7 @@ public sealed class BinanceExecutionStreamTests
         Assert.Equal(new ClientOrderId("O-1"), expired.ClientOrderId);
     }
 
-    [Fact(Skip = "BUG: on spot a CANCELED executionReport carries the cancel REQUEST id in \"c\" and the order's own id in \"C\"; HandleExecutionReport reads \"c\", so the cancel is applied to a non-existent order and the real one stays open in the cache")]
+    [Fact]
     public async Task A_spot_cancel_confirmation_is_applied_to_the_original_order_named_in_field_C()
     {
         await using BinanceExecRig rig = new(BinanceAccountType.Spot);
@@ -200,6 +200,22 @@ public sealed class BinanceExecutionStreamTests
         Assert.Equal(LiquiditySide.Taker, fill.LiquiditySide);
         Assert.Equal(new AccountId("BINANCE-USDMFUTURES"), fill.AccountId);
         Assert.Equal(1_568_879_465_650_000_000L, fill.TsEvent.Value);
+    }
+
+    [Fact]
+    public async Task A_futures_TAKE_PROFIT_fill_is_reported_as_LimitIfTouched()
+    {
+        await using BinanceExecRig rig = new(BinanceAccountType.UsdMFutures);
+        WsSession session = await rig.ConnectAsync(FuturesBalance);
+
+        await session.SendTextAsync("""
+            {"e":"ORDER_TRADE_UPDATE","E":1568879465651,"T":1568879465650,"o":{"s":"BTCUSDT","c":"O-8","S":"SELL","o":"TAKE_PROFIT","f":"GTC","q":"0.250","p":"26000.0","ap":"26000.0","sp":"25990.0","x":"TRADE","X":"FILLED","i":8886775,"l":"0.250","z":"0.250","L":"26000.0","N":"USDT","n":"1.30000","T":1568879465650,"t":5542,"b":"0","a":"0","m":true,"R":true,"wt":"CONTRACT_PRICE","ot":"TAKE_PROFIT","ps":"BOTH","cp":false,"rp":"0"}}
+            """);
+
+        OrderFilled fill = await rig.Sink.NextOrderEventAsync<OrderFilled>();
+        Assert.Equal(new ClientOrderId("O-8"), fill.ClientOrderId);
+        Assert.Equal(OrderType.LimitIfTouched, fill.OrderType);
+        Assert.Equal(LiquiditySide.Maker, fill.LiquiditySide);
     }
 
     [Fact]
