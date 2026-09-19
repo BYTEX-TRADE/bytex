@@ -138,6 +138,11 @@ public sealed class HttpClientWrapper : IDisposable
     public async Task<string> SendAsync(HttpMethod method, string path, IReadOnlyDictionary<string, string>? query, HttpContent? body, IReadOnlyDictionary<string, string>? headers, int weight, CancellationToken ct)
     {
         string url = query is { Count: > 0 } ? path + (path.Contains('?') ? "&" : "?") + BuildQuery(query) : path;
+
+        // A request message disposes its content, so the caller's content can be sent once only. Keep the bytes and the content
+        // headers and give every attempt a content of its own; otherwise a retried POST has nothing left to send.
+        byte[]? payload = body is null ? null : await body.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
+        List<KeyValuePair<string, IEnumerable<string>>>? contentHeaders = body?.Headers.ToList();
         for (int attempt = 1; ; attempt++)
         {
             if (_limiter is not null)
@@ -146,9 +151,15 @@ public sealed class HttpClientWrapper : IDisposable
             }
 
             using HttpRequestMessage request = new(method, url);
-            if (body is not null)
+            if (payload is not null)
             {
-                request.Content = body;
+                ByteArrayContent content = new(payload);
+                foreach ((string key, IEnumerable<string> values) in contentHeaders!)
+                {
+                    content.Headers.TryAddWithoutValidation(key, values);
+                }
+
+                request.Content = content;
             }
 
             if (headers is not null)
