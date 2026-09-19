@@ -56,7 +56,24 @@ each with a test that holds the correct expectation; see the
 | Adapters | Binance (spot, USDⓈ-M futures), Bybit (spot, linear perpetuals); Tardis historical data; adapter SDK for new venues |
 | Tooling | `bytex` CLI for backtests, live nodes, and catalog management; Docker image; notebook support |
 
-See the [roadmap](docs/roadmap.md) for what is planned next.
+## Roadmap
+
+| Release | Milestone | Highlights |
+|---|---|---|
+| **0.1** ✅ | **Foundation** | kernel · backtesting · live and sandbox trading · Binance · Bybit · test suite |
+| **0.2** | **Strategy Documents** | strategies as data · node catalog · validator · node control channel |
+| **0.3** | **Risk** | loss and exposure limits · kill switch · margin and leverage checks |
+| **0.4** | **Execution** | order emulation · execution algorithms (TWAP) · continuous reconciliation |
+| **0.5** | **Venues** | OKX · Kraken · Bitget · Gate · Hyperliquid |
+| **0.6** | **Realism** | funding payments · liquidation model · parameter sweeps |
+| **0.7** | **Persistence** | full Redis state · message streaming · cloud storage for the catalog |
+| **0.8** | **Markets** | Databento · Interactive Brokers · options · synthetic instruments |
+| **0.9** | **Depth** | order-book-level matching · own-order book |
+| **1.0** | **Stable** | API freeze · published benchmarks · long-term support policy |
+
+No dates: a release ships when it is ready. Fixes ship continuously as patch
+releases ([changelog](CHANGELOG.md)). The same list lives in
+[docs/roadmap.md](docs/roadmap.md).
 
 ## Quick start
 
