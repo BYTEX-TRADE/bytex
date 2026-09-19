@@ -7,6 +7,13 @@ change public APIs; a patch version only fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Binance USD-M futures: klines, mark prices and aggregated trades were never
+  delivered. The venue serves them on a separate `/market` route; the data
+  client now opens the `/public` and `/market` routes and sends each
+  subscription to the one that serves it (#7).
+
 ## [0.1.0] - 2026-09-19
 
 The first tagged release of the engine.
