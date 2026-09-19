@@ -23,6 +23,7 @@ public sealed class BinanceDataClient : DataClientBase
     private readonly HashSet<string> _streams = new(StringComparer.Ordinal);
     private readonly Dictionary<string, BarType> _klineStreams = new(StringComparer.Ordinal);
     private WebSocketClient? _ws;
+    private WebSocketClient? _wsMarket;
     private int _requestId;
 
     public BinanceDataClient(ClientId clientId, BinanceDataClientConfig config, KernelServices services)
@@ -43,27 +44,44 @@ public sealed class BinanceDataClient : DataClientBase
             HandleInstrument(instrument);
         }
 
-        _ws = new WebSocketClient(new WebSocketClientConfig { Url = new Uri(BinanceVenue.WsBase(_config) + "/stream") }, Log)
-        {
-            OnText = HandleMessageAsync,
-            OnConnected = isReconnect =>
-            {
-                if (isReconnect && _streams.Count > 0)
-                {
-                    SendSubscribe(_streams.ToList());
-                }
-
-                return Task.CompletedTask;
-            },
-            OnDisconnected = reason =>
-            {
-                NotifyDisconnected(reason);
-                return Task.CompletedTask;
-            },
-        };
+        // USDⓈ-M futures serve market data on two routes: /public carries book tickers, trades and depth; /market carries
+        // klines, mark prices and aggregated trades. The unrouted path still accepts a subscription to the latter but never
+        // delivers it. Spot has a single route.
+        bool futures = _config.AccountType == BinanceAccountType.UsdMFutures;
+        string wsBase = BinanceVenue.WsBase(_config);
+        _ws = CreateSocket(wsBase + (futures ? "/public/stream" : "/stream"), market: false);
         await _ws.ConnectAsync(ct).ConfigureAwait(false);
+        if (futures)
+        {
+            _wsMarket = CreateSocket(wsBase + "/market/stream", market: true);
+            await _wsMarket.ConnectAsync(ct).ConfigureAwait(false);
+        }
+
         NotifyConnected();
     }
+
+    private WebSocketClient CreateSocket(string url, bool market) => new(new WebSocketClientConfig { Url = new Uri(url) }, Log)
+    {
+        OnText = HandleMessageAsync,
+        OnConnected = isReconnect =>
+        {
+            List<string> streams = _streams.Where(s => IsMarketStream(s) == market).ToList();
+            if (isReconnect && streams.Count > 0)
+            {
+                SendSubscribe(streams);
+            }
+
+            return Task.CompletedTask;
+        },
+        OnDisconnected = reason =>
+        {
+            NotifyDisconnected(reason);
+            return Task.CompletedTask;
+        },
+    };
+
+    private bool IsMarketStream(string stream) =>
+        _wsMarket is not null && (stream.Contains("@kline_", StringComparison.Ordinal) || stream.Contains("@markPrice", StringComparison.Ordinal) || stream.Contains("@aggTrade", StringComparison.Ordinal));
 
     public override async Task DisconnectAsync(CancellationToken ct)
     {
@@ -73,12 +91,19 @@ public sealed class BinanceDataClient : DataClientBase
             _ws = null;
         }
 
+        if (_wsMarket is not null)
+        {
+            await _wsMarket.DisposeAsync().ConfigureAwait(false);
+            _wsMarket = null;
+        }
+
         NotifyDisconnected("disconnect requested");
     }
 
     protected override void OnDispose()
     {
         _ws?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        _wsMarket?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         _http.Dispose();
     }
 
@@ -155,7 +180,7 @@ public sealed class BinanceDataClient : DataClientBase
         if (stream is not null && _streams.Remove(stream))
         {
             _klineStreams.Remove(stream);
-            Send(new { method = "UNSUBSCRIBE", @params = new[] { stream }, id = Interlocked.Increment(ref _requestId) });
+            Send(IsMarketStream(stream), new { method = "UNSUBSCRIBE", @params = new[] { stream }, id = Interlocked.Increment(ref _requestId) });
         }
 
         return Task.CompletedTask;
@@ -169,10 +194,15 @@ public sealed class BinanceDataClient : DataClientBase
         }
     }
 
-    private void SendSubscribe(IReadOnlyList<string> streams) =>
-        Send(new { method = "SUBSCRIBE", @params = streams, id = Interlocked.Increment(ref _requestId) });
+    private void SendSubscribe(IReadOnlyList<string> streams)
+    {
+        foreach (IGrouping<bool, string> route in streams.GroupBy(IsMarketStream))
+        {
+            Send(route.Key, new { method = "SUBSCRIBE", @params = route.ToList(), id = Interlocked.Increment(ref _requestId) });
+        }
+    }
 
-    private void Send(object message) => _ws?.SendText(JsonSerializer.Serialize(message));
+    private void Send(bool market, object message) => (market ? _wsMarket : _ws)?.SendText(JsonSerializer.Serialize(message));
 
     private static string Lower(InstrumentId id) => BinanceVenue.ToRawSymbol(id).ToLowerInvariant();
 

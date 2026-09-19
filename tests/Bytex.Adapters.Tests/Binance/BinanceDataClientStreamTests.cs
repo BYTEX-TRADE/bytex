@@ -20,13 +20,14 @@ public sealed class BinanceDataClientStreamTests
 
     private sealed class Rig : IAsyncDisposable
     {
-        private Rig(LoopbackServer server, TestKernel kernel, BinanceDataClient client, RecordingDataSink sink, WsSession session)
+        private Rig(LoopbackServer server, TestKernel kernel, BinanceDataClient client, RecordingDataSink sink, WsSession session, WsSession? market)
         {
             Server = server;
             Kernel = kernel;
             Client = client;
             Sink = sink;
             Session = session;
+            Market = market;
         }
 
         public LoopbackServer Server { get; }
@@ -37,7 +38,11 @@ public sealed class BinanceDataClientStreamTests
 
         public RecordingDataSink Sink { get; }
 
+        /// <summary>Spot: the single combined stream. Futures: the /public route (book tickers, trades, depth).</summary>
         public WsSession Session { get; }
+
+        /// <summary>Futures only: the /market route (klines, mark prices, aggregated trades).</summary>
+        public WsSession? Market { get; }
 
         public static async Task<Rig> ConnectAsync(BinanceAccountType type, bool handleRevisedBars = false)
         {
@@ -61,7 +66,8 @@ public sealed class BinanceDataClientStreamTests
             client.AttachSink(sink);
             await client.ConnectAsync(CancellationToken.None).WaitAsync(Wait.Timeout);
             WsSession session = await server.NextSessionAsync();
-            return new Rig(server, kernel, client, sink, session);
+            WsSession? market = type == BinanceAccountType.UsdMFutures ? await server.NextSessionAsync() : null;
+            return new Rig(server, kernel, client, sink, session, market);
         }
 
         /// <summary>Next control message from the client as "METHOD stream,stream" with the streams sorted.</summary>
@@ -86,7 +92,8 @@ public sealed class BinanceDataClientStreamTests
     {
         await using Rig rig = await Rig.ConnectAsync(type);
 
-        Assert.Equal("/stream", rig.Session.Path);
+        Assert.Equal(type == BinanceAccountType.Spot ? "/stream" : "/public/stream", rig.Session.Path);
+        Assert.Equal(type == BinanceAccountType.Spot ? null : "/market/stream", rig.Market?.Path);
         Assert.True(rig.Client.IsConnected);
         Assert.Equal("connected", await rig.Sink.NextConnectionEventAsync());
         Assert.Equal(expectedInstruments, rig.Sink.Instruments.Count);
@@ -234,9 +241,9 @@ public sealed class BinanceDataClientStreamTests
     {
         await using Rig rig = await Rig.ConnectAsync(BinanceAccountType.UsdMFutures);
         await rig.Client.SubscribeAsync(Commands.Mark(_perpBtc), CancellationToken.None);
-        Assert.Equal("SUBSCRIBE btcusdt@markPrice@1s", await rig.NextControlMessageAsync());
+        Assert.Equal("SUBSCRIBE btcusdt@markPrice@1s", await rig.NextControlMessageAsync(rig.Market));
 
-        await rig.Session.SendTextAsync(BinancePayloads.MarkPriceUpdate);
+        await rig.Market!.SendTextAsync(BinancePayloads.MarkPriceUpdate);
 
         MarkPriceUpdate mark = Assert.IsType<MarkPriceUpdate>(await rig.Sink.NextDataAsync());
         IndexPriceUpdate index = Assert.IsType<IndexPriceUpdate>(await rig.Sink.NextDataAsync());
@@ -247,6 +254,46 @@ public sealed class BinanceDataClientStreamTests
         Assert.Equal(0.00038167m, funding.Rate);
         Assert.Equal(1_562_306_400_000_000_000L, funding.NextFundingTime!.Value.Value);
         Assert.Equal(1_562_305_380_000_000_000L, mark.TsEvent.Value);
+    }
+
+    [Fact]
+    public async Task On_futures_klines_go_to_the_market_route_and_quotes_to_the_public_route()
+    {
+        // The venue acknowledges a kline subscription on the public route and then never delivers it, so the route is part of the contract.
+        await using Rig rig = await Rig.ConnectAsync(BinanceAccountType.UsdMFutures);
+        BarType barType = BarType.Parse("BTCUSDT-PERP.BINANCE-1-MINUTE-LAST-EXTERNAL");
+
+        await rig.Client.SubscribeAsync(Commands.Bars(barType), CancellationToken.None);
+        await rig.Client.SubscribeAsync(Commands.Quotes(_perpBtc), CancellationToken.None);
+
+        Assert.Equal("SUBSCRIBE btcusdt@kline_1m", await rig.NextControlMessageAsync(rig.Market));
+        Assert.Equal("SUBSCRIBE btcusdt@bookTicker", await rig.NextControlMessageAsync(rig.Session));
+
+        await rig.Market!.SendTextAsync(BinancePayloads.KlineClosed);
+        Bar bar = Assert.IsType<Bar>(await rig.Sink.NextDataAsync());
+        Assert.Equal(barType, bar.BarType);
+        Assert.Equal(new Price(25_015.5m, 1), bar.Close);
+
+        await rig.Client.UnsubscribeAsync(new UnsubscribeBars(barType, null, Guid.NewGuid(), TestKernel.Now), CancellationToken.None);
+        Assert.Equal("UNSUBSCRIBE btcusdt@kline_1m", await rig.NextControlMessageAsync(rig.Market));
+    }
+
+    [Fact]
+    public async Task On_futures_a_dropped_route_resubscribes_only_its_own_streams()
+    {
+        await using Rig rig = await Rig.ConnectAsync(BinanceAccountType.UsdMFutures);
+        await rig.Client.SubscribeAsync(Commands.Bars(BarType.Parse("BTCUSDT-PERP.BINANCE-1-MINUTE-LAST-EXTERNAL")), CancellationToken.None);
+        await rig.Client.SubscribeAsync(Commands.Mark(_perpBtc), CancellationToken.None);
+        await rig.Client.SubscribeAsync(Commands.Quotes(_perpBtc), CancellationToken.None);
+        await rig.NextControlMessageAsync(rig.Market);
+        await rig.NextControlMessageAsync(rig.Market);
+        await rig.NextControlMessageAsync(rig.Session);
+
+        rig.Market!.Drop();
+        WsSession second = await rig.Server.NextSessionAsync();
+
+        Assert.Equal("/market/stream", second.Path);
+        Assert.Equal("SUBSCRIBE btcusdt@kline_1m,btcusdt@markPrice@1s", await rig.NextControlMessageAsync(second));
     }
 
     [Fact]
