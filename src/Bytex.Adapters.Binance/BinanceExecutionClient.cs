@@ -186,7 +186,9 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
 
     private void HandleExecutionReport(JsonElement o, UnixNanos? eventTime = null)
     {
-        string clientOrderIdText = o.Str("c");
+        // A spot report that cancels an order carries the id of the cancel request in "c" and the id of the order itself in "C".
+        string? originalClientOrderId = _futures ? null : o.StrOpt("C");
+        string clientOrderIdText = string.IsNullOrEmpty(originalClientOrderId) ? o.Str("c") : originalClientOrderId;
         if (string.IsNullOrEmpty(clientOrderIdText))
         {
             return;
@@ -237,7 +239,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
                     Money commission = new(commissionAmount, Currency.FromCode(commissionAsset));
                     bool maker = o.Bool("m");
                     OrderSide side = o.Str("S") == "BUY" ? OrderSide.Buy : OrderSide.Sell;
-                    OrderType type = MapOrderType(o.Str("o"));
+                    OrderType type = MapOrderType(o.Str("o"), _futures);
                     GenerateOrderFilled(strategyId, instrumentId, clientOrderId, venueOrderId, null, new TradeId(o.Long("t").ToString(CultureInfo.InvariantCulture)), side, type,
                         instrument.MakeQuantity(o.Dec("l")), instrument.MakePrice(o.Dec("L")), instrument.QuoteCurrency, commission, maker ? LiquiditySide.Maker : LiquiditySide.Taker, o.Has("T") ? o.Ms("T") : ts);
                     break;
@@ -701,7 +703,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
         long update = o.Has("updateTime") ? o.Long("updateTime") : time;
         return new OrderStatusReport(
             AccountId, instrumentId, string.IsNullOrEmpty(clientId) ? null : new ClientOrderId(clientId), new VenueOrderId(o.Long("orderId").ToString(CultureInfo.InvariantCulture)),
-            o.Str("side") == "BUY" ? OrderSide.Buy : OrderSide.Sell, MapOrderType(o.Str("type")), MapTif(o.StrOpt("timeInForce")), MapStatus(o.Str("status")),
+            o.Str("side") == "BUY" ? OrderSide.Buy : OrderSide.Sell, MapOrderType(o.Str("type"), _futures), MapTif(o.StrOpt("timeInForce")), MapStatus(o.Str("status")),
             instrument.MakeQuantity(o.Dec("origQty")), instrument.MakeQuantity(executed), UnixNanos.FromMilliseconds(time), UnixNanos.FromMilliseconds(update), Clock.Timestamp, Guid.NewGuid(),
             price > 0m ? instrument.MakePrice(price) : null, stopPrice > 0m ? instrument.MakePrice(stopPrice) : null, TriggerType.Default, null, TrailingOffsetType.Price, null,
             avgPx > 0m ? avgPx : null, o.StrOpt("timeInForce") == "GTX", o.Bool("reduceOnly"));
@@ -791,13 +793,14 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
 
     // ----- Mapping -----
 
-    private static OrderType MapOrderType(string type) => type switch
+    // TAKE_PROFIT is the market take-profit on spot and the limit one on futures, the same names SubmitOrder sends.
+    private static OrderType MapOrderType(string type, bool futures) => type switch
     {
         "MARKET" => OrderType.Market,
         "LIMIT" or "LIMIT_MAKER" => OrderType.Limit,
         "STOP_LOSS" or "STOP_MARKET" => OrderType.StopMarket,
         "STOP_LOSS_LIMIT" or "STOP" => OrderType.StopLimit,
-        "TAKE_PROFIT" => OrderType.MarketIfTouched,
+        "TAKE_PROFIT" => futures ? OrderType.LimitIfTouched : OrderType.MarketIfTouched,
         "TAKE_PROFIT_LIMIT" => OrderType.LimitIfTouched,
         "TAKE_PROFIT_MARKET" => OrderType.MarketIfTouched,
         "TRAILING_STOP_MARKET" => OrderType.TrailingStopMarket,

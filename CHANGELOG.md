@@ -17,6 +17,10 @@ change public APIs; a patch version only fixes.
   delivered. The venue serves them on a separate `/market` route; the data
   client now opens the `/public` and `/market` routes and sends each
   subscription to the one that serves it (#7).
+- Binance spot: a cancel confirmation was applied to the id of the cancel
+  request instead of the order it cancelled, so the order stayed open in the
+  engine. Binance futures: a `TAKE_PROFIT` order, the limit take-profit, was
+  reported back as a market one (#14).
 
 ### Changed
 
