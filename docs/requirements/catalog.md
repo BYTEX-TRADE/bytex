@@ -60,7 +60,8 @@ Identifiers are stable and used in design notes, issues, and tests.
 
 | Id | Requirement | Tier |
 |---|---|---|
-| R4.1 | Pre-trade checks: instrument known, quantity/price precision and increments, min/max quantity, min/max notional | Release |
+| R4.1 | Pre-trade checks: instrument known, quantity/price precision, min/max quantity, min/max notional | Release |
+| R4.13 | Pre-trade check that price and quantity sit on the instrument's tick and step increments | Roadmap |
 | R4.2 | Order rate limiting per time window | Release |
 | R4.3 | Trading state: active, reducing, halted; commands denied accordingly | Release |
 | R4.4 | Maximum notional per order by instrument | Release |
@@ -111,27 +112,33 @@ Identifiers are stable and used in design notes, issues, and tests.
 | R8.1 | Low-level `BacktestEngine`: add venues, instruments, data, actors, strategies; run by time range | Release |
 | R8.2 | High-level `BacktestNode`: run configurations with data from the catalog; batch runs | Release |
 | R8.3 | Simulated exchange per venue with per-instrument matching on quotes, trades, and bars | Release |
-| R8.4 | Bar execution: configurable OHLC path, tick-size/`reveal` modes | Release |
+| R8.4 | Bar execution: OHLC path (open, nearer extreme, farther extreme, close) or close only | Release |
 | R8.5 | Fill model: probability of fill on limit at touch, probability of slippage | Release |
 | R8.6 | Fee model: maker/taker from instrument; fixed per-trade | Release |
 | R8.7 | Latency model: base, submit, modify, cancel latencies | Release |
 | R8.8 | Cash and margin accounts in simulation; leverage per instrument | Release |
 | R8.9 | Order-book-level matching (L2/L3) | Roadmap |
-| R8.10 | Support for all release order types and time-in-force in simulation | Release |
+| R8.10 | Support for all release order types and time in force in simulation, with whole fills (R8.24) and without DAY expiry (R8.26) | Release |
 | R8.11 | Deterministic replay; same results across runs and machines | Release |
 | R8.12 | Performance statistics: returns, P&L by currency, win rate, expectancy, Sharpe, Sortino, max drawdown, profit factor | Release |
 | R8.13 | Reports: orders, fills, positions, account balances as tables; equity curve | Release |
 | R8.14 | Backtest results serialisable to JSON | Release |
+| R8.24 | Partial fills in the simulator: IOC remainders, iceberg slicing, market-to-limit remainders | Roadmap |
+| R8.25 | Additional bar execution modes (tick-size and reveal) | Roadmap |
+| R8.26 | DAY time in force expiring at a session end in simulation | Roadmap |
 
 ## R9 — Data catalog and loading
 
 | Id | Requirement | Tier |
 |---|---|---|
 | R9.1 | Parquet catalog for instruments, quotes, trades, bars, order book deltas | Release |
-| R9.2 | Query by instrument/bar type and time range; streaming read | Release |
+| R9.2 | Query by instrument/bar type and time range | Release |
 | R9.3 | CSV loaders for bars, quotes, trades with column mapping | Release |
-| R9.4 | Catalog CLI: import, list, info | Release |
+| R9.4 | Catalog CLI: list, import-csv, add-instrument, fetch-instruments | Release |
 | R9.5 | Cloud object storage backends | Roadmap |
+| R9.7 | Streaming (lazy) reads of catalog queries | Roadmap |
+| R9.8 | Catalog CLI `info` command: ranges, row counts and size per data set | Roadmap |
+| R9.9 | CSV loaders: headerless files and quoted fields | Roadmap |
 
 ## R10 — Live trading
 
