@@ -9,6 +9,10 @@ change public APIs; a patch version only fixes.
 
 ### Fixed
 
+- HTTP retries: a request with a body (POST, PUT, DELETE) was never actually
+  retried on a 5xx or 429 answer, because the first attempt disposed the
+  content. Every attempt now gets a content of its own, so order, cancel and
+  amend calls are resent intact (#13).
 - Binance USD-M futures: klines, mark prices and aggregated trades were never
   delivered. The venue serves them on a separate `/market` route; the data
   client now opens the `/public` and `/market` routes and sends each

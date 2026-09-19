@@ -139,7 +139,7 @@ public sealed class HttpClientWrapperTests
         Assert.Equal(expected, error.IsRateLimited);
     }
 
-    [Fact(Skip = "BUG: HttpClientWrapper.SendAsync disposes the caller's HttpContent with the first request, so a retried POST throws ObjectDisposedException instead of resending the body")]
+    [Fact]
     public async Task A_request_with_a_body_is_resent_intact_when_the_first_attempt_hits_a_server_error()
     {
         int calls = 0;
@@ -152,6 +152,26 @@ public sealed class HttpClientWrapperTests
         Assert.Equal("{\"ok\":1}", body);
         Assert.Equal(2, server.Requests.Count);
         Assert.All(server.Requests, r => Assert.Equal("{\"symbol\":\"BTCUSDT\"}", r.Body));
+        Assert.All(server.Requests, r => Assert.StartsWith("application/json", r.Header("Content-Type"), StringComparison.Ordinal));
+        Assert.Equal("{\"symbol\":\"BTCUSDT\"}", await content.ReadAsStringAsync()); // the caller's content is still the caller's
+    }
+
+    [Theory]
+    [InlineData("PUT")]
+    [InlineData("DELETE")]
+    public async Task A_rate_limited_request_with_a_body_is_resent_intact(string method)
+    {
+        int calls = 0;
+        await using LoopbackServer server = new(_ => Interlocked.Increment(ref calls) == 1 ? StubResponse.Error(429, "{}") : StubResponse.Json("{\"ok\":1}"));
+        using HttpClientWrapper http = new(new Uri(server.HttpBase), retry: _fastRetry);
+        using StringContent content = new("{\"orderId\":\"42\"}", Encoding.UTF8, "application/json");
+
+        string body = method == "PUT" ? await http.PutAsync("/v5/order/amend", body: content) : await http.DeleteAsync("/v5/order/cancel", body: content);
+
+        Assert.Equal("{\"ok\":1}", body);
+        Assert.Equal(2, server.Requests.Count);
+        Assert.All(server.Requests, r => Assert.Equal(method, r.Method));
+        Assert.All(server.Requests, r => Assert.Equal("{\"orderId\":\"42\"}", r.Body));
     }
 
     [Fact]
