@@ -15,8 +15,8 @@ public sealed class ShippedArtifactsTests
     [
         "Bytex.Core", "Bytex.Indicators", "Bytex.Documents", "Bytex.Data", "Bytex.Backtest", "Bytex.Live",
         "Bytex.Adapters.Binance", "Bytex.Adapters.Bitget", "Bytex.Adapters.Bybit", "Bytex.Adapters.Gate",
-        "Bytex.Adapters.Kraken", "Bytex.Adapters.Kucoin", "Bytex.Adapters.Okx", "Bytex.Adapters.Tardis",
-        "Bytex.Persistence.Redis", "Bytex.Cli",
+        "Bytex.Adapters.Hyperliquid", "Bytex.Adapters.Kraken", "Bytex.Adapters.Kucoin", "Bytex.Adapters.Okx",
+        "Bytex.Adapters.Tardis", "Bytex.Persistence.Redis", "Bytex.Cli",
     ];
 
     // ----- what the documentation says about releases -----

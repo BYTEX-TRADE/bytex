@@ -2,6 +2,7 @@ using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
 using Bytex.Adapters.Gate;
+using Bytex.Adapters.Hyperliquid;
 using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Okx;
@@ -69,6 +70,7 @@ public sealed class InstrumentNotFoundParityTests
         "Bitget.usdc-futures",
         "Bybit.spot",
         "Bybit.linear",
+        "Hyperliquid.perpetuals",
         "Kucoin.spot",
         "Kucoin.futures",
 
@@ -119,6 +121,12 @@ private static (string Method, string Path, int Status, string Body) NotFound(st
         "Bitget.usdt-futures" => ("GET", BitgetInstrumentProvider.ContractsPath, 400, BitgetPayloads.Error("40034", "Parameter NOTACOINUSDT does not exist")),
         "Bitget.usdc-futures" => ("GET", BitgetInstrumentProvider.ContractsPath, 400, BitgetPayloads.Error("40034", "Parameter NOTACOINPERP does not exist")),
 
+        // The second family that IGNORES THE FILTER, and it does not even have one to ignore: `meta` takes no
+        // arguments at all, so asking about one asset and asking about all of them is the same request. Measured -
+        // sent with a coin and a name field set to BTC it answered with all 234 assets and the same 17628 bytes as
+        // the bare request. Six real entries stand for them here.
+        "Hyperliquid.perpetuals" => ("POST", HyperliquidVenue.InfoPath, 200, HyperliquidPayloads.Meta),
+
         // HTTP 200 with the refusal in the body, which is why a caller checking the status learns nothing.
         "Kucoin.spot" => ("GET", "/api/v2/symbols/NOTACOIN-USDT", 200, """{"msg":"Trading pair NOTACOIN-USDT does not exist.","code":"900001"}"""),
         "Kucoin.futures" => ("GET", "/api/v1/contracts/NOTACOINUSDTM", 200, """{"msg":"The contract information you requested does not exist.","code":"404000"}"""),
@@ -160,6 +168,7 @@ private static InstrumentId Unknown(string family) => InstrumentId.Parse(family 
         "Bitget.spot" => "NOTACOINUSDT.BITGET",
         "Bitget.usdt-futures" => "NOTACOINUSDT-PERP.BITGET",
         "Bitget.usdc-futures" => "NOTACOINUSDC-PERP.BITGET",
+        "Hyperliquid.perpetuals" => "NOTACOIN-PERP.HYPERLIQUID",
         "Kucoin.spot" => "NOTACOIN-USDT.KUCOIN",
         "Kucoin.futures" => "NOTACOINUSDT-PERP.KUCOIN",
 
@@ -201,6 +210,8 @@ private static InstrumentProviderBase Provider(string family, LoopbackServer ser
             new BitgetHttp(new BitgetDataClientConfig { ProductType = BitgetProductType.UsdtFutures, BaseUrlHttp = server.HttpBase })),
         "Bitget.usdc-futures" => new BitgetInstrumentProvider(
             new BitgetHttp(new BitgetDataClientConfig { ProductType = BitgetProductType.UsdcFutures, BaseUrlHttp = server.HttpBase })),
+        "Hyperliquid.perpetuals" => new HyperliquidInstrumentProvider(
+            new HyperliquidHttp(new HyperliquidDataClientConfig { BaseUrlHttp = server.HttpBase })),
         "Kucoin.spot" => new KucoinInstrumentProvider(
             new KucoinHttp(new KucoinDataClientConfig { BaseUrlHttp = server.HttpBase })),
         "Kucoin.futures" => new KucoinFuturesInstrumentProvider(

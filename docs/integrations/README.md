@@ -6,6 +6,7 @@
 | Bitget spot, USDT- and USDC-margined perpetuals | `BITGET` | yes | yes | — |
 | Bybit spot and linear perpetuals | `BYBIT` | yes | yes | [bybit.md](bybit.md) |
 | Gate spot, perpetual and delivery futures | `GATE` | yes | yes | [gate.md](gate.md) |
+| Hyperliquid perpetuals | `HYPERLIQUID` | yes | yes | [hyperliquid.md](hyperliquid.md) |
 | Kraken spot and futures | `KRAKEN` | yes | yes | [kraken.md](kraken.md) |
 | KuCoin spot | `KUCOIN` | yes | yes | [kucoin.md](kucoin.md) |
 | Tardis historical data | `TARDIS` | historical only | — | [tardis.md](tardis.md) |

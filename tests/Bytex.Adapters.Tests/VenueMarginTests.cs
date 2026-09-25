@@ -32,9 +32,19 @@ namespace Bytex.Adapters.Tests;
 // anybody telling them the rule.
 public sealed class VenueMarginTests
 {
-    /// <summary>A margin assignment whose value is a number somebody typed, rather than one read from the venue.</summary>
+    /// <summary>
+    /// A margin assignment whose value is a number somebody typed, rather than one read from the venue.
+    /// <para>
+    /// A literal that is the NUMERATOR OF A DIVISION is not one of those, which is what the lookahead is for. The
+    /// rule this file states is that MarginInit must not be a floor over 1/leverage; a venue that publishes a
+    /// maximum leverage per contract and writes <c>1m / maxLeverage</c> has written exactly that reciprocal and
+    /// nothing else, and the only literal on the line is the 1 of "one over". Without the lookahead this read that
+    /// as an invented figure and failed the venue that obeys the rule most directly of any here. Something still
+    /// has to supply the denominator, so a typed pair - <c>5m / 100m</c> - is caught on the denominator instead.
+    /// </para>
+    /// </summary>
     private static readonly Regex _invented = new(
-        @"Margin(Init|Maint)\s*=.*?(?<literal>\b(?:[1-9]\d*|\d+\.\d+)m\b)",
+        @"Margin(Init|Maint)\s*=.*?(?<literal>\b(?:[1-9]\d*|\d+\.\d+)m\b)(?!\s*/)",
         RegexOptions.Compiled);
 
     [Fact]

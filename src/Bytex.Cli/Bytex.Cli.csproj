@@ -23,6 +23,7 @@
     <ProjectReference Include="..\Bytex.Adapters.Bitget\Bytex.Adapters.Bitget.csproj" />
     <ProjectReference Include="..\Bytex.Adapters.Bybit\Bytex.Adapters.Bybit.csproj" />
     <ProjectReference Include="..\Bytex.Adapters.Gate\Bytex.Adapters.Gate.csproj" />
+    <ProjectReference Include="..\Bytex.Adapters.Hyperliquid\Bytex.Adapters.Hyperliquid.csproj" />
     <ProjectReference Include="..\Bytex.Adapters.Kraken\Bytex.Adapters.Kraken.csproj" />
     <ProjectReference Include="..\Bytex.Adapters.Kucoin\Bytex.Adapters.Kucoin.csproj" />
     <ProjectReference Include="..\Bytex.Adapters.Okx\Bytex.Adapters.Okx.csproj" />

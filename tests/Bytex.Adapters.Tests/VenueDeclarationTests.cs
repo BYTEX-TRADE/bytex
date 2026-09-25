@@ -4,6 +4,7 @@ using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
 using Bytex.Adapters.Gate;
+using Bytex.Adapters.Hyperliquid;
 using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Okx;
@@ -169,6 +170,11 @@ public sealed class VenueDeclarationTests
         // them apart, so there is no market selector to ask this venue for.
         "Gate" => (GateVenue.HttpBase((IGateSettings)config), GateVenue.WsBase((IGateSettings)config), null),
 
+        // One host for everything and a fixed socket, which is why both are strings here where KuCoin's socket is
+        // a null. The declared bases are ROOTS - /info, /exchange and /ws hang off them - so this compares roots.
+        // This venue declares one family, so there is nothing for a market selector to tell apart.
+        "Hyperliquid" => (HyperliquidVenue.HttpBase((IHyperliquidSettings)config), HyperliquidVenue.WsBase((IHyperliquidSettings)config), null),
+
         _ => throw new InvalidOperationException(
             $"{venue} declares itself and this test does not know how to ask it where it talks. Add it here - the "
             + "declaration is only worth having if something checks it against the adapter."),
@@ -223,6 +229,10 @@ public sealed class VenueDeclarationTests
         ("Gate", "spot") => new Routes().On("GET", "/api/v4/spot/currency_pairs", GatePayloads.CurrencyPairs),
         ("Gate", "futures") => new Routes().On("GET", "/api/v4/futures/usdt/contracts", GatePayloads.FuturesContracts),
         ("Gate", "delivery") => new Routes().On("GET", "/api/v4/delivery/usdt/contracts", GatePayloads.DeliveryContracts),
+
+        // A POST to one path, with the read named in the BODY. This venue has no path per resource, so there is
+        // nothing narrower to route on - which is the shape the whole adapter is built around.
+        ("Hyperliquid", "perpetuals") => new Routes().On("POST", HyperliquidVenue.InfoPath, HyperliquidPayloads.Meta),
 
         _ => throw new InvalidOperationException(
             $"{venue}'s {family} family declares the instrument classes it returns and there is no catalog fixture "
@@ -318,6 +328,16 @@ public sealed class VenueDeclarationTests
                     _ => new GateInstrumentProvider(http),
                 };
 
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Hyperliquid":
+            {
+                HyperliquidDataClientConfig c = (HyperliquidDataClientConfig)config;
+                using HyperliquidHttp http = new(c);
+                HyperliquidInstrumentProvider provider = new(http);
                 await provider.LoadAllAsync(CancellationToken.None);
                 instruments = provider.GetAll();
                 break;
