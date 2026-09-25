@@ -4,6 +4,7 @@ using System.Net;
 using System.Security.Authentication;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
+using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
 using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
@@ -70,6 +71,11 @@ internal static class KeyCommands
                     case "BINANCE":
                         RequireKey(BinanceVenue.EnvApiKey, BinanceVenue.EnvApiSecret);
                         await VerifyBinanceAsync(parseResult.GetValue(baseUrl), loggerFactory, report, limit.Token).ConfigureAwait(false);
+                        break;
+                    case "BITGET":
+                        RequireKey(BitgetVenue.EnvApiKey, BitgetVenue.EnvApiSecret);
+                        RequireKey(BitgetVenue.EnvApiPassphrase, BitgetVenue.EnvApiPassphrase);
+                        await VerifyBitgetAsync(parseResult.GetValue(baseUrl), loggerFactory, report, limit.Token).ConfigureAwait(false);
                         break;
                     case "KUCOIN":
                         RequireKey(KucoinVenue.EnvApiKey, KucoinVenue.EnvApiSecret);
@@ -538,6 +544,109 @@ internal static class KeyCommands
         public const string SpotWebSocketsToken = KrakenVenue.RestVersion + "/private/GetWebSocketsToken";
     }
 
+    /// <summary>
+    /// Bitget: the key's own record says what it may do and which addresses it may be used from, and each family's
+    /// account is then read to prove the key really works on it.
+    /// <para>
+    /// A Bitget key is three parts, so a missing passphrase is reported by name before anything is sent. The
+    /// permissions arrive as a list of words the venue calls authorities, and the two that matter are whether the key
+    /// may trade at all and whether it may withdraw - a key that may withdraw should be replaced rather than used.
+    /// </para>
+    /// <para>
+    /// Which markets the key covers is answered by asking them rather than by reading a permission name. The venue
+    /// grants a key per product type, and a key refused by one market and accepted by another has said exactly what a
+    /// person needs to know - where a name in a list would still have to be believed.
+    /// </para>
+    /// </summary>
+    private static async Task VerifyBitgetAsync(string? baseUrl, ILoggerFactory loggerFactory, Report report, CancellationToken ct)
+    {
+        BitgetExecutionClientConfig config = new() { BaseUrlHttp = baseUrl };
+        using BitgetHttp http = new(config, loggerFactory.CreateLogger("bitget"), requireCredentials: true);
+        JsonElement info = await http.GetSignedAsync(BitgetAccountInfoPath, null, ct).ConfigureAwait(false);
+        report.KeyAccepted = true;
+        report.Checks.Add(new Check("ok", "auth", $"key of user {Mask(Field(info, "userId"))}"));
+
+        List<string> authorities = BitgetAuthorities(info);
+        bool withdraw = authorities.Exists(a => a.Contains("withdraw", StringComparison.OrdinalIgnoreCase));
+        bool readOnly = authorities.Count > 0 && authorities.TrueForAll(a => a.Contains("readonly", StringComparison.OrdinalIgnoreCase) || a.Contains("read_only", StringComparison.OrdinalIgnoreCase));
+        report.CanWithdraw = withdraw;
+        report.Checks.Add(new Check("ok", "permissions", (readOnly ? "read-only" : "trade") + (authorities.Count > 0 ? " - " + string.Join(", ", authorities) : string.Empty)));
+        report.Checks.Add(new Check(withdraw ? "warn" : "ok", "withdraw", withdraw ? "withdrawal permission PRESENT; create a key without it" : "withdrawal permission absent"));
+
+        string ips = Field(info, "ips");
+        bool restricted = ips.Length > 0;
+        report.IpRestricted = restricted;
+        report.Checks.Add(new Check(restricted ? "ok" : "warn", "ip-allow-list", restricted ? ips : "no IP restriction; restrict the key to this machine"));
+
+        bool spot = await BitgetMarketWorksAsync(http, BitgetSpotAssetsPath, null, ct).ConfigureAwait(false);
+        report.Spot = spot && !readOnly;
+        report.Checks.Add(new Check(spot ? "ok" : "warn", "spot", spot ? "spot account readable" : "spot account not readable with this key"));
+
+        // Both perpetual families, because a node pointed at the one the key was not granted fails at its first
+        // request rather than at its first order.
+        bool usdt = await BitgetMarketWorksAsync(http, BitgetMixAccountsPath, BitgetUsdtFuturesProduct, ct).ConfigureAwait(false);
+        bool usdc = await BitgetMarketWorksAsync(http, BitgetMixAccountsPath, BitgetUsdcFuturesProduct, ct).ConfigureAwait(false);
+        report.Futures = (usdt || usdc) && !readOnly;
+        report.Checks.Add(new Check(
+            usdt || usdc ? "ok" : "warn",
+            "futures",
+            $"USDT-margined {(usdt ? "readable" : "not readable")}, USDC-margined {(usdc ? "readable" : "not readable")}"));
+
+        report.CanTrade = !readOnly && (spot || usdt || usdc);
+    }
+
+    /// <summary>
+    /// What a Bitget key is allowed to do. The venue sends the list as an array on some accounts and as one
+    /// comma-separated string on others, and a report that read only one of the two shapes would call a trading key
+    /// read-only.
+    /// </summary>
+    private static List<string> BitgetAuthorities(JsonElement info)
+    {
+        if (info.ValueKind == JsonValueKind.Object
+            && info.TryGetProperty("authorities", out JsonElement list)
+            && list.ValueKind == JsonValueKind.Array)
+        {
+            return list.EnumerateArray().Select(a => a.ToString()).Where(a => a.Length > 0).ToList();
+        }
+
+        return Field(info, "authorities")
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+    }
+
+    /// <summary>Whether one Bitget market answers this key, which is the only way to tell what the key covers.</summary>
+    private static async Task<bool> BitgetMarketWorksAsync(BitgetHttp http, string path, string? productType, CancellationToken ct)
+    {
+        try
+        {
+            Dictionary<string, string>? query = productType is null
+                ? null
+                : new Dictionary<string, string>(StringComparer.Ordinal) { ["productType"] = productType };
+
+            await http.GetSignedAsync(path, query, ct).ConfigureAwait(false);
+            return true;
+        }
+        catch (BitgetApiException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Where a Bitget key's own record answers: who owns it, what it may do, and where it may be used from.</summary>
+    private const string BitgetAccountInfoPath = "/api/v2/spot/account/info";
+
+    /// <summary>Where a Bitget spot balance answers, asked only to prove the key works on that market.</summary>
+    private const string BitgetSpotAssetsPath = "/api/v2/spot/account/assets";
+
+    /// <summary>Where a Bitget derivative balance answers, asked once per perpetual product type.</summary>
+    private const string BitgetMixAccountsPath = "/api/v2/mix/account/accounts";
+
+    /// <summary>The venue's name for its USDT-margined perpetuals, which a derivative request carries.</summary>
+    private const string BitgetUsdtFuturesProduct = "USDT-FUTURES";
+
+    /// <summary>The venue's name for its USDC-margined perpetuals.</summary>
+    private const string BitgetUsdcFuturesProduct = "USDC-FUTURES";
+
     private static string Field(JsonElement e, string name) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out JsonElement p)
         ? p.ValueKind == JsonValueKind.String ? p.GetString() ?? string.Empty : p.ValueKind == JsonValueKind.Number ? p.GetRawText() : string.Empty
         : string.Empty;
@@ -554,6 +663,8 @@ internal static class KeyCommands
                 return new Failure(BybitCode(bybit.Code) ?? "venue_error", null, bybit.Code.ToString(CultureInfo.InvariantCulture), e.Message);
             case KrakenApiException kraken:
                 return new Failure(KrakenCode(kraken.Code) ?? "venue_error", kraken.HttpStatus == 200 ? null : kraken.HttpStatus, kraken.Code, e.Message);
+            case BitgetApiException bitget:
+                return new Failure(BitgetCode(bitget.Code) ?? "venue_error", bitget.HttpStatus == 200 ? null : bitget.HttpStatus, bitget.Code, e.Message);
             case KucoinApiException kucoin:
                 return new Failure(KucoinCode(kucoin.Code) ?? (kucoin.HttpStatus is (int)HttpStatusCode.TooManyRequests ? "rate_limited" : "venue_error"), kucoin.HttpStatus == 200 ? null : kucoin.HttpStatus, kucoin.Code, e.Message);
             case OkxApiException okx:
@@ -649,6 +760,25 @@ internal static class KeyCommands
         "EAPI:Rate limit exceeded" => "rate_limited",
         "EGeneral:Temporary lockout" => "rate_limited",
         "authenticationError" => "bad_key",
+        _ => null,
+    };
+
+    /// <summary>
+    /// What Bitget's own codes mean. Only two of these were seen from the live venue - 40006 when no key is sent at
+    /// all and 40037 for a key it has never issued - because the key is checked before anything else, so a request
+    /// without a real key can never produce a signature, timestamp or passphrase refusal to read. The rest are as the
+    /// venue documents them and are unverified here.
+    /// </summary>
+    private static string? BitgetCode(string code) => code switch
+    {
+        BitgetVenue.ErrorNoApiKey => "bad_key",
+        BitgetVenue.ErrorApiKeyUnknown => "bad_key",
+        "40001" or "40002" or "40003" or "40011" or "40012" => "bad_key",
+        "40009" => "bad_signature",
+        "40005" or "40008" => "clock_skew",
+        "40013" or "40014" => "permission_denied",
+        "40018" => "ip_not_allowed",
+        "429" => "rate_limited",
         _ => null,
     };
 

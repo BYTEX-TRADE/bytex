@@ -3,6 +3,7 @@
 | Integration | Factory name | Data | Execution | Guide |
 |---|---|---|---|---|
 | Binance spot and USDⓈ-M futures | `BINANCE` | yes | yes | [binance.md](binance.md) |
+| Bitget spot, USDT- and USDC-margined perpetuals | `BITGET` | yes | yes | — |
 | Bybit spot and linear perpetuals | `BYBIT` | yes | yes | [bybit.md](bybit.md) |
 | Kraken spot and futures | `KRAKEN` | yes | yes | [kraken.md](kraken.md) |
 | KuCoin spot | `KUCOIN` | yes | yes | [kucoin.md](kucoin.md) |

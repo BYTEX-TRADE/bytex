@@ -20,6 +20,7 @@
     <ProjectReference Include="..\Bytex.Documents\Bytex.Documents.csproj" />
     <ProjectReference Include="..\Bytex.Persistence.Redis\Bytex.Persistence.Redis.csproj" />
     <ProjectReference Include="..\Bytex.Adapters.Binance\Bytex.Adapters.Binance.csproj" />
+    <ProjectReference Include="..\Bytex.Adapters.Bitget\Bytex.Adapters.Bitget.csproj" />
     <ProjectReference Include="..\Bytex.Adapters.Bybit\Bytex.Adapters.Bybit.csproj" />
     <ProjectReference Include="..\Bytex.Adapters.Kraken\Bytex.Adapters.Kraken.csproj" />
     <ProjectReference Include="..\Bytex.Adapters.Kucoin\Bytex.Adapters.Kucoin.csproj" />

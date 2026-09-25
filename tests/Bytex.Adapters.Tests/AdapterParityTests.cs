@@ -72,6 +72,30 @@ public sealed class AdapterParityTests
                 ["GenerateFillReportsAsync"] = Parity.Own,
                 ["GeneratePositionStatusReportsAsync"] = Parity.Own,
             },
+            ["Bitget"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubmitOrderAsync"] = Parity.Own,
+                ["SubmitOrderListAsync"] = Parity.Base,
+
+                // Implemented, and it does different things on the two markets: the derivative endpoint amends in
+                // place, and spot has no amend at all so the venue's own cancel-and-replace is used instead.
+                ["ModifyOrderAsync"] = Parity.Own,
+
+                ["CancelOrderAsync"] = Parity.Own,
+                ["CancelAllOrdersAsync"] = Parity.Own,
+                ["BatchCancelOrdersAsync"] = Parity.Base,
+
+                // As Bybit and KuCoin: answered by the base out of this venue's own order report.
+                ["QueryOrderAsync"] = Parity.Base,
+
+                ["GenerateMassStatusAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportsAsync"] = Parity.Own,
+                ["GenerateFillReportsAsync"] = Parity.Own,
+                ["GeneratePositionStatusReportsAsync"] = Parity.Own,
+            },
             ["Bybit"] = new(StringComparer.Ordinal)
             {
                 ["ConnectAsync"] = Parity.Own,
@@ -204,6 +228,14 @@ public sealed class AdapterParityTests
                 ["UnsubscribeAsync"] = Parity.Own,
                 ["RequestAsync"] = Parity.Own,
             },
+            ["Bitget"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubscribeAsync"] = Parity.Own,
+                ["UnsubscribeAsync"] = Parity.Own,
+                ["RequestAsync"] = Parity.Own,
+            },
             ["Bybit"] = new(StringComparer.Ordinal)
             {
                 ["ConnectAsync"] = Parity.Own,
@@ -261,6 +293,17 @@ public sealed class AdapterParityTests
             {
                 ["LoadAllAsync"] = Parity.Own,
                 ["LoadIdsAsync"] = Parity.Base,
+                ["LoadAsync"] = Parity.Own,
+            },
+            ["Bitget"] = new(StringComparer.Ordinal)
+            {
+                ["LoadAllAsync"] = Parity.Own,
+
+                // The base loops over single loads, which is the right behaviour here and an expensive one: each
+                // contract of a derivative family costs a second request for its margin tiers, because the venue
+                // answers those for one symbol at a time.
+                ["LoadIdsAsync"] = Parity.Base,
+
                 ["LoadAsync"] = Parity.Own,
             },
             ["Bybit"] = new(StringComparer.Ordinal)
@@ -552,6 +595,26 @@ public sealed class AdapterParityTests
             ["BrokerTag"] = Owed.Has,
 
             // And the venue pays for it: the programme is live and this adapter carries an id for it.
+            ["BrokerProgramme"] = Owed.Has,
+        },
+        ["Bitget"] = new(StringComparer.Ordinal)
+        {
+            ["HistoryBars"] = Owed.Has,
+
+            // Owed by the two perpetual families and answered for them. Spot pays no funding and has none to fetch,
+            // and asking for it there throws rather than answering an empty list - an empty list would read as "this
+            // pair was never charged anything", which is a different statement.
+            ["HistoryFunding"] = Owed.Has,
+
+            ["VerifyKeys"] = Owed.Has,
+            ["Declaration"] = Owed.Has,
+
+            // A header on the request - the channel API code the venue's broker programme issues - so an id rides
+            // outside the signature and changes nothing about the order itself.
+            ["BrokerTag"] = Owed.Has,
+
+            // And the venue pays for it: the programme is published, its mechanism is published with it, and this
+            // adapter carries an id for it. What is left is applying for a code.
             ["BrokerProgramme"] = Owed.Has,
         },
         ["Bybit"] = new(StringComparer.Ordinal)

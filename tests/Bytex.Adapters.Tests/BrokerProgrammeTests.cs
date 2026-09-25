@@ -1,4 +1,5 @@
 using Bytex.Adapters.Binance;
+using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Tests.Support;
@@ -34,6 +35,11 @@ public sealed class BrokerProgrammeTests
     private static readonly (string Venue, BrokerProgramme Programme)[] _programmes =
     [
         ("Binance", BrokerProgramme.Carried),
+
+        // Bitget publishes both the programme and its mechanism - a channel API code in a header on the request - so
+        // an id is carried here and what is left is applying for one.
+        ("Bitget", BrokerProgramme.Carried),
+
         ("Bybit", BrokerProgramme.Carried),
         ("Kucoin", BrokerProgramme.NotCarried),
     ];
@@ -41,6 +47,7 @@ public sealed class BrokerProgrammeTests
     private static VenueDescriptor Describe(string venue) => venue switch
     {
         "Binance" => new BinancePlugin().Describe(),
+        "Bitget" => new BitgetPlugin().Describe(),
         "Bybit" => new BybitPlugin().Describe(),
         "Kucoin" => new KucoinPlugin().Describe(),
         _ => throw new ArgumentOutOfRangeException(nameof(venue), venue, "not a declared venue"),

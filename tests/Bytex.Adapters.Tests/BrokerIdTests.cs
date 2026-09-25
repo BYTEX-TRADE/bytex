@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Bytex.Adapters.Binance;
+using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Tests.Fixtures;
@@ -45,6 +46,11 @@ public sealed class BrokerIdTests
         // thought about it, and a host cannot tell "this venue has no programme" from "nobody looked".
         Assert.Equal(BrokerTag.ClientOrderIdPrefix, new BinancePlugin().Describe().BrokerTag);
         Assert.Equal(BrokerTag.RequestHeader, new BybitPlugin().Describe().BrokerTag);
+
+        // A header here too, under the venue's own name for it. Measured to be accepted and ignored on a request
+        // carrying no key, so a code that is not a real one cannot break a request.
+        Assert.Equal(BrokerTag.RequestHeader, new BitgetPlugin().Describe().BrokerTag);
+        Assert.Equal("X-CHANNEL-API-CODE", BitgetVenue.BrokerIdHeader);
 
         // Nothing carries one here. That this venue nevertheless HAS a programme is the other field's answer, and
         // the reason the two were separated.
