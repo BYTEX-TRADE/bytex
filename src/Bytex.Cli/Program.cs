@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Okx;
 using Bytex.Adapters.Tardis;
@@ -645,6 +646,7 @@ internal static class Program
         PluginRegistry registry = new();
         registry.AddPlugin(new BinancePlugin());
         registry.AddPlugin(new BybitPlugin());
+        registry.AddPlugin(new KrakenPlugin());
         registry.AddPlugin(new KucoinPlugin());
         registry.AddPlugin(new OkxPlugin());
         registry.AddPlugin(new DocumentsPlugin());

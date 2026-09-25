@@ -14,8 +14,8 @@ public sealed class ShippedArtifactsTests
     private static readonly string[] _packageProjects =
     [
         "Bytex.Core", "Bytex.Indicators", "Bytex.Documents", "Bytex.Data", "Bytex.Backtest", "Bytex.Live",
-        "Bytex.Adapters.Binance", "Bytex.Adapters.Bybit", "Bytex.Adapters.Kucoin", "Bytex.Adapters.Okx",
-        "Bytex.Adapters.Tardis",
+        "Bytex.Adapters.Binance", "Bytex.Adapters.Bybit", "Bytex.Adapters.Kraken", "Bytex.Adapters.Kucoin",
+        "Bytex.Adapters.Okx", "Bytex.Adapters.Tardis",
         "Bytex.Persistence.Redis", "Bytex.Cli",
     ];
 
@@ -274,7 +274,7 @@ public sealed class ShippedArtifactsTests
     private static readonly string[] _knownProviders = ["bytex.importable", "bytex.document"];
     private static readonly string[] _knownDataKinds = ["bars", "quotes", "trades", "deltas"];
     private static readonly string[] _knownEnvironments = ["backtest", "sandbox", "live"];
-    private static readonly string[] _knownFactories = ["BINANCE", "BYBIT", "KUCOIN", "TARDIS", "SANDBOX"];
+    private static readonly string[] _knownFactories = ["BINANCE", "BYBIT", "KRAKEN", "KUCOIN", "TARDIS", "SANDBOX"];
 
     public static TheoryData<string> ExampleConfigs()
     {

@@ -5,6 +5,7 @@ using System.Security.Authentication;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Okx;
 using Bytex.Live.Network;
@@ -31,8 +32,8 @@ internal static class KeyCommands
 
     public static Command Build(Option<string> logLevel)
     {
-        Option<string> venue = new("--venue") { Description = "BINANCE | BYBIT | KUCOIN | OKX", Required = true };
-        Option<string> envFile = new("--env-file") { Description = "File with KEY=VALUE lines (for example BYBIT_API_KEY=...; KuCoin and OKX also need a passphrase)", Required = true };
+        Option<string> venue = new("--venue") { Description = "BINANCE | BITGET | BYBIT | GATE | HYPERLIQUID | KRAKEN | KUCOIN | OKX", Required = true };
+        Option<string> envFile = new("--env-file") { Description = "File with KEY=VALUE lines (for example BYBIT_API_KEY=...; Bitget, KuCoin and OKX also need a passphrase; Hyperliquid takes HYPERLIQUID_PRIVATE_KEY and no key pair at all)", Required = true };
         Option<bool> json = new("--json") { Description = "Print the result as JSON and nothing else on standard output" };
         Option<string?> baseUrl = new("--base-url") { Description = "Override the venue's REST address (a proxy or a test venue)" };
         Option<double> timeout = new("--timeout") { Description = "Seconds the whole check may take before it is reported as unreachable; 0 waits for as long as the venue takes", DefaultValueFactory = _ => 30 };
@@ -80,8 +81,12 @@ internal static class KeyCommands
                         RequireKey(OkxVenue.EnvApiPassphrase, OkxVenue.EnvApiPassphrase);
                         await VerifyOkxAsync(parseResult.GetValue(baseUrl), loggerFactory, report, limit.Token).ConfigureAwait(false);
                         break;
+                    case "KRAKEN":
+                        RequireKey(KrakenVenue.EnvApiKey, KrakenVenue.EnvApiSecret);
+                        await VerifyKrakenAsync(parseResult.GetValue(baseUrl), loggerFactory, report, limit.Token).ConfigureAwait(false);
+                        break;
                     default:
-                        report.Fail("venue", new Failure("venue_unknown", null, null, "expected BINANCE, BYBIT, KUCOIN or OKX"));
+                        report.Fail("venue", new Failure("venue_unknown", null, null, "expected one of BINANCE, BITGET, BYBIT, GATE, HYPERLIQUID, KRAKEN, KUCOIN or OKX"));
                         break;
                 }
             }
@@ -435,6 +440,104 @@ internal static class KeyCommands
     private static JsonElement First(JsonElement data) =>
         data.ValueKind == JsonValueKind.Array && data.GetArrayLength() > 0 ? data[0] : data;
 
+    /// <summary>
+    /// Kraken, which is two platforms behind one venue name and one pair of variables. A spot key is issued on one
+    /// site and a futures key on the other, they sign differently, and NEITHER WORKS ON THE OTHER - so the first
+    /// thing this reports is which of the two the key in the file belongs to, because a key that is perfectly good
+    /// and configured against the wrong family is the mistake this venue invites.
+    /// <para>
+    /// What it cannot report is the rest. Kraken publishes no endpoint that says what a key may do, whether it may
+    /// withdraw, or whether it is restricted to an address: the other three venues each have one and this one has
+    /// none. Those facts are left unknown rather than guessed at, and the report says so in as many words - a green
+    /// line reading "withdrawals disabled" that nothing had checked would be worse than no line at all.
+    /// </para>
+    /// <para>
+    /// Trade permission is not probed either. The spot platform would allow it - AddOrder takes a validate flag
+    /// documented to check an order without submitting it - and a flag that turned out not to be honoured would
+    /// place a real order on somebody's account while testing their key. That is not a risk worth a line of a
+    /// report.
+    /// </para>
+    /// </summary>
+    private static async Task VerifyKrakenAsync(string? baseUrl, ILoggerFactory loggerFactory, Report report, CancellationToken ct)
+    {
+        KrakenApiException? spotRefusal = null;
+        using (KrakenHttp spot = new(
+            new KrakenExecutionClientConfig { ProductType = KrakenProductType.Spot, BaseUrlHttp = baseUrl },
+            loggerFactory.CreateLogger("kraken"),
+            requireCredentials: true))
+        {
+            try
+            {
+                await spot.PostSignedAsync(KrakenKeyPaths.SpotBalance, null, ct).ConfigureAwait(false);
+                report.KeyAccepted = true;
+                report.Spot = true;
+                report.Checks.Add(new Check("ok", "auth", "spot balances readable"));
+
+                // What a live node needs beyond reading: the private socket is opened with a token from a signed
+                // call, so a key that cannot fetch one cannot receive an order event however well it reads.
+                try
+                {
+                    await spot.PostSignedAsync(KrakenKeyPaths.SpotWebSocketsToken, null, ct).ConfigureAwait(false);
+                    report.Checks.Add(new Check("ok", "stream", "socket token issued; order events can be received"));
+                }
+                catch (KrakenApiException e)
+                {
+                    report.Checks.Add(new Check("warn", "stream", "no socket token: " + e.Code));
+                }
+            }
+            catch (KrakenApiException e)
+            {
+                spotRefusal = e;
+                report.Spot = false;
+            }
+        }
+
+        using KrakenHttp futures = new(
+            new KrakenExecutionClientConfig { ProductType = KrakenProductType.Futures, BaseUrlHttp = baseUrl },
+            loggerFactory.CreateLogger("kraken"),
+            requireCredentials: true);
+
+        try
+        {
+            await futures.GetSignedAsync(KrakenFuturesVenue.AccountsPath, null, ct).ConfigureAwait(false);
+            report.KeyAccepted = true;
+            report.Futures = true;
+            report.Checks.Add(new Check("ok", "auth", "futures accounts readable"));
+        }
+        catch (KrakenApiException e)
+        {
+            report.Futures = false;
+            if (report.Spot != true)
+            {
+                // Neither platform took it. The spot refusal is the one reported, because it is the one that names a
+                // reason: the futures platform answers every bad credential with the same single word.
+                throw spotRefusal ?? e;
+            }
+        }
+
+        report.Checks.Add(new Check(
+            "ok",
+            "platform",
+            (report.Spot == true ? "spot" : string.Empty)
+            + (report.Spot == true && report.Futures == true ? " and " : string.Empty)
+            + (report.Futures == true ? "futures" : string.Empty)
+            + " · a key for one of Kraken's two platforms does not work on the other"));
+
+        report.Checks.Add(new Check(
+            "warn",
+            "permissions",
+            "unknown: Kraken publishes no endpoint that reports a key's permissions, its withdrawal rights or its "
+            + "address restrictions. Check them on the venue's own API management page."));
+    }
+
+    /// <summary>The two spot paths this check calls, named rather than written into the calls twice.</summary>
+    private static class KrakenKeyPaths
+    {
+        public const string SpotBalance = KrakenVenue.RestVersion + "/private/BalanceEx";
+
+        public const string SpotWebSocketsToken = KrakenVenue.RestVersion + "/private/GetWebSocketsToken";
+    }
+
     private static string Field(JsonElement e, string name) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out JsonElement p)
         ? p.ValueKind == JsonValueKind.String ? p.GetString() ?? string.Empty : p.ValueKind == JsonValueKind.Number ? p.GetRawText() : string.Empty
         : string.Empty;
@@ -449,6 +552,8 @@ internal static class KeyCommands
                 return new Failure("env_file_missing", null, null, e.Message);
             case BybitApiException bybit:
                 return new Failure(BybitCode(bybit.Code) ?? "venue_error", null, bybit.Code.ToString(CultureInfo.InvariantCulture), e.Message);
+            case KrakenApiException kraken:
+                return new Failure(KrakenCode(kraken.Code) ?? "venue_error", kraken.HttpStatus == 200 ? null : kraken.HttpStatus, kraken.Code, e.Message);
             case KucoinApiException kucoin:
                 return new Failure(KucoinCode(kucoin.Code) ?? (kucoin.HttpStatus is (int)HttpStatusCode.TooManyRequests ? "rate_limited" : "venue_error"), kucoin.HttpStatus == 200 ? null : kucoin.HttpStatus, kucoin.Code, e.Message);
             case OkxApiException okx:
@@ -519,6 +624,31 @@ internal static class KeyCommands
         10005 => "permission_denied",
         10009 or 10024 => "geo_blocked",
         10006 or 10018 => "rate_limited",
+        _ => null,
+    };
+
+    /// <summary>
+    /// Kraken spot's refusal tokens. It answers with a stable <c>ECATEGORY:Message</c> string and an HTTP 200, so
+    /// the token is the only thing that says what went wrong - a caller reading the status learns nothing at all.
+    /// <para>
+    /// "EAPI:Invalid key" is measured: it is what the live platform answers an unsigned request. The rest are the
+    /// venue's published tokens and have not been provoked from here.
+    /// </para>
+    /// <para>
+    /// The futures platform has no equivalent. It answers every bad credential with the single word
+    /// <c>authenticationError</c> - measured - so a wrong key, a wrong signature and a clock that is off are one
+    /// failure there and cannot be told apart by anything.
+    /// </para>
+    /// </summary>
+    private static string? KrakenCode(string code) => code switch
+    {
+        "EAPI:Invalid key" => "bad_key",
+        "EAPI:Invalid signature" => "bad_signature",
+        "EAPI:Invalid nonce" => "clock_skew",
+        "EGeneral:Permission denied" => "permission_denied",
+        "EAPI:Rate limit exceeded" => "rate_limited",
+        "EGeneral:Temporary lockout" => "rate_limited",
+        "authenticationError" => "bad_key",
         _ => null,
     };
 

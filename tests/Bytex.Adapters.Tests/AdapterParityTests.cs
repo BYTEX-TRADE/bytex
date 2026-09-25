@@ -140,6 +140,40 @@ public sealed class AdapterParityTests
                 ["GeneratePositionStatusReportsAsync"] = Parity.Own,
             },
 
+            // The row describes the SPOT client, which is the one the naming convention finds. Its futures sibling
+            // is KrakenFuturesExecutionClient, and the two are compared against each other by name in the Kraken
+            // tests rather than here - as KuCoin's are, for the same reason.
+            ["Kraken"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubmitOrderAsync"] = Parity.Own,
+                ["SubmitOrderListAsync"] = Parity.Base,
+                ["ModifyOrderAsync"] = Parity.Own,
+                ["CancelOrderAsync"] = Parity.Own,
+
+                // The base's loop, and on this venue that is the CORRECT answer rather than a gap. Kraken spot's own
+                // /0/private/CancelAll takes no symbol and cancels every open order on the account, while a
+                // cancel-all command always names an instrument - so sending it would close orders on every other
+                // instrument the account holds. Its futures sibling takes a symbol and implements this itself.
+                ["CancelAllOrdersAsync"] = Parity.Base,
+
+                ["BatchCancelOrdersAsync"] = Parity.Base,
+
+                // As the other three: answered by the base out of this venue's own order report.
+                ["QueryOrderAsync"] = Parity.Base,
+
+                ["GenerateMassStatusAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportsAsync"] = Parity.Own,
+                ["GenerateFillReportsAsync"] = Parity.Own,
+
+                // A cash account holds no positions, so the base's empty list is the whole of the right answer and
+                // implementing it would be inventing one. The futures client, which does hold positions, reports
+                // them.
+                ["GeneratePositionStatusReportsAsync"] = Parity.Base,
+            },
+
             // Tardis is a history source. There is nothing to trade on and no execution client to trade with, which
             // is why every command is None rather than Silent - it cannot be asked at all.
             ["Tardis"] = new(StringComparer.Ordinal)
@@ -194,6 +228,14 @@ public sealed class AdapterParityTests
                 ["UnsubscribeAsync"] = Parity.Own,
                 ["RequestAsync"] = Parity.Own,
             },
+            ["Kraken"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubscribeAsync"] = Parity.Own,
+                ["UnsubscribeAsync"] = Parity.Own,
+                ["RequestAsync"] = Parity.Own,
+            },
             ["Tardis"] = new(StringComparer.Ordinal)
             {
                 // There is no socket to open, so the base's bookkeeping - mark connected, tell the sink - is the
@@ -234,6 +276,12 @@ public sealed class AdapterParityTests
                 ["LoadAsync"] = Parity.Own,
             },
             ["Okx"] = new(StringComparer.Ordinal)
+            {
+                ["LoadAllAsync"] = Parity.Own,
+                ["LoadIdsAsync"] = Parity.Base,
+                ["LoadAsync"] = Parity.Own,
+            },
+            ["Kraken"] = new(StringComparer.Ordinal)
             {
                 ["LoadAllAsync"] = Parity.Own,
                 ["LoadIdsAsync"] = Parity.Base,
@@ -569,6 +617,36 @@ public sealed class AdapterParityTests
             // nobody is collecting. Not Missing either - the venue trades correctly and shipping it is not a
             // mistake.
             ["BrokerProgramme"] = Owed.Unclaimed,
+        },
+
+        ["Kraken"] = new(StringComparer.Ordinal)
+        {
+            // Both families, out of one helper that routes on which platform its http client is pointed at. Worth
+            // saying what each can really reach: the futures charts service pages properly, and the spot OHLC
+            // endpoint does not page AT ALL - it clamps every request to the newest 720 intervals, so one-minute
+            // spot history older than twelve hours cannot be fetched from this venue at any price.
+            ["HistoryBars"] = Owed.Has,
+
+            // Owed by the futures family and answered for it. A year of hourly settlements, which is everything the
+            // venue retains; spot pays no funding and has none to fetch.
+            ["HistoryFunding"] = Owed.Has,
+
+            // And it answers a question no other venue's key test has to: WHICH of the two platforms the key in the
+            // file belongs to. A spot key and a futures key are issued separately and neither works on the other,
+            // so a perfectly good key against the wrong family is this venue's own invitation to failure.
+            ["VerifyKeys"] = Owed.Has,
+
+            ["Declaration"] = Owed.Has,
+
+            // A field on the order - `broker`, carrying the partner's own Kraken IIBAN - on AddOrder and on
+            // sendorder alike. Nothing about the order's identity changes, so this needs no reconciliation test of
+            // the kind Binance's prefix does.
+            ["BrokerTag"] = Owed.Has,
+
+            // The venue runs the programme, publishes the mechanism, and this adapter carries an id for it. What
+            // cannot be verified from outside an approved account is whether the field is honoured: the futures
+            // platform documents its own `broker` parameter as available in pre-production only.
+            ["BrokerProgramme"] = Owed.Has,
         },
         ["Tardis"] = new(StringComparer.Ordinal)
         {

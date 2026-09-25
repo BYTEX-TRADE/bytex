@@ -1,7 +1,9 @@
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Okx;
+using Bytex.Adapters.Tests.Fixtures;
 using Bytex.Adapters.Tests.Support;
 using Bytex.Core.Adapters;
 using Bytex.Core.Model.Identifiers;
@@ -72,6 +74,12 @@ public sealed class InstrumentNotFoundParityTests
         "Okx.spot",
         "Okx.swap",
         "Okx.futures",
+
+        // And the fifth venue disagrees with itself as well, in a way neither of the other two does: its spot
+        // platform refuses the question with a named token, and its futures platform IGNORES the symbol filter and
+        // answers with every contract it lists. That is Binance's USD-margined defect on a second venue.
+        "Kraken.spot",
+        "Kraken.futures",
     ];
 
 private static (string Method, string Path, int Status, string Body) NotFound(string family) => family switch
@@ -105,6 +113,15 @@ private static (string Method, string Path, int Status, string Body) NotFound(st
         // a DIFFERENT market: asked for the spot pair BTC-USDT under instType=SWAP, the venue gives this same
         // refusal rather than the pair or its whole catalog.
         "Okx.spot" or "Okx.swap" or "Okx.futures" => ("GET", "/api/v5/public/instruments", 200, """{"code":"51001","data":[],"msg":"Instrument ID, Instrument ID code, or Spread ID doesn't exist."}"""),
+
+        // HTTP 200 with the refusal in an error ARRAY, which is this platform's shape for every failure.
+        "Kraken.spot" => ("GET", "/0/public/AssetPairs", 200, KrakenPayloads.UnknownPair),
+
+        // No refusal at all: the catalog ignores its symbol filter and answers with the whole list. Measured -
+        // ?symbol=PF_XBTUSD returned all 300 contracts - and there is no per-symbol endpoint to ask instead, so
+        // "load this one instrument" is a request for the venue unless the adapter keeps only the one it asked for.
+        "Kraken.futures" => ("GET", "/derivatives/api/v3/instruments", 200, KrakenPayloads.Instruments),
+
         _ => throw new InvalidOperationException(
             $"{family} ships a catalog and there is no recorded answer here for an instrument it does not list. Add "
             + "what the LIVE family really says - its sibling's answer is not it, as both of these venues prove."),
@@ -124,6 +141,12 @@ private static InstrumentId Unknown(string family) => InstrumentId.Parse(family 
         "Okx.spot" => "NOTACOIN-USDT.OKX",
         "Okx.swap" => "NOTACOIN-USDT-SWAP.OKX",
         "Okx.futures" => "NOTACOIN-USD_UM-261030.OKX",
+
+        // A dash where the wire name has a slash, as every Kraken spot id does; and on futures the venue's own
+        // contract symbol, prefix and all.
+        "Kraken.spot" => "NOTACOIN-USD.KRAKEN",
+        "Kraken.futures" => "PF_NOTACOINUSD.KRAKEN",
+
         _ => throw new InvalidOperationException(family),
     });
 
@@ -148,6 +171,10 @@ private static InstrumentProviderBase Provider(string family, LoopbackServer ser
         "Okx.spot" => OkxProvider(server, OkxInstrumentType.Spot),
         "Okx.swap" => OkxProvider(server, OkxInstrumentType.Swap),
         "Okx.futures" => OkxProvider(server, OkxInstrumentType.Futures),
+        "Kraken.spot" => new KrakenInstrumentProvider(
+            new KrakenHttp(new KrakenDataClientConfig { BaseUrlHttp = server.HttpBase })),
+        "Kraken.futures" => new KrakenFuturesInstrumentProvider(
+            new KrakenHttp(new KrakenDataClientConfig { ProductType = KrakenProductType.Futures, BaseUrlHttp = server.HttpBase })),
         _ => throw new InvalidOperationException(family),
     };
 
