@@ -143,4 +143,94 @@ public sealed class FetchInstrumentsCommandTests
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("/api/v2/symbols", venue.Requests.Select(r => r.Path));
     }
+
+    /// <summary>
+    /// Binance's coin-margined perpetual and one quarterly as that family really publishes them - tradability in
+    /// contractStatus, a contract size, quantities in whole contracts - plus one the venue is not trading yet.
+    /// </summary>
+    private const string CoinMExchangeInfo = """
+        {
+          "timezone": "UTC", "serverTime": 1700000000000,
+          "symbols": [
+            {
+              "symbol": "BTCUSD_PERP", "pair": "BTCUSD", "contractType": "PERPETUAL",
+              "deliveryDate": 4133404800000, "onboardDate": 1597042800000, "contractStatus": "TRADING",
+              "maintMarginPercent": "2.5000", "requiredMarginPercent": "5.0000",
+              "baseAsset": "BTC", "quoteAsset": "USD", "marginAsset": "BTC",
+              "pricePrecision": 1, "quantityPrecision": 0, "contractSize": 100,
+              "filters": [
+                { "filterType": "PRICE_FILTER", "minPrice": "1000", "maxPrice": "4520958", "tickSize": "0.1" },
+                { "filterType": "LOT_SIZE", "minQty": "1", "maxQty": "1000000", "stepSize": "1" }
+              ]
+            },
+            {
+              "symbol": "BTCUSD_261225", "pair": "BTCUSD", "contractType": "CURRENT_QUARTER",
+              "deliveryDate": 1798185600000, "onboardDate": 1766563200000, "contractStatus": "TRADING",
+              "maintMarginPercent": "2.5000", "requiredMarginPercent": "5.0000",
+              "baseAsset": "BTC", "quoteAsset": "USD", "marginAsset": "BTC",
+              "pricePrecision": 1, "quantityPrecision": 0, "contractSize": 100,
+              "filters": [
+                { "filterType": "PRICE_FILTER", "minPrice": "2109.4", "maxPrice": "3515698.4", "tickSize": "0.1" },
+                { "filterType": "LOT_SIZE", "minQty": "1", "maxQty": "1000000", "stepSize": "1" }
+              ]
+            },
+            {
+              "symbol": "EGLDUSD_PERP", "pair": "EGLDUSD", "contractType": "PERPETUAL",
+              "deliveryDate": 4133404800000, "onboardDate": 1766563200000, "contractStatus": "PENDING_TRADING",
+              "baseAsset": "EGLD", "quoteAsset": "USD", "marginAsset": "EGLD",
+              "pricePrecision": 3, "quantityPrecision": 0, "contractSize": 10,
+              "filters": [
+                { "filterType": "PRICE_FILTER", "minPrice": "0.5", "maxPrice": "10000", "tickSize": "0.001" },
+                { "filterType": "LOT_SIZE", "minQty": "1", "maxQty": "1000000", "stepSize": "1" }
+              ]
+            }
+          ]
+        }
+        """;
+
+    [Fact]
+    public async Task Binances_coin_margined_family_is_reachable_through_instrument_type()
+    {
+        // Binance has three markets and --futures can only choose between two, so the third is named the way OKX's
+        // third is. A capability nothing can reach is not a capability, and this switch is the only way a user gets
+        // at it - which is why the test is here as well as in the adapter's own suite.
+        using TempDirectory temp = new();
+        await using LoopbackServer venue = new(_ => StubResponse.Json(CoinMExchangeInfo));
+        string catalog = temp.Combine("catalog");
+
+        CliResult result = await CliRunner.RunAsync(
+            ["catalog", "fetch-instruments", "--path", catalog, "--venue", "BINANCE", "--instrument-type", "CoinMFutures", "--base-url", venue.HttpBase]);
+
+        Assert.True(result.ExitCode == 0, result.AllOutput);
+        Assert.Contains("/dapi/v1/exchangeInfo", venue.Requests.Select(r => r.Path));
+
+        // Two of the three: the one the venue is not trading yet is left out, which is the field this family
+        // publishes under a different name from its sibling's.
+        IReadOnlyList<Instrument> stored = new ParquetDataCatalog(catalog).Instruments();
+        Assert.Equal(["BTCUSD_261225.BINANCE", "BTCUSD_PERP.BINANCE"], stored.Select(i => i.Id.Value).Order());
+
+        // And what is stored is a coin-margined contract rather than a linear one under another name: inverse,
+        // sized in whole contracts, carrying the venue's own contract size as its multiplier.
+        Instrument perp = stored.Single(i => i.Id == InstrumentId.Parse("BTCUSD_PERP.BINANCE"));
+        Assert.True(perp.IsInverse);
+        Assert.Equal(new Quantity(1m, 0), perp.SizeIncrement);
+        Assert.Equal(100m, perp.Multiplier.Value);
+        Assert.Equal(Currencies.BTC, perp.SettlementCurrency);
+    }
+
+    [Fact]
+    public async Task The_usd_margined_family_is_still_what_futures_means_on_binance()
+    {
+        // The switch that existed before there were three markets keeps meaning what it meant: a stored script must
+        // not start fetching a different market because a family was added beside it.
+        using TempDirectory temp = new();
+        await using LoopbackServer venue = new(_ => StubResponse.Json("""{"timezone":"UTC","serverTime":1700000000000,"symbols":[]}"""));
+
+        CliResult result = await CliRunner.RunAsync(
+            ["catalog", "fetch-instruments", "--path", temp.Combine("catalog"), "--venue", "BINANCE", "--futures", "--base-url", venue.HttpBase]);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("/fapi/v1/exchangeInfo", venue.Requests.Select(r => r.Path));
+        Assert.DoesNotContain("/dapi/v1/exchangeInfo", venue.Requests.Select(r => r.Path));
+    }
 }

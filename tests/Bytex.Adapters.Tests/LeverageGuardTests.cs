@@ -1,3 +1,4 @@
+using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
 using Bytex.Adapters.Tests.Fixtures;
 using Bytex.Adapters.Tests.Support;
@@ -120,6 +121,55 @@ public sealed class LeverageGuardTests
 
         Assert.Single(rig.Server.RequestsTo(BybitVenue.LeveragePath));
     }
+
+    [Fact]
+    public async Task Binances_coin_margined_family_refuses_a_leverage_its_own_brackets_do_not_grant()
+    {
+        // The guard reached on the family added last, through the only path that can give it a ceiling here: this
+        // venue keeps its brackets behind a key, so a run holding one learns that BTCUSD_PERP grants 125x. Asking
+        // for 200x would otherwise be sent, granted at 125x by the venue, and traded - a strategy running at a size
+        // it was never tested at, with a log line as the only trace.
+        await using BinanceExecRig rig = new(BinanceAccountType.CoinMFutures, leverage: 200m);
+        rig.Routes.On("GET", BinanceVenue.LeverageBracketPath(BinanceAccountType.CoinMFutures), CoinMBrackets);
+
+        // What a node holds after a catalog fetch that HAD a key, which is the only way a ceiling exists on this
+        // venue. Without one the guard has nothing to check and a test of it would prove nothing.
+        rig.Kernel.Kernel.Cache.AddInstrument(BinanceExecRig.CoinMPerpetual(maxLeverage: 125m));
+
+        ArgumentOutOfRangeException refused = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => rig.ConnectAsync("[]"));
+
+        Assert.Contains("125", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("200", refused.Message, StringComparison.Ordinal);
+
+        // And nothing was sent: the refusal comes before the venue is asked to set anything.
+        Assert.Empty(rig.Server.RequestsTo(BinanceVenue.LeveragePath(BinanceAccountType.CoinMFutures)));
+    }
+
+    [Fact]
+    public async Task Binances_coin_margined_family_still_connects_at_a_leverage_it_does_grant()
+    {
+        await using BinanceExecRig rig = new(BinanceAccountType.CoinMFutures, leverage: 50m);
+        rig.Routes.On("GET", BinanceVenue.LeverageBracketPath(BinanceAccountType.CoinMFutures), CoinMBrackets);
+        rig.Kernel.Kernel.Cache.AddInstrument(BinanceExecRig.CoinMPerpetual(maxLeverage: 125m));
+
+        await rig.ConnectAsync("[]");
+
+        Assert.NotEmpty(rig.Server.RequestsTo(BinanceVenue.LeveragePath(BinanceAccountType.CoinMFutures)));
+    }
+
+    /// <summary>What Binance's coin-margined brackets answer with a key: 125x at the tier a position starts in.</summary>
+    private const string CoinMBrackets = """
+        [
+          {
+            "symbol": "BTCUSD_PERP",
+            "brackets": [
+              { "bracket": 1, "initialLeverage": 125, "qtyCap": 50,   "qtyFloor": 0,  "maintMarginRatio": 0.004, "cum": 0.0 },
+              { "bracket": 2, "initialLeverage": 50,  "qtyCap": 1000, "qtyFloor": 50, "maintMarginRatio": 0.01,  "cum": 50.0 }
+            ]
+          }
+        ]
+        """;
 
     // ----- and no venue may apply a leverage without checking it -----
 

@@ -274,11 +274,21 @@ internal static class KeyCommands
         }
     }
 
+    /// <summary>
+    /// Binance: the spot account read proves the key, and the key's own restrictions record says what it may do.
+    /// <para>
+    /// The coin-margined market is then asked in its own right. This venue grants futures with ONE permission and
+    /// serves its two futures markets on two different hosts, so "futures on" does not establish that the key
+    /// reaches the coin-margined one - and a key that does not is a live node that authenticates, starts, and is
+    /// refused by the venue on its first order. Kraken's key test asks each of its platforms for the same reason,
+    /// and that reason is stronger here, because one permission covering two hosts looks like nothing to check.
+    /// </para>
+    /// </summary>
     private static async Task VerifyBinanceAsync(string? baseUrl, ILoggerFactory loggerFactory, Report report, CancellationToken ct)
     {
         BinanceDataClientConfig config = new() { AccountType = BinanceAccountType.Spot, BaseUrlHttp = baseUrl };
         using BinanceHttp http = new(config, loggerFactory.CreateLogger("binance"), requireCredentials: true);
-        using JsonDocument account = await http.GetSignedAsync("/api/v3/account", null, BinanceVenue.Weights.Account, ct).ConfigureAwait(false);
+        using JsonDocument account = await http.GetSignedAsync(BinanceVenue.BalancePath(BinanceAccountType.Spot), null, BinanceVenue.Weights.Account, ct).ConfigureAwait(false);
         JsonElement root = account.RootElement;
         report.KeyAccepted = true;
         report.Checks.Add(new Check("ok", "auth", "account readable"));
@@ -303,10 +313,47 @@ internal static class KeyCommands
             report.Checks.Add(new Check(withdrawals ? "warn" : "ok", "withdraw", withdrawals ? "withdrawals ENABLED; create a key without them" : "withdrawals disabled"));
             report.Checks.Add(new Check(ipRestrict ? "ok" : "warn", "ip-allow-list", ipRestrict ? "restricted to trusted IPs" : "no IP restriction; restrict the key to this machine"));
             report.Checks.Add(new Check("ok", "trading", $"spot/margin {(trading ? "on" : "off")}, futures {(futures ? "on" : "off")}"));
+            if (futures)
+            {
+                await CheckBinanceCoinMarginedAsync(baseUrl, loggerFactory, report, ct).ConfigureAwait(false);
+            }
         }
         catch (Exception e) when (e is VenueHttpException or HttpRequestException or InvalidOperationException or JsonException)
         {
             report.Checks.Add(new Check("warn", "restrictions", "could not read API restrictions: " + e.Message));
+        }
+    }
+
+    /// <summary>
+    /// Whether the key really works on Binance's coin-margined host, asked only where the restrictions record says
+    /// futures are on at all: a key without the permission would be refused for the permission and the report would
+    /// then say the same thing twice. A refusal here is a warning rather than a failure, because the key is known
+    /// good by this point and what is being reported is which of the venue's markets it reaches.
+    /// </summary>
+    private static async Task CheckBinanceCoinMarginedAsync(string? baseUrl, ILoggerFactory loggerFactory, Report report, CancellationToken ct)
+    {
+        using BinanceHttp coinM = new(
+            new BinanceDataClientConfig { AccountType = BinanceAccountType.CoinMFutures, BaseUrlHttp = baseUrl },
+            loggerFactory.CreateLogger("binance"),
+            requireCredentials: true);
+
+        try
+        {
+            using JsonDocument balances = await coinM.GetSignedAsync(
+                BinanceVenue.BalancePath(BinanceAccountType.CoinMFutures),
+                null,
+                BinanceVenue.Weights.FuturesBalance,
+                ct).ConfigureAwait(false);
+
+            int assets = balances.RootElement.ValueKind == JsonValueKind.Array ? balances.RootElement.GetArrayLength() : 0;
+            report.Checks.Add(new Check("ok", "coinm-futures", $"coin-margined balances readable ({assets} assets)"));
+        }
+        catch (Exception e) when (e is VenueHttpException or HttpRequestException or InvalidOperationException or JsonException)
+        {
+            report.Checks.Add(new Check(
+                "warn",
+                "coinm-futures",
+                "futures are enabled and the coin-margined host refused this key: " + e.Message));
         }
     }
 

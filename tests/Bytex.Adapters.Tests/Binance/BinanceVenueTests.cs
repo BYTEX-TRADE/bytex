@@ -14,6 +14,7 @@ public sealed class BinanceVenueTests
     [Theory]
     [InlineData(BinanceAccountType.Spot, "https://api.binance.com")]
     [InlineData(BinanceAccountType.UsdMFutures, "https://fapi.binance.com")]
+    [InlineData(BinanceAccountType.CoinMFutures, "https://dapi.binance.com")]
     public void Rest_base_url_depends_on_the_account_type(BinanceAccountType type, string expected)
     {
         BinanceDataClientConfig config = new() { AccountType = type };
@@ -24,6 +25,7 @@ public sealed class BinanceVenueTests
     [Theory]
     [InlineData(BinanceAccountType.Spot, "wss://stream.binance.com:9443")]
     [InlineData(BinanceAccountType.UsdMFutures, "wss://fstream.binance.com")]
+    [InlineData(BinanceAccountType.CoinMFutures, "wss://dstream.binance.com")]
     public void Stream_base_url_depends_on_the_account_type(BinanceAccountType type, string expected)
     {
         BinanceExecutionClientConfig config = new() { AccountType = type };
@@ -43,6 +45,7 @@ public sealed class BinanceVenueTests
     [Theory]
     [InlineData(BinanceAccountType.Spot, "/api/v3")]
     [InlineData(BinanceAccountType.UsdMFutures, "/fapi/v1")]
+    [InlineData(BinanceAccountType.CoinMFutures, "/dapi/v1")]
     public void Rest_prefix_separates_the_spot_and_futures_apis(BinanceAccountType type, string expected)
     {
         Assert.Equal(expected, BinanceVenue.ApiPrefix(type));
@@ -55,6 +58,13 @@ public sealed class BinanceVenueTests
     [InlineData("ETHUSDT_251226", BinanceAccountType.UsdMFutures, "NEXT_QUARTER", "ETHUSDT_251226.BINANCE")]
     [InlineData("BTCUSDT_250926", BinanceAccountType.UsdMFutures, "PERPETUAL", "BTCUSDT_250926.BINANCE")] // streams and order rows carry no contract type
     [InlineData("1000SHIBUSDT", BinanceAccountType.UsdMFutures, "PERPETUAL", "1000SHIBUSDT-PERP.BINANCE")]
+
+    // The coin-margined family marks its own perpetuals, with an underscore where the engine's convention uses a
+    // dash, so nothing is added: a second marking of the same fact would have to be undone from an id that no
+    // longer says which family it came from.
+    [InlineData("BTCUSD_PERP", BinanceAccountType.CoinMFutures, "PERPETUAL", "BTCUSD_PERP.BINANCE")]
+    [InlineData("BTCUSD_261225", BinanceAccountType.CoinMFutures, "CURRENT_QUARTER", "BTCUSD_261225.BINANCE")]
+    [InlineData("BTCUSD_270326", BinanceAccountType.CoinMFutures, "NEXT_QUARTER", "BTCUSD_270326.BINANCE")]
     public void Instrument_ids_follow_the_documented_naming_for_spot_perpetual_and_dated_contracts(string raw, BinanceAccountType type, string contractType, string expected)
     {
         InstrumentId id = BinanceVenue.ToInstrumentId(raw, type, contractType);
@@ -68,6 +78,8 @@ public sealed class BinanceVenueTests
     [InlineData("BTCUSDT", BinanceAccountType.UsdMFutures, "PERPETUAL")]
     [InlineData("BTCUSDT_250926", BinanceAccountType.UsdMFutures, "CURRENT_QUARTER")]
     [InlineData("BTCUSDT_250926", BinanceAccountType.UsdMFutures, "PERPETUAL")]
+    [InlineData("BTCUSD_PERP", BinanceAccountType.CoinMFutures, "PERPETUAL")]
+    [InlineData("BTCUSD_261225", BinanceAccountType.CoinMFutures, "CURRENT_QUARTER")]
     public void Raw_symbol_survives_the_round_trip_through_an_instrument_id(string raw, BinanceAccountType type, string contractType)
     {
         InstrumentId id = BinanceVenue.ToInstrumentId(raw, type, contractType);
@@ -161,5 +173,23 @@ public sealed class BinanceVenueTests
         Assert.Equal([InstrumentId.Parse("BTCUSDT-PERP.BINANCE")], config.InstrumentProvider.LoadIds);
         Assert.Equal("USDT", config.InstrumentProvider.Filters["quote"]);
         Assert.True(config.UseAggTrades);
+    }
+
+    [Fact]
+    public void The_documented_coin_margined_configuration_deserializes_into_the_typed_config()
+    {
+        // The spelling a host writes, from docs/integrations/binance.md. A value the enum does not accept would
+        // leave the client on the default family - a node that starts, connects and receives the wrong market.
+        string json = """
+            {
+              "accountType": "coinMFutures",
+              "instrumentProvider": { "loadAll": false, "loadIds": ["BTCUSD_PERP.BINANCE"] }
+            }
+            """;
+
+        BinanceDataClientConfig config = Core.Serialization.BytexJson.Deserialize<BinanceDataClientConfig>(json)!;
+
+        Assert.Equal(BinanceAccountType.CoinMFutures, config.AccountType);
+        Assert.Equal([InstrumentId.Parse("BTCUSD_PERP.BINANCE")], config.InstrumentProvider.LoadIds);
     }
 }

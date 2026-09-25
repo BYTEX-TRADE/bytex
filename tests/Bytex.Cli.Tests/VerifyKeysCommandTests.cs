@@ -245,6 +245,67 @@ public sealed class VerifyKeysCommandTests
     }
 
     [Fact]
+    public async Task A_Binance_key_with_futures_on_is_asked_whether_it_reaches_the_coin_margined_host()
+    {
+        // This venue grants futures with ONE permission and serves its two futures markets on two different hosts,
+        // so "futures on" does not establish that the key reaches the coin-margined one - and a key that does not
+        // is a live node that authenticates, starts, and is refused by the venue on its first order.
+        Run run = await VerifyAsync("BINANCE", BinanceEnv, r => r.Path switch
+        {
+            "/api/v3/account" => StubResponse.Json(BinanceAccount),
+            "/sapi/v1/account/apiRestrictions" => StubResponse.Json("""{"ipRestrict":true,"enableWithdrawals":false,"enableReading":true,"enableFutures":true,"enableSpotAndMarginTrading":true}"""),
+            "/dapi/v1/balance" => StubResponse.Json("""[{"accountAlias":"x","asset":"BTC","balance":"1.5","availableBalance":"1.5"}]"""),
+            _ => StubResponse.Error(404, "{}"),
+        });
+
+        Assert.Equal(0, run.Cli.ExitCode);
+        Assert.True(Fact(run.Json, "markets", "futures"));
+        Assert.Contains("/dapi/v1/balance", run.Requests.Select(r => r.Path));
+
+        JsonElement check = Assert.Single(run.Json.GetProperty("checks").EnumerateArray(), c => c.GetProperty("name").GetString() == "coinm-futures");
+        Assert.Equal("ok", check.GetProperty("status").GetString());
+        Assert.Contains("1 assets", check.GetProperty("detail").GetString()!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_Binance_key_the_coin_margined_host_refuses_is_warned_about_rather_than_failed()
+    {
+        // The key is known good by this point, so what is being reported is which of the venue's markets it
+        // reaches. Failing the whole report over one market would tell somebody their key is bad when it is not.
+        Run run = await VerifyAsync("BINANCE", BinanceEnv, r => r.Path switch
+        {
+            "/api/v3/account" => StubResponse.Json(BinanceAccount),
+            "/sapi/v1/account/apiRestrictions" => StubResponse.Json("""{"ipRestrict":true,"enableWithdrawals":false,"enableReading":true,"enableFutures":true,"enableSpotAndMarginTrading":true}"""),
+            _ => StubResponse.Error(401, BinanceError(-2015, "Invalid API-key, IP, or permissions for action.")),
+        });
+
+        Assert.Equal(0, run.Cli.ExitCode);
+        Assert.True(run.Json.GetProperty("ok").GetBoolean());
+
+        JsonElement check = Assert.Single(run.Json.GetProperty("checks").EnumerateArray(), c => c.GetProperty("name").GetString() == "coinm-futures");
+        Assert.Equal("warn", check.GetProperty("status").GetString());
+        Assert.DoesNotContain(Secret, run.Cli.AllOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_Binance_key_without_futures_is_not_asked_about_the_coin_margined_host_at_all()
+    {
+        // A key without the permission would be refused for the permission, and the report would then say the same
+        // thing twice - once as "futures off" and once as a warning about a host it was never going to reach.
+        Run run = await VerifyAsync("BINANCE", BinanceEnv, r => r.Path switch
+        {
+            "/api/v3/account" => StubResponse.Json(BinanceAccount),
+            "/sapi/v1/account/apiRestrictions" => StubResponse.Json("""{"ipRestrict":true,"enableWithdrawals":false,"enableReading":true,"enableFutures":false,"enableSpotAndMarginTrading":true}"""),
+            _ => StubResponse.Error(404, "{}"),
+        });
+
+        Assert.Equal(0, run.Cli.ExitCode);
+        Assert.False(Fact(run.Json, "markets", "futures"));
+        Assert.DoesNotContain("/dapi/v1/balance", run.Requests.Select(r => r.Path));
+        Assert.DoesNotContain(run.Json.GetProperty("checks").EnumerateArray(), c => c.GetProperty("name").GetString() == "coinm-futures");
+    }
+
+    [Fact]
     public async Task Binance_mainnet_with_unreadable_restrictions_keeps_the_unknown_facts_null()
     {
         Run run = await VerifyAsync("BINANCE", BinanceEnv, r => r.Path == "/api/v3/account" ? StubResponse.Json(BinanceAccount) : StubResponse.Error(400, BinanceError(-1002, "You are not authorized to execute this request.")));

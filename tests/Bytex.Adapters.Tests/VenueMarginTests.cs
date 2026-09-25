@@ -124,6 +124,34 @@ public sealed class VenueMarginTests
     }
 
     [Fact]
+    public async Task Binances_coin_margined_family_reads_the_margin_from_its_own_response_as_well()
+    {
+        // The third family of the same venue, held to the same rule and measured in its own right: every one of its
+        // 30 contracts publishes requiredMarginPercent and maintMarginPercent, and every one publishes the SAME
+        // pair - 5.0000 and 2.5000, from the 100-USD BTCUSD perpetual to the 10-USD altcoin quarterlies. A figure
+        // identical across every contract of a market is not what that market requires of each of them, which is
+        // why it stays a venue-wide default behind the signed brackets rather than becoming the answer.
+        await using LoopbackServer server = new(new Routes()
+            .On("GET", "/dapi/v1/exchangeInfo", BinancePayloads.CoinMExchangeInfo)
+            .Handle);
+
+        using BinanceHttp http = new(new BinanceDataClientConfig { AccountType = BinanceAccountType.CoinMFutures, BaseUrlHttp = server.HttpBase }, null);
+        BinanceInstrumentProvider provider = new(http, BinanceAccountType.CoinMFutures, null, null);
+
+        await provider.LoadAllAsync(CancellationToken.None);
+
+        Instrument perp = provider.Find(InstrumentId.Parse("BTCUSD_PERP.BINANCE"))!;
+
+        Assert.Equal(0.05m, perp.MarginInit);
+        Assert.Equal(0.025m, perp.MarginMaint);
+
+        // Null, and deliberately, exactly as on its sibling: an unauthenticated call to this family's own bracket
+        // endpoint is refused with -2014, so the ceiling cannot be read from public data - and "not published" is a
+        // different answer from "unlimited" to anything deciding whether a configured leverage is reachable.
+        Assert.Null(perp.MaxLeverage);
+    }
+
+    [Fact]
     public async Task KuCoin_reads_the_margin_and_the_ceiling_from_the_contract()
     {
         await using LoopbackServer server = new(new Routes()

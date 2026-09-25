@@ -185,6 +185,11 @@ public sealed class VenueDeclarationTests
     {
         ("Binance", "spot") => new Routes().On("GET", "/api/v3/exchangeInfo", BinancePayloads.SpotExchangeInfo),
         ("Binance", "usdm-futures") => new Routes().On("GET", "/fapi/v1/exchangeInfo", BinancePayloads.FuturesExchangeInfo),
+
+        // Its own recorded catalog, on its own host's path. The family declares a swap class and a future class and
+        // the fixture holds both, taken from the venue's own contractType field rather than from the symbols -
+        // which on this family are BTCUSD_PERP and BTCUSD_261225, and would both have read as dated.
+        ("Binance", "coinm-futures") => new Routes().On("GET", "/dapi/v1/exchangeInfo", BinancePayloads.CoinMExchangeInfo),
         ("Bybit", "spot") => new Routes().On("GET", "/v5/market/instruments-info", BybitPayloads.SpotInstruments),
         ("Bybit", "linear") => new Routes().On(
             "GET",

@@ -23,13 +23,11 @@ internal sealed class BinanceExecRig : IAsyncDisposable
 
     public BinanceExecRig(BinanceAccountType type, TriggerType defaultTrigger = TriggerType.LastPrice, string? brokerId = null, decimal? leverage = null)
     {
-        Futures = type == BinanceAccountType.UsdMFutures;
-        Routes = new Routes()
-            .On("GET", "/api/v3/exchangeInfo", BinancePayloads.SpotExchangeInfo)
-            .On("GET", "/fapi/v1/exchangeInfo", BinancePayloads.FuturesExchangeInfo);
+        AccountType = type;
+        Routes = VenueRoutes();
         Server = new LoopbackServer(Routes.Handle);
         Kernel = new TestKernel();
-        Instrument = Futures ? Perpetual() : Spot();
+        Instrument = InstrumentFor(type);
         Kernel.Kernel.Cache.AddInstrument(Instrument);
         Client = new BinanceExecutionClient(new ClientId("BINANCE"), new BinanceExecutionClientConfig
         {
@@ -58,13 +56,11 @@ internal sealed class BinanceExecRig : IAsyncDisposable
     /// </param>
     public BinanceExecRig(BinanceAccountType type, Func<string, string, string> config)
     {
-        Futures = type == BinanceAccountType.UsdMFutures;
-        Routes = new Routes()
-            .On("GET", "/api/v3/exchangeInfo", BinancePayloads.SpotExchangeInfo)
-            .On("GET", "/fapi/v1/exchangeInfo", BinancePayloads.FuturesExchangeInfo);
+        AccountType = type;
+        Routes = VenueRoutes();
         Server = new LoopbackServer(Routes.Handle);
         Kernel = new TestKernel();
-        Instrument = Futures ? Perpetual() : Spot();
+        Instrument = InstrumentFor(type);
         Kernel.Kernel.Cache.AddInstrument(Instrument);
 
         BinanceExecutionClientFactory factory = new();
@@ -79,7 +75,10 @@ internal sealed class BinanceExecRig : IAsyncDisposable
 
     public static StrategyId Strategy { get; } = new("Probe-001");
 
-    public bool Futures { get; }
+    /// <summary>Which of the venue's three markets this rig trades, which decides every path below.</summary>
+    public BinanceAccountType AccountType { get; }
+
+    public bool Futures => BinanceVenue.IsFutures(AccountType);
 
     public Routes Routes { get; }
 
@@ -95,11 +94,25 @@ internal sealed class BinanceExecRig : IAsyncDisposable
 
     public OrderFactory Orders { get; }
 
-    public string OrderPath => Futures ? "/fapi/v1/order" : "/api/v3/order";
+    public string OrderPath => BinanceVenue.ApiPrefix(AccountType) + "/order";
 
     public Quantity Qty(decimal value) => Instrument.MakeQuantity(value);
 
     public Price Px(decimal value) => Instrument.MakePrice(value);
+
+    /// <summary>The catalog route of each of the venue's markets, so a rig for any of them finds its own.</summary>
+    private static Routes VenueRoutes() => new Routes()
+        .On("GET", "/api/v3/exchangeInfo", BinancePayloads.SpotExchangeInfo)
+        .On("GET", "/fapi/v1/exchangeInfo", BinancePayloads.FuturesExchangeInfo)
+        .On("GET", "/dapi/v1/exchangeInfo", BinancePayloads.CoinMExchangeInfo);
+
+    /// <summary>The one instrument a rig trades, in the shape the configured market really holds.</summary>
+    private static Instrument InstrumentFor(BinanceAccountType type) => type switch
+    {
+        BinanceAccountType.UsdMFutures => Perpetual(),
+        BinanceAccountType.CoinMFutures => CoinMPerpetual(),
+        _ => Spot(),
+    };
 
     public static CurrencyPair Spot() => new(new InstrumentSpec
     {
@@ -128,6 +141,34 @@ internal sealed class BinanceExecRig : IAsyncDisposable
         SizePrecision = 3,
         PriceIncrement = new Price(0.1m, 1),
         SizeIncrement = new Quantity(0.001m, 3),
+    });
+
+    /// <summary>
+    /// The coin-margined perpetual as its own family really publishes it: the venue's own spelling, sized in whole
+    /// 100-USD contracts, inverse, and settled in the coin. Not the USD-margined one with a different id - the
+    /// differences here are the ones an order's quantity and every money figure go through.
+    /// </summary>
+    /// <param name="maxLeverage">
+    /// What the venue grants here, and null by default rather than a number: this venue publishes no ceiling
+    /// without a key, so a rig that carried one by default would describe a state no unauthenticated run is ever
+    /// in. A test of the leverage guard passes the figure its own bracket fixture answers with.
+    /// </param>
+    public static CryptoPerpetual CoinMPerpetual(decimal? maxLeverage = null) => new(new InstrumentSpec
+    {
+        Id = InstrumentId.Parse("BTCUSD_PERP.BINANCE"),
+        RawSymbol = new Symbol("BTCUSD_PERP"),
+        AssetClass = AssetClass.Crypto,
+        InstrumentClass = InstrumentClass.Swap,
+        QuoteCurrency = Currencies.USD,
+        BaseCurrency = Currencies.BTC,
+        SettlementCurrency = Currencies.BTC,
+        IsInverse = true,
+        PricePrecision = 1,
+        SizePrecision = 0,
+        PriceIncrement = new Price(0.1m, 1),
+        SizeIncrement = new Quantity(1m, 0),
+        Multiplier = new Quantity(100m, 0),
+        MaxLeverage = maxLeverage,
     });
 
     public static CryptoFuture DatedFuture() => new(
@@ -160,8 +201,8 @@ internal sealed class BinanceExecRig : IAsyncDisposable
     {
         int issued = 0;
         string[] keys = listenKeys.Length == 0 ? ["listen-key-1"] : listenKeys;
-        string listenKeyPath = Futures ? "/fapi/v1/listenKey" : "/api/v3/userDataStream";
-        Routes.On("GET", Futures ? "/fapi/v2/balance" : "/api/v3/account", accountJson)
+        string listenKeyPath = BinanceVenue.ListenKeyPath(AccountType);
+        Routes.On("GET", BinanceVenue.BalancePath(AccountType), accountJson)
             .On("POST", listenKeyPath, _ => StubResponse.Json($"{{\"listenKey\":\"{keys[Math.Min(Interlocked.Increment(ref issued), keys.Length) - 1]}\"}}"))
             .On("PUT", listenKeyPath, "{}")
             .On("DELETE", listenKeyPath, "{}");

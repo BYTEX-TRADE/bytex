@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 namespace Bytex.Adapters.Binance;
 
 /// <summary>
-/// Order routing and execution reporting for a Binance spot or USDⓈ-M futures account.
+/// Order routing and execution reporting for a Binance spot, USDⓈ-margined futures or coin-margined futures account.
 /// </summary>
 public sealed class BinanceExecutionClient : ExecutionClientBase
 {
@@ -34,7 +34,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
             config.AccountType == BinanceAccountType.Spot ? AccountType.Cash : AccountType.Margin, null, OmsType.Netting, services)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
-        _futures = config.AccountType == BinanceAccountType.UsdMFutures;
+        _futures = BinanceVenue.IsFutures(config.AccountType);
         _http = new BinanceHttp(config, Log, requireCredentials: true, config.RecvWindowMs);
         _instruments = new BinanceInstrumentProvider(_http, config.AccountType, config.InstrumentProvider, Log);
         _brokerPrefix = config.BrokerId is { Length: > 0 } broker ? broker : string.Empty;
@@ -43,7 +43,12 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
         // built rather than rounded: rounding picks a direction on somebody's behalf and changes the size of every
         // position, which is invisible in a result. Distinct from the venue REFUSING a whole number it is not
         // entitled to, which is logged and left to the venue's own words, because only the venue knows that.
-        if (_futures && config.Leverage is { } wanted && wanted != decimal.Truncate(wanted))
+        //
+        // Both futures families, on the same documented grounds and with the limit written down: this venue checks
+        // the API key before it looks at a parameter, so an unauthenticated call cannot be made to reject a
+        // fraction and prove it. What decides the tie is direction - a refusal is a sentence somebody reads, and a
+        // silently rounded leverage is a position a fifth smaller than the one that was tested.
+        if (BinanceVenue.LeverageIsWholeNumber && _futures && config.Leverage is { } wanted && wanted != decimal.Truncate(wanted))
         {
             throw new ArgumentOutOfRangeException(
                 nameof(config),
@@ -72,7 +77,9 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
     /// failure this exists to stop.
     /// </para>
     /// <para>
-    /// Only for the futures family: a spot account has no leverage to set. A venue refusal is logged and does not
+    /// Only for the futures families: a spot account has no leverage to set. Each of them sets it under its own
+    /// prefix - the coin-margined endpoint was confirmed to exist by a POST to it being refused for the key rather
+    /// than for the route - and the guard below runs before either is asked. A venue refusal is logged and does not
     /// stop the node, because it is usually the venue saying the account is not entitled to the figure asked for -
     /// which the node cannot fix and which a person needs to read rather than have a start silently abandoned.
     /// </para>
@@ -95,7 +102,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
             try
             {
                 await _http.PostSignedAsync(
-                    BinanceVenue.LeveragePath,
+                    BinanceVenue.LeveragePath(_config.AccountType),
                     new Dictionary<string, string>
                     {
                         ["symbol"] = instrument.RawSymbol!.Value,
@@ -160,7 +167,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
         {
             try
             {
-                string path = _futures ? "/fapi/v1/listenKey" : "/api/v3/userDataStream";
+                string path = BinanceVenue.ListenKeyPath(_config.AccountType);
                 await _http.SendKeyedAsync(HttpMethod.Delete, path, _futures ? null : new Dictionary<string, string> { ["listenKey"] = _listenKey }, ct).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -185,7 +192,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
 
     private async Task StartUserStreamAsync(CancellationToken ct)
     {
-        string path = _futures ? "/fapi/v1/listenKey" : "/api/v3/userDataStream";
+        string path = BinanceVenue.ListenKeyPath(_config.AccountType);
         using JsonDocument doc = await _http.SendKeyedAsync(HttpMethod.Post, path, null, ct).ConfigureAwait(false);
         _listenKey = doc.RootElement.Str("listenKey");
         _cts = new CancellationTokenSource();
@@ -214,7 +221,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
 
     private async Task KeepAliveLoopAsync(CancellationToken ct)
     {
-        string path = _futures ? "/fapi/v1/listenKey" : "/api/v3/userDataStream";
+        string path = BinanceVenue.ListenKeyPath(_config.AccountType);
         try
         {
             using PeriodicTimer timer = new(BinanceVenue.ListenKeyKeepAlive);
@@ -385,7 +392,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
             List<AccountBalance> balances = new();
             if (_futures)
             {
-                using JsonDocument doc = await _http.GetSignedAsync("/fapi/v2/balance", null, BinanceVenue.Weights.FuturesBalance, ct).ConfigureAwait(false);
+                using JsonDocument doc = await _http.GetSignedAsync(BinanceVenue.BalancePath(_config.AccountType), null, BinanceVenue.Weights.FuturesBalance, ct).ConfigureAwait(false);
                 foreach (JsonElement b in doc.RootElement.EnumerateArray())
                 {
                     Currency currency = Currency.FromCode(b.Str("asset"));
@@ -396,7 +403,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
             }
             else
             {
-                using JsonDocument doc = await _http.GetSignedAsync("/api/v3/account", null, BinanceVenue.Weights.Account, ct).ConfigureAwait(false);
+                using JsonDocument doc = await _http.GetSignedAsync(BinanceVenue.BalancePath(_config.AccountType), null, BinanceVenue.Weights.Account, ct).ConfigureAwait(false);
                 foreach (JsonElement b in doc.RootElement.GetProperty("balances").EnumerateArray())
                 {
                     decimal free = b.Dec("free");
@@ -671,7 +678,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
         try
         {
             Dictionary<string, string> q = new() { ["symbol"] = BinanceVenue.ToRawSymbol(command.InstrumentId) };
-            string path = _futures ? "/fapi/v1/allOpenOrders" : "/api/v3/openOrders";
+            string path = BinanceVenue.AllOpenOrdersPath(_config.AccountType);
             using JsonDocument doc = await _http.DeleteSignedAsync(path, q, 1, ct).ConfigureAwait(false);
         }
         catch (Exception e) when (e is not OperationCanceledException)
@@ -835,7 +842,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
             q["endTime"] = e.ToMilliseconds().ToString(CultureInfo.InvariantCulture);
         }
 
-        string path = _futures ? "/fapi/v1/userTrades" : "/api/v3/myTrades";
+        string path = BinanceVenue.UserTradesPath(_config.AccountType);
         List<FillReport> fills = new();
         using JsonDocument doc = await _http.GetSignedAsync(path, q, BinanceVenue.Weights.OrderQuery, ct).ConfigureAwait(false);
         foreach (JsonElement t in doc.RootElement.EnumerateArray())
@@ -865,7 +872,7 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
         }
 
         List<PositionStatusReport> reports = new();
-        using JsonDocument doc = await _http.GetSignedAsync("/fapi/v2/positionRisk", q, BinanceVenue.Weights.FuturesPositionRisk, ct).ConfigureAwait(false);
+        using JsonDocument doc = await _http.GetSignedAsync(BinanceVenue.PositionRiskPath(_config.AccountType), q, BinanceVenue.Weights.FuturesPositionRisk, ct).ConfigureAwait(false);
         foreach (JsonElement p in doc.RootElement.EnumerateArray())
         {
             decimal amount = p.Dec("positionAmt");
@@ -956,8 +963,10 @@ public sealed class BinancePlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePl
     public string Id => "bytex.binance";
 
     /// <summary>
-    /// Binance as two families on two hosts. Spot and USD-margined futures differ in every fact here - where they
-    /// answer, what they charge, what they publish - which is why none of it is stated for "Binance".
+    /// Binance as three families on three hosts. Spot, USD-margined futures and coin-margined futures differ in
+    /// every fact here - where they answer, what they charge, what they publish - which is why none of it is stated
+    /// for "Binance". The two futures families differ from each other in most of them as well, and by more than
+    /// their address: their fee schedules, their datasets and the classes they hold are all their own.
     /// </summary>
     public Core.Adapters.VenueDescriptor Describe() => new()
     {
@@ -979,7 +988,7 @@ public sealed class BinancePlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePl
                 WsBase = BinanceVenue.SpotWsBase,
                 Key = BinanceKey,
                 Config = new Dictionary<string, string> { ["accountType"] = nameof(BinanceAccountType.Spot) },
-                DefaultFees = new Core.Adapters.VenueFees(0.001m, 0.001m),
+                DefaultFees = new Core.Adapters.VenueFees(BinanceVenue.SpotMakerFee, BinanceVenue.SpotTakerFee),
 
                 // Spot answers 404 for the book ticker archive: the root is right and the dataset is not there.
                 FreeDatasets = [new Core.Adapters.VenueDataset("trades", "https://data.binance.vision/data/spot/daily/trades")],
@@ -1007,7 +1016,7 @@ public sealed class BinancePlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePl
                 WsBase = BinanceVenue.UsdMFuturesWsBase,
                 Key = BinanceKey,
                 Config = new Dictionary<string, string> { ["accountType"] = nameof(BinanceAccountType.UsdMFutures) },
-                DefaultFees = new Core.Adapters.VenueFees(0.0002m, 0.0005m),
+                DefaultFees = new Core.Adapters.VenueFees(BinanceVenue.UsdMFuturesMakerFee, BinanceVenue.UsdMFuturesTakerFee),
                 FreeDatasets =
                 [
                     new Core.Adapters.VenueDataset("trades", "https://data.binance.vision/data/futures/um/daily/trades"),
@@ -1021,6 +1030,56 @@ public sealed class BinancePlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePl
                     FundingHistory = true,
                     MarketData = true,
                     Execution = true,
+                    AmendOrders = true,
+                },
+            },
+            new Core.Adapters.VenueFamily
+            {
+                Name = "coinm-futures",
+
+                // Both classes, from the venue's own contractType field: 20 of its 30 contracts are PERPETUAL and
+                // the other 10 are CURRENT_QUARTER or NEXT_QUARTER, measured 2026-09-25.
+                InstrumentClasses = [InstrumentClass.Swap, InstrumentClass.Future],
+
+                // Its perpetuals are, and its quarterlies are not - a contract that delivers converges by
+                // delivering. The family is charged funding because it holds perpetuals, which is what this field
+                // means; the dated contracts answering an empty funding history is that same fact from the
+                // instrument's side rather than a gap in the fetch.
+                PaysFunding = true,
+                HttpBase = BinanceVenue.CoinMFuturesHttpBase,
+                WsBase = BinanceVenue.CoinMFuturesWsBase,
+
+                // The same two variables as the venue's other families. Measured only as far as an unauthenticated
+                // caller can: the coin-margined host accepts the same X-MBX-APIKEY header and the same HMAC-SHA256
+                // query signature, and refuses a malformed key with the same -2014 as the other two, so there is no
+                // third part and no separate issuance to declare.
+                Key = BinanceKey,
+                Config = new Dictionary<string, string> { ["accountType"] = nameof(BinanceAccountType.CoinMFutures) },
+
+                // Cheaper than the USD-margined market on this venue's own published schedule, which is why the two
+                // futures families cannot share one figure.
+                DefaultFees = new Core.Adapters.VenueFees(BinanceVenue.CoinMFuturesMakerFee, BinanceVenue.CoinMFuturesTakerFee),
+
+                // Its own archive, under cm rather than um, listed and confirmed to hold files on 2026-09-25: 272
+                // contracts under daily trades and daily klines, and dated ones among them going back to 2020.
+                FreeDatasets =
+                [
+                    new Core.Adapters.VenueDataset("trades", "https://data.binance.vision/data/futures/cm/daily/trades"),
+                    new Core.Adapters.VenueDataset("bookTicker", "https://data.binance.vision/data/futures/cm/daily/bookTicker"),
+                ],
+                Capabilities = new Core.Adapters.VenueCapabilities
+                {
+                    LoadOneInstrument = true,
+                    ListInstruments = true,
+                    BarHistory = true,
+                    FundingHistory = true,
+                    MarketData = true,
+                    Execution = true,
+
+                    // This family serves the venue's order-modify endpoint, which was established the only way an
+                    // unauthenticated caller can: a PUT to it and a read of orderAmendment are refused for the key
+                    // rather than for the route, where a path this venue does not serve - /dapi/v2/balance, say -
+                    // answers with an HTML error page instead.
                     AmendOrders = true,
                 },
             },

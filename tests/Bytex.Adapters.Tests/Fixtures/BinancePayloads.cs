@@ -1,7 +1,10 @@
 namespace Bytex.Adapters.Tests.Fixtures;
 
 /// <summary>
-/// Payloads written by hand in the shapes published in the Binance spot and USDⓈ-M futures API documentation.
+/// Payloads written by hand in the shapes published in the Binance spot and USDⓈ-M futures API documentation, and -
+/// for the coin-margined family - recorded from the live venue on 2026-09-25 rather than written from its
+/// documentation, because the fields that family disagrees with its sibling about are exactly the ones a
+/// hand-written payload would have copied from the sibling.
 /// </summary>
 internal static class BinancePayloads
 {
@@ -106,6 +109,130 @@ internal static class BinancePayloads
         }
         """;
 
+    /// <summary>
+    /// GET /dapi/v1/exchangeInfo, recorded live on 2026-09-25: the 100-USD BTCUSD perpetual, the 10-USD ETHUSD
+    /// perpetual, a 100-USD BTCUSD quarterly, and - from the venue's test network, because mainnet happened to list
+    /// none that day - one contract in delivery and one not yet trading.
+    /// <para>
+    /// Five contracts rather than the live 30, and every field the live answer carries. The last two are what make
+    /// the fixture worth recording rather than writing: this family states tradability in <c>contractStatus</c> and
+    /// publishes no <c>status</c> at all, so a reader looking only for the sibling family's field would take both of
+    /// them for tradable - and one of them spells its contract type as the compound "CURRENT_QUARTER DELIVERING".
+    /// </para>
+    /// </summary>
+    public const string CoinMExchangeInfo = """
+        {
+          "timezone": "UTC",
+          "serverTime": 1700000000000,
+          "rateLimits": [
+            { "rateLimitType": "REQUEST_WEIGHT", "interval": "MINUTE", "intervalNum": 1, "limit": 2400 },
+            { "rateLimitType": "ORDERS", "interval": "MINUTE", "intervalNum": 1, "limit": 1200 }
+          ],
+          "exchangeFilters": [],
+          "symbols": [
+            {
+              "symbol": "BTCUSD_PERP", "pair": "BTCUSD", "contractType": "PERPETUAL",
+              "deliveryDate": 4133404800000, "onboardDate": 1597042800000, "contractStatus": "TRADING",
+              "maintMarginPercent": "2.5000", "requiredMarginPercent": "5.0000",
+              "baseAsset": "BTC", "quoteAsset": "USD", "marginAsset": "BTC",
+              "pricePrecision": 1, "quantityPrecision": 0, "baseAssetPrecision": 8, "quotePrecision": 8,
+              "underlyingType": "COIN", "underlyingSubType": ["PoW"], "triggerProtect": "0.0500",
+              "liquidationFee": "0.015000", "marketTakeBound": "0.05", "maxMoveOrderLimit": 10000,
+              "contractSize": 100, "equalQtyPrecision": 4,
+              "filters": [
+                { "filterType": "PRICE_FILTER", "minPrice": "1000", "maxPrice": "4520958", "tickSize": "0.1" },
+                { "filterType": "LOT_SIZE", "minQty": "1", "maxQty": "1000000", "stepSize": "1" },
+                { "filterType": "MARKET_LOT_SIZE", "minQty": "1", "maxQty": "60000", "stepSize": "1" },
+                { "filterType": "MAX_NUM_ORDERS", "limit": 200 },
+                { "filterType": "MAX_NUM_ALGO_ORDERS", "limit": 20 },
+                { "filterType": "PERCENT_PRICE", "multiplierUp": "1.0500", "multiplierDown": "0.9500", "multiplierDecimal": "4" }
+              ],
+              "orderTypes": ["LIMIT", "MARKET", "STOP", "STOP_MARKET", "TAKE_PROFIT", "TAKE_PROFIT_MARKET", "TRAILING_STOP_MARKET"],
+              "timeInForce": ["GTC", "IOC", "FOK", "GTX"],
+              "permissionSets": ["GRID"]
+            },
+            {
+              "symbol": "ETHUSD_PERP", "pair": "ETHUSD", "contractType": "PERPETUAL",
+              "deliveryDate": 4133404800000, "onboardDate": 1597042800000, "contractStatus": "TRADING",
+              "maintMarginPercent": "2.5000", "requiredMarginPercent": "5.0000",
+              "baseAsset": "ETH", "quoteAsset": "USD", "marginAsset": "ETH",
+              "pricePrecision": 2, "quantityPrecision": 0, "baseAssetPrecision": 8, "quotePrecision": 8,
+              "underlyingType": "COIN", "underlyingSubType": ["Layer-1"], "triggerProtect": "0.0500",
+              "liquidationFee": "0.015000", "marketTakeBound": "0.05", "maxMoveOrderLimit": 10000,
+              "contractSize": 10, "equalQtyPrecision": 4,
+              "filters": [
+                { "filterType": "PRICE_FILTER", "minPrice": "50", "maxPrice": "306177", "tickSize": "0.01" },
+                { "filterType": "LOT_SIZE", "minQty": "1", "maxQty": "1000000", "stepSize": "1" },
+                { "filterType": "MARKET_LOT_SIZE", "minQty": "1", "maxQty": "60000", "stepSize": "1" },
+                { "filterType": "MAX_NUM_ORDERS", "limit": 200 },
+                { "filterType": "MAX_NUM_ALGO_ORDERS", "limit": 20 },
+                { "filterType": "PERCENT_PRICE", "multiplierUp": "1.0500", "multiplierDown": "0.9500", "multiplierDecimal": "4" }
+              ],
+              "orderTypes": ["LIMIT", "MARKET", "STOP", "STOP_MARKET", "TAKE_PROFIT", "TAKE_PROFIT_MARKET", "TRAILING_STOP_MARKET"],
+              "timeInForce": ["GTC", "IOC", "FOK", "GTX"],
+              "permissionSets": ["GRID"]
+            },
+            {
+              "symbol": "BTCUSD_261225", "pair": "BTCUSD", "contractType": "CURRENT_QUARTER",
+              "deliveryDate": 1798185600000, "onboardDate": 1766563200000, "contractStatus": "TRADING",
+              "maintMarginPercent": "2.5000", "requiredMarginPercent": "5.0000",
+              "baseAsset": "BTC", "quoteAsset": "USD", "marginAsset": "BTC",
+              "pricePrecision": 1, "quantityPrecision": 0, "baseAssetPrecision": 8, "quotePrecision": 8,
+              "underlyingType": "COIN", "underlyingSubType": [], "triggerProtect": "0.0500",
+              "liquidationFee": "0.007500", "marketTakeBound": "0.05", "maxMoveOrderLimit": 10000,
+              "contractSize": 100, "equalQtyPrecision": 4,
+              "filters": [
+                { "filterType": "PRICE_FILTER", "minPrice": "2109.4", "maxPrice": "3515698.4", "tickSize": "0.1" },
+                { "filterType": "LOT_SIZE", "minQty": "1", "maxQty": "1000000", "stepSize": "1" },
+                { "filterType": "MARKET_LOT_SIZE", "minQty": "0", "maxQty": "20000", "stepSize": "1" },
+                { "filterType": "MAX_NUM_ORDERS", "limit": 200 },
+                { "filterType": "MAX_NUM_ALGO_ORDERS", "limit": 20 },
+                { "filterType": "PERCENT_PRICE", "multiplierUp": "1.0500", "multiplierDown": "0.9500", "multiplierDecimal": "4" }
+              ],
+              "orderTypes": ["LIMIT", "MARKET", "STOP", "STOP_MARKET", "TAKE_PROFIT", "TAKE_PROFIT_MARKET", "TRAILING_STOP_MARKET"],
+              "timeInForce": ["GTC", "IOC", "FOK", "GTX"],
+              "permissionSets": ["GRID"]
+            },
+            {
+              "symbol": "BTCUSD_260626", "pair": "BTCUSD", "contractType": "CURRENT_QUARTER DELIVERING",
+              "deliveryDate": 1782460800000, "onboardDate": 1766563200000, "contractStatus": "DELIVERING",
+              "maintMarginPercent": "2.5000", "requiredMarginPercent": "5.0000",
+              "baseAsset": "BTC", "quoteAsset": "USD", "marginAsset": "BTC",
+              "pricePrecision": 1, "quantityPrecision": 0, "baseAssetPrecision": 8, "quotePrecision": 8,
+              "underlyingType": "COIN", "underlyingSubType": [], "triggerProtect": "0.0500",
+              "liquidationFee": "0.007500", "marketTakeBound": "0.05", "maxMoveOrderLimit": 10000,
+              "contractSize": 100, "equalQtyPrecision": 4,
+              "filters": [
+                { "filterType": "PRICE_FILTER", "minPrice": "2109.4", "maxPrice": "3515698.4", "tickSize": "0.1" },
+                { "filterType": "LOT_SIZE", "minQty": "1", "maxQty": "1000000", "stepSize": "1" },
+                { "filterType": "MAX_NUM_ORDERS", "limit": 200 },
+                { "filterType": "PERCENT_PRICE", "multiplierUp": "1.0500", "multiplierDown": "0.9500", "multiplierDecimal": "4" }
+              ],
+              "orderTypes": ["LIMIT", "MARKET"],
+              "timeInForce": ["GTC", "IOC", "FOK", "GTX"]
+            },
+            {
+              "symbol": "EGLDUSD_PERP", "pair": "EGLDUSD", "contractType": "PERPETUAL",
+              "deliveryDate": 4133404800000, "onboardDate": 1766563200000, "contractStatus": "PENDING_TRADING",
+              "maintMarginPercent": "2.5000", "requiredMarginPercent": "5.0000",
+              "baseAsset": "EGLD", "quoteAsset": "USD", "marginAsset": "EGLD",
+              "pricePrecision": 3, "quantityPrecision": 0, "baseAssetPrecision": 8, "quotePrecision": 8,
+              "underlyingType": "COIN", "underlyingSubType": [], "triggerProtect": "0.0500",
+              "liquidationFee": "0.015000", "marketTakeBound": "0.05", "maxMoveOrderLimit": 10000,
+              "contractSize": 10, "equalQtyPrecision": 4,
+              "filters": [
+                { "filterType": "PRICE_FILTER", "minPrice": "0.5", "maxPrice": "10000", "tickSize": "0.001" },
+                { "filterType": "LOT_SIZE", "minQty": "1", "maxQty": "1000000", "stepSize": "1" },
+                { "filterType": "MAX_NUM_ORDERS", "limit": 200 },
+                { "filterType": "PERCENT_PRICE", "multiplierUp": "1.0500", "multiplierDown": "0.9500", "multiplierDecimal": "4" }
+              ],
+              "orderTypes": ["LIMIT", "MARKET"],
+              "timeInForce": ["GTC", "IOC", "FOK", "GTX"]
+            }
+          ]
+        }
+        """;
+
     /// <summary>Spot exchangeInfo narrowed to one symbol, as returned for ?symbol=BTCUSDT.</summary>
     public static string SpotExchangeInfoFor(string symbol)
     {
@@ -151,4 +278,60 @@ internal static class BinancePayloads
         """;
 
     public const string SubscriptionAck = """{"result":null,"id":1}""";
+
+    // ----- the coin-margined family's own frames, recorded live on 2026-09-25 -----
+    //
+    // Every one of these carries a field its USD-margined equivalent does not - `ps` for the pair on the book and
+    // depth frames, `ap` for the estimated settlement price on the mark-price one - and sizes in contracts rather
+    // than base units. They are recorded rather than adapted for that reason: a frame edited from the sibling
+    // family's would have proved the parser reads a shape nobody sends.
+
+    /// <summary>btcusd_perp@bookTicker: bid and ask sizes are numbers of 100-USD contracts.</summary>
+    public const string CoinMBookTicker = """
+        {"stream":"btcusd_perp@bookTicker","data":{"e":"bookTicker","u":11660059839759,"s":"BTCUSD_PERP","ps":"BTCUSD","b":"83732.4","B":"680","a":"83732.5","A":"2458","T":1790373637547,"E":1790373637547,"st":2}}
+        """;
+
+    /// <summary>btcusd_perp@trade, with the buyer as the taker.</summary>
+    public const string CoinMTrade = """
+        {"stream":"btcusd_perp@trade","data":{"e":"trade","E":1790373534694,"T":1790373534694,"s":"BTCUSD_PERP","t":1155839922,"p":"83781.6","q":"1","X":"MARKET","m":false}}
+        """;
+
+    /// <summary>btcusd_perp@kline_1m, closed: `v` is contracts and `q` is the coin they are worth.</summary>
+    public const string CoinMKlineClosed = """
+        {"stream":"btcusd_perp@kline_1m","data":{"e":"kline","E":1790373660003,"s":"BTCUSD_PERP","k":{"t":1790373600000,"T":1790373659999,"s":"BTCUSD_PERP","i":"1m","f":1155840109,"L":1155840149,"o":"83723.8","c":"83732.4","h":"83732.5","l":"83723.8","v":"180","n":41,"x":true,"q":"0.21498328","V":"94","Q":"0.11224187","B":"0"}}}
+        """;
+
+    /// <summary>btcusd_perp@markPrice@1s: mark in p, index in i, funding rate in r, exactly as on the other family.</summary>
+    public const string CoinMMarkPrice = """
+        {"stream":"btcusd_perp@markPrice@1s","data":{"e":"markPriceUpdate","E":1790373638000,"s":"BTCUSD_PERP","p":"83732.50000000","ap":"83732.50000000","P":"83805.72765516","i":"83786.17543766","r":"-0.00000573","T":1790380800000,"st":2}}
+        """;
+
+    /// <summary>btcusd_perp@depth@100ms, levels sized in contracts, a zero size meaning the level is gone.</summary>
+    public const string CoinMDepthUpdate = """
+        {"stream":"btcusd_perp@depth@100ms","data":{"e":"depthUpdate","E":1790373637622,"T":1790373637613,"s":"BTCUSD_PERP","ps":"BTCUSD","U":11660059838224,"u":11660059844303,"pu":11660059836647,"b":[["82997.3","1382"],["83517.9","0"]],"a":[["83732.5","2458"]],"st":2}}
+        """;
+
+    /// <summary>GET /dapi/v1/depth: the snapshot this family answers, which carries a `pair` the other does not.</summary>
+    public const string CoinMDepthSnapshot = """
+        {"symbol":"BTCUSD_PERP","pair":"BTCUSD","lastUpdateId":11660051107935,"E":1790373521101,"T":1790373521100,"bids":[["83778.8","5078"],["83778.7","1200"]],"asks":[["83778.9","956"]]}
+        """;
+
+    /// <summary>
+    /// GET /dapi/v1/klines: two closed minute bars, element 0 the open and element 6 the close, and element 5 a
+    /// number of contracts where the USD-margined family puts base units.
+    /// </summary>
+    public const string CoinMKlines = """
+        [[1790373900000,"83772.1","83790.0","83750.0","83780.0","2804",1790373959999,"3.34573438",512,"1400","1.67000000","0"],
+         [1790373960000,"83780.0","83800.0","83770.0","83790.0","646",1790374019999,"0.77074142",210,"300","0.35000000","0"]]
+        """;
+
+    /// <summary>
+    /// GET /dapi/v1/fundingRate: three settlements of a coin-margined perpetual, oldest first, each carrying the
+    /// mark price at settlement and a rate type the other family does not publish.
+    /// </summary>
+    public const string CoinMFundingRates = """
+        [{"symbol":"BTCUSD_PERP","fundingTime":1790323200000,"fundingRate":"-0.00001838","markPrice":"73035.00000000","rateType":"Regular"},
+         {"symbol":"BTCUSD_PERP","fundingTime":1790352000002,"fundingRate":"0.00000272","markPrice":"83742.41308536","rateType":"Regular"},
+         {"symbol":"BTCUSD_PERP","fundingTime":1790380800000,"fundingRate":"-0.00000573","markPrice":"83778.90000000","rateType":"Regular"}]
+        """;
 }

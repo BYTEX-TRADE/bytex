@@ -25,7 +25,7 @@ namespace Bytex.Adapters.Tests;
 //   KUCOIN   futures       {"code":"404000",...}                          throws
 //
 // That was six combinations and four behaviours, with BOTH multi-family venues disagreeing with themselves. The
-// table below has grown to 18 families across 8 venues as the 0.7 venues landed, and every one of them is
+// table below has grown to 19 families across 8 venues as the 0.7 venues landed, and every one of them is
 // held to the same two rules - so the measurements above are the ORIGINAL finding rather than the whole list.
 //
 // A host cannot write one piece of code against behaviour like that, so it writes six, or it writes one and
@@ -69,6 +69,12 @@ public sealed class InstrumentNotFoundParityTests
     [
         "Binance.spot",
         "Binance.usdm-futures",
+
+        // The third family of the same venue, measured in its own right rather than signed off by the one above it:
+        // ?symbol=BTCUSD_PERP, ?symbol=NOSUCH_PERP and ?pair=BTCUSD each answered HTTP 200 with all 30 of its
+        // contracts. It happens to agree with its USD-margined sibling, which is not why it is a row - the row
+        // exists because agreeing with a sibling is something only a measurement can establish.
+        "Binance.coinm-futures",
         "Bitget.spot",
         "Bitget.usdt-futures",
         "Bitget.usdc-futures",
@@ -111,6 +117,11 @@ private static (string Method, string Path, int Status, string Body) NotFound(st
                "filters":[{"filterType":"PRICE_FILTER","minPrice":"0.01","maxPrice":"100000","tickSize":"0.01"},{"filterType":"LOT_SIZE","minQty":"0.001","maxQty":"10000","stepSize":"0.001"}]}
             ]}
             """),
+
+        // No refusal here either, and its own recorded answer rather than the one above with the symbols changed:
+        // five real contracts of the coin-margined family stand for the 30 the live venue sends, and none of them
+        // is the one being asked about.
+        "Binance.coinm-futures" => ("GET", "/dapi/v1/exchangeInfo", 200, BinancePayloads.CoinMExchangeInfo),
 
         // Success with an empty list - this family never refuses the question.
         "Bybit.spot" => ("GET", "/v5/market/instruments-info", 200, """{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[]},"retExtInfo":{},"time":1790319460076}"""),
@@ -167,6 +178,10 @@ private static InstrumentId Unknown(string family) => InstrumentId.Parse(family 
     {
         "Binance.spot" => "NOTACOINUSDT.BINANCE",
         "Binance.usdm-futures" => "NOTACOINUSDT-PERP.BINANCE",
+
+        // The venue's own spelling, underscore and all: this family marks its own perpetuals and the adapter adds
+        // no second marking of the same fact.
+        "Binance.coinm-futures" => "NOTACOINUSD_PERP.BINANCE",
         "Bybit.spot" => "NOTACOINUSDT.BYBIT",
         "Bybit.linear" => "NOTACOINUSDT-PERP.BYBIT",
         "Bitget.spot" => "NOTACOINUSDT.BITGET",
@@ -202,6 +217,9 @@ private static InstrumentProviderBase Provider(string family, LoopbackServer ser
         "Binance.usdm-futures" => new BinanceInstrumentProvider(
             new BinanceHttp(new BinanceDataClientConfig { AccountType = BinanceAccountType.UsdMFutures, BaseUrlHttp = server.HttpBase }),
             BinanceAccountType.UsdMFutures),
+        "Binance.coinm-futures" => new BinanceInstrumentProvider(
+            new BinanceHttp(new BinanceDataClientConfig { AccountType = BinanceAccountType.CoinMFutures, BaseUrlHttp = server.HttpBase }),
+            BinanceAccountType.CoinMFutures),
         "Bybit.spot" => new BybitInstrumentProvider(
             new BybitHttp(new BybitDataClientConfig { ProductType = BybitProductType.Spot, BaseUrlHttp = server.HttpBase }),
             BybitProductType.Spot),
