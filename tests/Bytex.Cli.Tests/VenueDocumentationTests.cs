@@ -89,6 +89,19 @@ public sealed class VenueDocumentationTests
     }
 
     [Fact]
+    public void Every_adapter_that_ships_is_named_in_the_readme()
+    {
+        // The row a person reads first, and the last one anybody remembers to update: it omitted Hyperliquid
+        // entirely and described two venues by the families they had before their newest ones shipped.
+        string readme = RepoRoot.Read("README.md");
+
+        foreach (string adapter in Shipped())
+        {
+            Assert.Contains(adapter, readme, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
     public void The_reading_above_really_finds_the_documents()
     {
         // The whole of this file is reading files off disk, so a moved page or a renamed folder would leave every
@@ -97,5 +110,6 @@ public sealed class VenueDocumentationTests
         Assert.True(Shipped().Length >= 8, $"only {Shipped().Length} adapters were found under src/");
         Assert.True(File.Exists(RepoRoot.Combine("docs", "integrations", "README.md")));
         Assert.True(File.Exists(RepoRoot.Combine("docs", "getting-started", "installation.md")));
+        Assert.True(File.Exists(RepoRoot.Combine("README.md")));
     }
 }
