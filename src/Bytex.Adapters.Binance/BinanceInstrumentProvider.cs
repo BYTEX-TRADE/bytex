@@ -178,10 +178,22 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
             MaxPrice = maxPrice > 0m ? new Price(maxPrice, pricePrecision) : null,
             MakerFee = _accountType == BinanceAccountType.Spot ? 0.001m : 0.0002m,
             TakerFee = _accountType == BinanceAccountType.Spot ? 0.001m : 0.0005m,
-            // Read from the venue rather than assumed. This venue publishes margin per symbol in the same
-            // response the instruments come from, as a percentage; the adapter used to carry one hard-coded pair for
-            // all of them, which happened to match BTCUSDT and was a guess everywhere else. A spot account borrows
-            // nothing, so its margin is zero rather than unpublished.
+            // Read from the venue rather than assumed: published per symbol in the same response the instruments
+            // come from, where the adapter used to carry one hard-coded pair for all 909 of them.
+            //
+            // KNOWN COARSE, AND NOT YET THE REAL FIGURE. What this venue publishes without a key is a venue-wide
+            // default, not the minimum it will actually take. The arithmetic says so on its own: 5 percent supports
+            // at most 20x, and this venue grants 125x on BTCUSDT, which cannot need more than 0.8 percent. So this
+            // number is still a floor under InitialMarginRate that clamps every leverage above 20x - the same defect
+            // corrected on Bybit, where the real figures were public.
+            //
+            // The true per-notional brackets are behind /fapi/v1/leverageBracket, which is signed. Measured
+            // 2026-09-25: the documented endpoint refuses an unauthenticated call, the web interface's own bracket
+            // feed rejects it, and there is no futures-data equivalent - so there is no public source, and closing
+            // this needs the brackets fetched where credentials exist. Sourcing the figure is an improvement over
+            // inventing it; it is not the same as being right.
+            //
+            // A spot account borrows nothing, so its margin is zero rather than unpublished.
             MarginInit = _accountType == BinanceAccountType.Spot ? 0m : PublishedMargin(symbol, "requiredMarginPercent", BinanceVenue.DefaultMarginInit),
             MarginMaint = _accountType == BinanceAccountType.Spot ? 0m : PublishedMargin(symbol, "maintMarginPercent", BinanceVenue.DefaultMarginMaint),
 

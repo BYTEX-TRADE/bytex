@@ -98,6 +98,12 @@ public sealed class VenueMarginTests
 
         // The fixture carries this venue's own percentages, and the engine holds a fraction - a factor of a hundred
         // apart, which is the kind of mistake that produces a plausible number rather than a broken one.
+        //
+        // These happen to equal the pair the adapter used to hard-code, and that is the point rather than a
+        // coincidence worth hiding: what this venue publishes publicly is a venue-wide DEFAULT and not the minimum
+        // it will take. 5 percent supports at most 20x while the venue grants 125x, so it cannot be the bracket
+        // minimum, and it remains a floor that clamps everything above 20x. Sourcing the number fixed where it came
+        // from; the real brackets are behind a signed endpoint and are still owed.
         Assert.Equal(0.05m, perp.MarginInit);
         Assert.Equal(0.025m, perp.MarginMaint);
 
