@@ -4,7 +4,7 @@
 |---|---|---|---|---|
 | Binance spot and USDⓈ-M futures | `BINANCE` | yes | yes | [binance.md](binance.md) |
 | Bitget spot, USDT- and USDC-margined perpetuals | `BITGET` | yes | yes | — |
-| Bybit spot and linear perpetuals | `BYBIT` | yes | yes | [bybit.md](bybit.md) |
+| Bybit spot, linear, inverse and options | `BYBIT` | yes | yes | [bybit.md](bybit.md) |
 | Gate spot, perpetual and delivery futures | `GATE` | yes | yes | [gate.md](gate.md) |
 | Hyperliquid perpetuals | `HYPERLIQUID` | yes | yes | [hyperliquid.md](hyperliquid.md) |
 | Kraken spot and futures | `KRAKEN` | yes | yes | [kraken.md](kraken.md) |

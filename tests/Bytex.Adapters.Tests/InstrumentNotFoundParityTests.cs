@@ -74,6 +74,14 @@ public sealed class InstrumentNotFoundParityTests
         "Bitget.usdc-futures",
         "Bybit.spot",
         "Bybit.linear",
+
+        // And the two that landed with the inverse and option families. The inverse market answers exactly as its
+        // linear sibling does; the option market refuses with the SAME CODE and a different sentence, which is
+        // worth a row of its own rather than a note on the row above - the code is what the adapter reads, and a
+        // venue that changed only the wording would look identical here while a venue that changed the code would
+        // not.
+        "Bybit.inverse",
+        "Bybit.option",
         "Hyperliquid.perpetuals",
         "Kucoin.spot",
         "Kucoin.futures",
@@ -117,6 +125,13 @@ private static (string Method, string Path, int Status, string Body) NotFound(st
 
         // And the other family of the same venue refuses it, with the venue's parameter-error code.
         "Bybit.linear" => ("GET", "/v5/market/instruments-info", 200, """{"retCode":10001,"retMsg":"params error: symbol invalid","result":{"category":"","list":[],"nextPageCursor":""},"retExtInfo":{},"time":1790320625451}"""),
+
+        // The inverse family refuses in its linear sibling's words, measured on 2026-09-26.
+        "Bybit.inverse" => ("GET", "/v5/market/instruments-info", 200, """{"retCode":10001,"retMsg":"params error: symbol invalid","result":{"category":"","list":[],"nextPageCursor":""},"retExtInfo":{},"time":1790373455993}"""),
+
+        // And the option family refuses in its own: the same code, a different sentence, and a result element that
+        // names the category where the other two leave it empty.
+        "Bybit.option" => ("GET", "/v5/market/instruments-info", 200, """{"retCode":10001,"retMsg":"Parameter verification failed for 'symbol'.","result":{"category":"option","nextPageCursor":"","list":[]},"retExtInfo":{},"time":1790373456786}"""),
 
         // HTTP 400 with the venue's own code in the body, measured live on all three families: 40034 "Parameter
         // NOTACOINUSDT does not exist". This venue is the only one of the four whose families agree with each other
@@ -169,6 +184,13 @@ private static InstrumentId Unknown(string family) => InstrumentId.Parse(family 
         "Binance.usdm-futures" => "NOTACOINUSDT-PERP.BINANCE",
         "Bybit.spot" => "NOTACOINUSDT.BYBIT",
         "Bybit.linear" => "NOTACOINUSDT-PERP.BYBIT",
+
+        // The inverse family's perpetuals are named for the coin they are quoted in, so the id carries the suffix
+        // the same way - and its dated contracts do not, which is a different row's business.
+        "Bybit.inverse" => "NOTACOINUSD-PERP.BYBIT",
+
+        // An option id is the venue's own symbol, untouched: it already says everything about the contract.
+        "Bybit.option" => "NOTACOIN-25JUN27-106000-P-USDT.BYBIT",
         "Bitget.spot" => "NOTACOINUSDT.BITGET",
         "Bitget.usdt-futures" => "NOTACOINUSDT-PERP.BITGET",
         "Bitget.usdc-futures" => "NOTACOINUSDC-PERP.BITGET",
@@ -208,6 +230,12 @@ private static InstrumentProviderBase Provider(string family, LoopbackServer ser
         "Bybit.linear" => new BybitInstrumentProvider(
             new BybitHttp(new BybitDataClientConfig { ProductType = BybitProductType.Linear, BaseUrlHttp = server.HttpBase }),
             BybitProductType.Linear),
+        "Bybit.inverse" => new BybitInstrumentProvider(
+            new BybitHttp(new BybitDataClientConfig { ProductType = BybitProductType.Inverse, BaseUrlHttp = server.HttpBase }),
+            BybitProductType.Inverse),
+        "Bybit.option" => new BybitInstrumentProvider(
+            new BybitHttp(new BybitDataClientConfig { ProductType = BybitProductType.Option, BaseUrlHttp = server.HttpBase }),
+            BybitProductType.Option),
         "Bitget.spot" => new BitgetInstrumentProvider(
             new BitgetHttp(new BitgetDataClientConfig { ProductType = BitgetProductType.Spot, BaseUrlHttp = server.HttpBase })),
         "Bitget.usdt-futures" => new BitgetInstrumentProvider(

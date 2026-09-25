@@ -82,6 +82,156 @@ internal static class BybitPayloads
         }
         """);
 
+    /// <summary>
+    /// GET /v5/market/instruments-info?category=inverse, exactly as the live venue answered on 2026-09-26: the
+    /// BTCUSD perpetual and the BTCUSDZ26 dated contract, the two shapes this family holds.
+    /// <para>
+    /// The dated one is the reason the family cannot reuse the linear naming rule. Its symbol carries no dash
+    /// anywhere, so "a symbol with no dash is a perpetual" would have called it one; what says otherwise is the
+    /// venue's own contractType, and its delivery time. Both are here so a test can prove the class comes from the
+    /// field and the id from neither.
+    /// </para>
+    /// </summary>
+    public static readonly string InverseInstruments = Envelope("""
+        {
+          "category": "inverse",
+          "list": [
+            {
+              "symbol": "BTCUSD", "contractType": "InversePerpetual", "status": "Trading", "baseCoin": "BTC",
+              "quoteCoin": "USD", "launchTime": "1542211200000", "deliveryTime": "0", "deliveryFeeRate": "",
+              "priceScale": "2",
+              "leverageFilter": { "minLeverage": "1", "maxLeverage": "100.00", "leverageStep": "0.01" },
+              "priceFilter": { "minPrice": "0.10", "maxPrice": "1999999.80", "tickSize": "0.10" },
+              "lotSizeFilter": { "maxOrderQty": "25000000", "minOrderQty": "1", "qtyStep": "1", "postOnlyMaxOrderQty": "25000000", "maxMktOrderQty": "5000000", "minNotionalValue": "5" },
+              "unifiedMarginTrade": true, "fundingInterval": 480, "settleCoin": "BTC", "copyTrading": "none",
+              "upperFundingRate": "0.005", "lowerFundingRate": "-0.005", "displayName": "BTCUSD"
+            },
+            {
+              "symbol": "BTCUSDZ26", "contractType": "InverseFutures", "status": "Trading", "baseCoin": "BTC",
+              "quoteCoin": "USD", "launchTime": "1781251200000", "deliveryTime": "1798185600000",
+              "deliveryFeeRate": "0.0005", "priceScale": "2",
+              "leverageFilter": { "minLeverage": "1", "maxLeverage": "100.00", "leverageStep": "0.01" },
+              "priceFilter": { "minPrice": "0.50", "maxPrice": "9999999.00", "tickSize": "0.50" },
+              "lotSizeFilter": { "maxOrderQty": "5000000", "minOrderQty": "1", "qtyStep": "1", "postOnlyMaxOrderQty": "5000000", "maxMktOrderQty": "1000000", "minNotionalValue": "5" },
+              "unifiedMarginTrade": true, "fundingInterval": 0, "settleCoin": "BTC", "copyTrading": "none",
+              "displayName": "BTCUSD1225"
+            }
+          ],
+          "nextPageCursor": ""
+        }
+        """);
+
+    /// <summary>
+    /// What the venue answered for BTCUSD's inverse risk limits on 2026-09-26, first two tiers. The lowest is the
+    /// instrument's margin - 1 percent initial and 0.5 percent maintenance - and the second is here so a test can
+    /// prove the tier is chosen rather than the first row taken.
+    /// </summary>
+    public static readonly string InverseRiskLimits = Envelope("""
+        {
+          "category": "inverse",
+          "list": [
+            { "id": 1, "symbol": "BTCUSD", "riskLimitValue": "150", "maintenanceMargin": "0.005",
+              "initialMargin": "0.01", "isLowestRisk": 1, "maxLeverage": "100.00", "mmDeduction": "" },
+            { "id": 2, "symbol": "BTCUSD", "riskLimitValue": "300", "maintenanceMargin": "0.01",
+              "initialMargin": "0.015", "isLowestRisk": 0, "maxLeverage": "66.67", "mmDeduction": "0.75" },
+            { "id": 1, "symbol": "BTCUSDZ26", "riskLimitValue": "100", "maintenanceMargin": "0.005",
+              "initialMargin": "0.01", "isLowestRisk": 1, "maxLeverage": "100.00", "mmDeduction": "" }
+          ],
+          "nextPageCursor": ""
+        }
+        """);
+
+    /// <summary>
+    /// GET /v5/market/instruments-info?category=option, as the live venue answered on 2026-09-26. Thirteen fields
+    /// per contract and NOT ONE OF THEM IS THE STRIKE: the strike exists only inside the symbol, which is why the
+    /// provider reads it from there and checks it against baseCoin and optionsType as it does.
+    /// <para>
+    /// There is no leverageFilter either, and the venue refuses the risk-limit endpoint for this category, so
+    /// nothing here says what an option is margined at. The third row is an XRP put struck at 0.4 against a
+    /// ten-thousandth tick, which is the case where the strike needs fewer digits than the premium's precision.
+    /// </para>
+    /// </summary>
+    public static readonly string OptionInstruments = Envelope("""
+        {
+          "category": "option",
+          "nextPageCursor": "",
+          "list": [
+            {
+              "symbolId": 394577, "symbol": "BTC-25JUN27-106000-P-USDT", "status": "Trading", "baseCoin": "BTC",
+              "quoteCoin": "USDT", "settleCoin": "USDT", "optionsType": "Put", "launchTime": "1789950000000",
+              "deliveryTime": "1813910400000", "deliveryFeeRate": "0.00015",
+              "priceFilter": { "minPrice": "5", "maxPrice": "1110000", "tickSize": "5" },
+              "lotSizeFilter": { "maxOrderQty": "500", "minOrderQty": "0.01", "qtyStep": "0.01" },
+              "displayName": "BTCUSDT-25JUN27-106000-P"
+            },
+            {
+              "symbolId": 394578, "symbol": "BTC-25JUN27-106000-C-USDT", "status": "Trading", "baseCoin": "BTC",
+              "quoteCoin": "USDT", "settleCoin": "USDT", "optionsType": "Call", "launchTime": "1789950000000",
+              "deliveryTime": "1813910400000", "deliveryFeeRate": "0.00015",
+              "priceFilter": { "minPrice": "5", "maxPrice": "1110000", "tickSize": "5" },
+              "lotSizeFilter": { "maxOrderQty": "500", "minOrderQty": "0.01", "qtyStep": "0.01" },
+              "displayName": "BTCUSDT-25JUN27-106000-C"
+            },
+            {
+              "symbolId": 385731, "symbol": "XRP-30OCT26-0.4-P-USDT", "status": "Trading", "baseCoin": "XRP",
+              "quoteCoin": "USDT", "settleCoin": "USDT", "optionsType": "Put", "launchTime": "1788422400000",
+              "deliveryTime": "1793347200000", "deliveryFeeRate": "0.0002",
+              "priceFilter": { "minPrice": "0.0001", "maxPrice": "100", "tickSize": "0.0001" },
+              "lotSizeFilter": { "maxOrderQty": "400000", "minOrderQty": "10", "qtyStep": "10" },
+              "displayName": "XRPUSDT-30OCT26-0.4-P"
+            }
+          ]
+        }
+        """);
+
+    /// <summary>
+    /// The option tickers topic, recorded live on 2026-09-26. It carries the top of book under ITS OWN field names
+    /// - bidPrice and bidSize where the contract markets write bid1Price and bid1Size - which is why an option's
+    /// quotes come from here: the option socket accepts orderbook.1 and delivers nothing for it.
+    /// </summary>
+    public const string OptionTickerSnapshot = """
+        {"topic":"tickers.BTC-25JUN27-106000-P-USDT","ts":1790373953406,"type":"snapshot","id":"tickers.BTC-25JUN27-106000-P-USDT-76572337574-1790373953406","data":{"symbol":"BTC-25JUN27-106000-P-USDT","bidPrice":"22915","bidSize":"18.55","bidIv":"0.3285","askPrice":"26205","askSize":"18.55","askIv":"0.4489","lastPrice":"0","highPrice24h":"0","lowPrice24h":"0","markPrice":"24465","indexPrice":"83885","markPriceIv":"0.3868","underlyingPrice":"86977.1","openInterest":"0","turnover24h":"0","volume24h":"0","totalVolume":"0","totalTurnover":"0","delta":"-0.5","gamma":"0.00001","vega":"100","theta":"-40","change24h":"0"}}
+        """;
+
+    /// <summary>A delta on the same topic: only the ask moved, so the bid has to be carried forward.</summary>
+    public const string OptionTickerDelta = """
+        {"topic":"tickers.BTC-25JUN27-106000-P-USDT","ts":1790373954406,"type":"delta","id":"tickers.BTC-25JUN27-106000-P-USDT-76572337575-1790373954406","data":{"symbol":"BTC-25JUN27-106000-P-USDT","askPrice":"26200","askSize":"20.00","askIv":"0.4480"}}
+        """;
+
+    /// <summary>
+    /// The option trade topic, recorded live on 2026-09-26. It is named for the UNDERLYING and not for a contract -
+    /// publicTrade.BTC - and every row names the contract it belongs to, so one subscription carries the trades of
+    /// every BTC option. The second row is a contract the client has not loaded, which must produce nothing.
+    /// </summary>
+    public const string OptionPublicTrades = """
+        {"topic":"publicTrade.BTC","ts":1790373961392,"type":"snapshot","id":"publicTrade.BTC-76572340339-1790373961392","data":[
+          {"i":"44f06f5c-3628-5a2d-9a1c-0142ddf5e2ab","T":1790373961369,"p":"240","v":"0.1","S":"Buy","seq":76572340339,"s":"BTC-25JUN27-106000-C-USDT","BT":false,"mP":"238.7827077","iP":"83885.18491835","mIv":"0.1389","iv":"0.14"},
+          {"i":"a34d7d60-0fbe-5ff2-865f-8621c27f64cb","T":1790373961369,"p":"245","v":"0.3","S":"Buy","seq":76572340339,"s":"BTC-26SEP26-83750-C-USDT","BT":false,"mP":"244.1","iP":"83885.18491835","mIv":"0.1389","iv":"0.14"}]}
+        """;
+
+    /// <summary>
+    /// The option book, at the depth this market really publishes. Recorded live on 2026-09-26 from
+    /// orderbook.25; the same contract subscribed to orderbook.1 and orderbook.50 delivered nothing in
+    /// twenty-five seconds while the venue listed both under successTopics.
+    /// </summary>
+    public const string OptionBookSnapshot = """
+        {"topic":"orderbook.25.BTC-25JUN27-106000-P-USDT","ts":1790373952615,"type":"snapshot","id":"orderbook.25.BTC-25JUN27-106000-P-USDT-76571748900-1790373952615","data":{"s":"BTC-25JUN27-106000-P-USDT","b":[["22915","18.55"],["5","0.96"]],"a":[["26205","18.55"]],"u":4846,"seq":76571748900},"cts":1790372489986}
+        """;
+
+    /// <summary>
+    /// The subscription reply of the OPTION socket, recorded live. It is a different envelope from the one the
+    /// other three families answer with, and - the part that matters - it reports every topic asked for under
+    /// <c>successTopics</c> including the four that then send nothing at all.
+    /// </summary>
+    public const string OptionSubscribeAck = """
+        {"success":true,"conn_id":"da7u80nak99fkijm8s6g-3x3ed","data":{"failTopics":[],"successTopics":["kline.1.BTC-25JUN27-106000-P-USDT","orderbook.1.BTC-25JUN27-106000-P-USDT","tickers.BTC-25JUN27-106000-P-USDT"]},"type":"COMMAND_RESP"}
+        """;
+
+    /// <summary>The inverse tickers topic, recorded live: mark, index and funding, as the linear family serves them.</summary>
+    public const string InverseTickerSnapshot = """
+        {"topic":"tickers.BTCUSD","type":"snapshot","data":{"symbol":"BTCUSD","tickDirection":"ZeroPlusTick","price24hPcnt":"-0.004837","lastPrice":"83807.60","markPrice":"83822.10","indexPrice":"83876.10","openInterest":"462590534","openInterestValue":"5518.71","fundingIntervalHour":"8","fundingCap":"0.005","nextFundingTime":"1790380800000","fundingRate":"-0.0000392","bid1Price":"83819.30","bid1Size":"5949","ask1Price":"83819.40","ask1Size":"46909"},"cs":24987956059,"ts":1790373926264}
+        """;
+
     public const string TopOfBookSnapshot = """
         {"topic":"orderbook.1.BTCUSDT","type":"snapshot","ts":1672304484978,"data":{"s":"BTCUSDT","b":[["16493.50","0.006"]],"a":[["16611.00","0.029"]],"u":18521288,"seq":7961638724},"cts":1672304484976}
         """;

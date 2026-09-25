@@ -46,6 +46,16 @@ public static class BybitHistory
     {
         ArgumentNullException.ThrowIfNull(http);
         ArgumentNullException.ThrowIfNull(instrument);
+        if (!BybitVenue.HasCandles(http.ProductType))
+        {
+            // Said here rather than let the venue say it. Measured: /v5/market/kline refuses category=option with
+            // "params error: Category is invalid", and the option socket accepts a kline subscription, reports it
+            // under successTopics and sends nothing - so a caller storing history would either read a category
+            // error it cannot interpret or wait for candles that never arrive.
+            throw new NotSupportedException(
+                $"Bybit publishes no candles for its {http.Category} family, so there is no bar history to fetch. "
+                + "Its option market has no kline endpoint and its kline socket topic delivers nothing for one.");
+        }
 
         List<Bar> bars = new();
         // No limit and a start means "the window", not "a page of it": this venue answers newest first, so a
@@ -133,6 +143,15 @@ public static class BybitHistory
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(http);
+        if (!BybitVenue.PaysFunding(http.ProductType))
+        {
+            // An empty list would read as "this instrument was never charged anything", which is a different
+            // statement from "this market is never charged". Measured: the funding endpoint refuses category=option
+            // with "Illegal category", and spot has no funding on any venue.
+            throw new NotSupportedException(
+                $"Bybit charges no funding on its {http.Category} family, so there is no funding history to fetch.");
+        }
+
         List<FundingRateUpdate> rates = new();
         long? until = endMs;
         while (true)
