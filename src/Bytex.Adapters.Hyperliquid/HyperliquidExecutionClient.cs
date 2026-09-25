@@ -296,6 +296,10 @@ public sealed class HyperliquidExecutionClient : ExecutionClientBase
             return;
         }
 
+        // Before anything is sent. A venue asked for more leverage than it grants does not refuse - it grants
+        // what it will and trades on, so the strategy would run at a size it was never tested at.
+        LeverageGuard.EnsureGranted(configured, _instruments.GetAll(), HyperliquidVenue.Venue.Value);
+
         int leverage = (int)configured;
         foreach (Instrument instrument in _instruments.GetAll())
         {

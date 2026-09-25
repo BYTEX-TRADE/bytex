@@ -668,14 +668,21 @@ public sealed class KrakenExecutionClientTests
     }
 
     [Fact]
-    public async Task A_leverage_above_what_the_contract_allows_is_named_rather_than_left_to_the_venue()
+    public async Task A_leverage_above_what_the_contract_allows_refuses_the_run()
     {
-        // PF_XBTUSD's first margin tier is one percent, so it allows 100x. Asking for more is worth saying out
-        // loud: the venue would refuse the preference with a message nobody can act on, and the node would then
-        // trade at whatever the account was already on.
-        await using FuturesRig rig = await new FuturesRig(leverage: 150m).ConnectAsync();
+        // PF_XBTUSD's first margin tier is one percent, so it allows 100x. This used to log a warning and send the
+        // preference anyway, which left the venue to grant what it allows and the run to trade at a leverage nobody
+        // chose - the line in the log said so and nothing stopped. A warning is not a guard when the thing being
+        // altered is the size of every position.
+        await using FuturesRig rig = new(leverage: 150m);
 
-        Assert.Contains(rig.Logs.Warnings, w => w.Contains("100", StringComparison.Ordinal) && w.Contains("150", StringComparison.Ordinal));
+        ArgumentOutOfRangeException refused = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => rig.ConnectAsync());
+
+        Assert.Contains("100", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("150", refused.Message, StringComparison.Ordinal);
+
+        // And nothing was asked of the venue: the refusal comes before the preference is sent.
+        Assert.Empty(rig.Server.RequestsTo("/derivatives/api/v3/leveragepreferences"));
     }
 
     [Fact]

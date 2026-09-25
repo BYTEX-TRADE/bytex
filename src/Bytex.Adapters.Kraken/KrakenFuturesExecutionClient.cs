@@ -185,22 +185,16 @@ public sealed class KrakenFuturesExecutionClient : ExecutionClientBase
             return;
         }
 
+        // Before anything is sent. This adapter used to WARN here and send the preference anyway, which left the
+        // venue to grant what it allows and the run to trade at a leverage nobody chose - the log line said so and
+        // nothing stopped. Refusing is the same knowledge acted on.
+        LeverageGuard.EnsureGranted(
+            leverage,
+            Services.Cache.Instruments(Venue).Concat(_instruments.GetAll()).DistinctBy(i => i.Id),
+            KrakenVenue.Venue.Value);
+
         foreach (Instrument instrument in _instruments.GetAll())
         {
-            if (instrument.Info.TryGetValue(KrakenFuturesInstrumentProvider.MaxLeverageInfo, out string? permitted)
-                && decimal.TryParse(permitted, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal max)
-                && max > 0m
-                && leverage > max)
-            {
-                // The contract's own first margin tier says what it allows. Saying so is better than letting the
-                // venue refuse the preference for a reason nobody can read.
-                Log.LogWarning(
-                    "Kraken futures {Instrument} allows at most {Max}x at its first margin tier and {Leverage}x was configured",
-                    instrument.Id,
-                    max,
-                    leverage);
-            }
-
             try
             {
                 await _http.PutSignedAsync(

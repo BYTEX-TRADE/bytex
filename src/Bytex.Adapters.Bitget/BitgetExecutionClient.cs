@@ -559,6 +559,10 @@ public sealed class BitgetExecutionClient : ExecutionClientBase
             return;
         }
 
+        // Before anything is sent. A venue asked for more leverage than it grants does not refuse - it grants
+        // what it will and trades on, so the strategy would run at a size it was never tested at.
+        LeverageGuard.EnsureGranted(leverage, Services.Cache.Instruments(Venue).Concat(_instruments.GetAll()).DistinctBy(i => i.Id), BitgetVenue.Venue.Value);
+
         string value = Json.Fmt(leverage);
         IReadOnlyList<Instrument> tradable =
             [.. Services.Cache.Instruments(Venue).Concat(_instruments.GetAll()).DistinctBy(i => i.Id)];

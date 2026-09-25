@@ -511,6 +511,10 @@ public sealed class KrakenFuturesInstrumentProvider : InstrumentProviderBase
             // From the venue's own schedule rather than from a number in this source. See FirstMarginTier.
             MarginInit = initial,
             MarginMaint = maintenance,
+
+            // The ceiling the venue's first margin tier implies, as the typed fact every venue publishes it as. It
+            // stays in Info too, because this adapter reads it from there for its own margin-mode reporting.
+            MaxLeverage = maxLeverage > 0m ? maxLeverage : null,
             Info = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 [MaxLeverageInfo] = maxLeverage.ToString(CultureInfo.InvariantCulture),

@@ -210,6 +210,10 @@ public sealed class OkxExecutionClient : ExecutionClientBase
         IReadOnlyList<Instrument> tradable =
             [.. Services.Cache.Instruments(Venue).Concat(_instruments.GetAll()).DistinctBy(i => i.Id)];
 
+        // Before anything is sent. A venue asked for more leverage than it grants does not refuse - it grants
+        // what it will and trades on, so the strategy would run at a size it was never tested at.
+        LeverageGuard.EnsureGranted(leverage, tradable, OkxVenue.Venue.Value);
+
         foreach (Instrument instrument in tradable)
         {
             try
