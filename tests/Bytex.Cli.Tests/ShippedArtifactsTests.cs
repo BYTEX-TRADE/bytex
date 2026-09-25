@@ -14,7 +14,8 @@ public sealed class ShippedArtifactsTests
     private static readonly string[] _packageProjects =
     [
         "Bytex.Core", "Bytex.Indicators", "Bytex.Documents", "Bytex.Data", "Bytex.Backtest", "Bytex.Live",
-        "Bytex.Adapters.Binance", "Bytex.Adapters.Bybit", "Bytex.Adapters.Kucoin", "Bytex.Adapters.Tardis",
+        "Bytex.Adapters.Binance", "Bytex.Adapters.Bitget", "Bytex.Adapters.Bybit", "Bytex.Adapters.Kucoin",
+        "Bytex.Adapters.Tardis",
         "Bytex.Persistence.Redis", "Bytex.Cli",
     ];
 
@@ -45,7 +46,8 @@ public sealed class ShippedArtifactsTests
         Assert.NotEmpty(released);
 
         // A row like "| **0.3** ✅ |" in the README, or a heading like "## 0.3 · Risk ✅" in the roadmap.
-        Regex ticked = new(@"(?:\|\s*\*\*|##\s*)(\d+\.\d+)(?:\*\*)?[^|
+        Regex ticked = new(@"(?:\|\s*\*\*|##\s*)(\d+\.\d+)(?:\*\*)?[^|
+
 ]*✅", RegexOptions.Multiline, TimeSpan.FromSeconds(1));
         foreach ((string path, string text) in DocumentsAndTheReadme())
         {

@@ -180,7 +180,7 @@ src/Bytex.Documents          strategy documents: a strategy as data, and the run
 src/Bytex.Data               Parquet data catalog, CSV loaders
 src/Bytex.Backtest           simulated venues, backtest engine and node, reports
 src/Bytex.Live               trading node, kernel loop, network infrastructure, sandbox execution
-src/Bytex.Adapters.*         Binance, Bybit, KuCoin, Tardis
+src/Bytex.Adapters.*         Binance, Bitget, Bybit, KuCoin, Tardis
 src/Bytex.Persistence.Redis  Redis state persistence
 src/Bytex.Cli                the bytex command-line tool
 examples/                    example strategies, configurations and the notebook

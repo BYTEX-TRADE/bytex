@@ -1,5 +1,7 @@
 using Bytex.Adapters.Binance;
+using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Tests.Fixtures;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Tests.Support;
 using Bytex.Core.Adapters;
@@ -59,6 +61,9 @@ public sealed class InstrumentNotFoundParityTests
     [
         "Binance.spot",
         "Binance.usdm-futures",
+        "Bitget.spot",
+        "Bitget.usdt-futures",
+        "Bitget.usdc-futures",
         "Bybit.spot",
         "Bybit.linear",
         "Kucoin.spot",
@@ -87,6 +92,13 @@ private static (string Method, string Path, int Status, string Body) NotFound(st
         // And the other family of the same venue refuses it, with the venue's parameter-error code.
         "Bybit.linear" => ("GET", "/v5/market/instruments-info", 200, """{"retCode":10001,"retMsg":"params error: symbol invalid","result":{"category":"","list":[],"nextPageCursor":""},"retExtInfo":{},"time":1790320625451}"""),
 
+        // HTTP 400 with the venue's own code in the body, measured live on all three families: 40034 "Parameter
+        // NOTACOINUSDT does not exist". This venue is the only one of the four whose families agree with each other
+        // about it, and the only one that answers the same way on every endpoint that takes a symbol.
+        "Bitget.spot" => ("GET", BitgetInstrumentProvider.SpotSymbolsPath, 400, BitgetPayloads.Error("40034", "Parameter NOTACOINUSDT does not exist")),
+        "Bitget.usdt-futures" => ("GET", BitgetInstrumentProvider.ContractsPath, 400, BitgetPayloads.Error("40034", "Parameter NOTACOINUSDT does not exist")),
+        "Bitget.usdc-futures" => ("GET", BitgetInstrumentProvider.ContractsPath, 400, BitgetPayloads.Error("40034", "Parameter NOTACOINPERP does not exist")),
+
         // HTTP 200 with the refusal in the body, which is why a caller checking the status learns nothing.
         "Kucoin.spot" => ("GET", "/api/v2/symbols/NOTACOIN-USDT", 200, """{"msg":"Trading pair NOTACOIN-USDT does not exist.","code":"900001"}"""),
         "Kucoin.futures" => ("GET", "/api/v1/contracts/NOTACOINUSDTM", 200, """{"msg":"The contract information you requested does not exist.","code":"404000"}"""),
@@ -101,6 +113,9 @@ private static InstrumentId Unknown(string family) => InstrumentId.Parse(family 
         "Binance.usdm-futures" => "NOTACOINUSDT-PERP.BINANCE",
         "Bybit.spot" => "NOTACOINUSDT.BYBIT",
         "Bybit.linear" => "NOTACOINUSDT-PERP.BYBIT",
+        "Bitget.spot" => "NOTACOINUSDT.BITGET",
+        "Bitget.usdt-futures" => "NOTACOINUSDT-PERP.BITGET",
+        "Bitget.usdc-futures" => "NOTACOINUSDC-PERP.BITGET",
         "Kucoin.spot" => "NOTACOIN-USDT.KUCOIN",
         "Kucoin.futures" => "NOTACOINUSDT-PERP.KUCOIN",
         _ => throw new InvalidOperationException(family),
@@ -120,6 +135,12 @@ private static InstrumentProviderBase Provider(string family, LoopbackServer ser
         "Bybit.linear" => new BybitInstrumentProvider(
             new BybitHttp(new BybitDataClientConfig { ProductType = BybitProductType.Linear, BaseUrlHttp = server.HttpBase }),
             BybitProductType.Linear),
+        "Bitget.spot" => new BitgetInstrumentProvider(
+            new BitgetHttp(new BitgetDataClientConfig { ProductType = BitgetProductType.Spot, BaseUrlHttp = server.HttpBase })),
+        "Bitget.usdt-futures" => new BitgetInstrumentProvider(
+            new BitgetHttp(new BitgetDataClientConfig { ProductType = BitgetProductType.UsdtFutures, BaseUrlHttp = server.HttpBase })),
+        "Bitget.usdc-futures" => new BitgetInstrumentProvider(
+            new BitgetHttp(new BitgetDataClientConfig { ProductType = BitgetProductType.UsdcFutures, BaseUrlHttp = server.HttpBase })),
         "Kucoin.spot" => new KucoinInstrumentProvider(
             new KucoinHttp(new KucoinDataClientConfig { BaseUrlHttp = server.HttpBase })),
         "Kucoin.futures" => new KucoinFuturesInstrumentProvider(

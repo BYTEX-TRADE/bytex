@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
+using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Tests.Fixtures;
@@ -121,14 +122,32 @@ public sealed class VenueDeclarationTests
         return config;
     }
 
-    /// <summary>Where a configured client really talks, asked of the adapter's own resolver.</summary>
-    private static (string Http, string? Ws) Talks(string venue, object config) => venue switch
+    /// <summary>
+    /// Where a configured client really talks, asked of the adapter's own resolver - and, where the address is not
+    /// what distinguishes one family from another, which market it really asks for.
+    /// <para>
+    /// The third element exists for Bitget and would have been wrong to leave out. On the three venues that shipped
+    /// first, a family is selected by somewhere to go: Binance's two families answer on different hosts and Bybit's
+    /// socket is opened on a different path. Bitget's three answer on one host and one socket path, and what selects
+    /// a family is a string the adapter puts in every request - the instrument type a subscription names and the
+    /// product type a REST call carries. Without asking for that, nothing here could tell whether a declared setting
+    /// landed on the family it claimed, which is exactly the failure this file exists to catch: a node that starts,
+    /// connects and never receives anything.
+    /// </para>
+    /// <para>
+    /// It is null where a venue really has nothing of the kind, which is a statement and not a gap: those venues are
+    /// distinguished by their addresses, and a selector invented for them would be this test's idea rather than the
+    /// adapter's.
+    /// </para>
+    /// </summary>
+    private static (string Http, string? Ws, string? Market) Talks(string venue, object config) => venue switch
     {
-        "Binance" => (BinanceVenue.HttpBase((IBinanceSettings)config), BinanceVenue.WsBase((IBinanceSettings)config)),
-        "Bybit" => (BybitVenue.HttpBase((IBybitSettings)config), BybitVenue.WsPublic((IBybitSettings)config)),
+        "Binance" => (BinanceVenue.HttpBase((IBinanceSettings)config), BinanceVenue.WsBase((IBinanceSettings)config), null),
+        "Bitget" => (BitgetVenue.HttpBase((IBitgetSettings)config), BitgetVenue.WsPublic((IBitgetSettings)config), BitgetVenue.Market((IBitgetSettings)config)),
+        "Bybit" => (BybitVenue.HttpBase((IBybitSettings)config), BybitVenue.WsPublic((IBybitSettings)config), null),
 
         // KuCoin has no socket base to resolve: the venue answers a REST call with the address, per connection.
-        "Kucoin" => (KucoinVenue.HttpBase((IKucoinSettings)config), null),
+        "Kucoin" => (KucoinVenue.HttpBase((IKucoinSettings)config), null, null),
         _ => throw new InvalidOperationException(
             $"{venue} declares itself and this test does not know how to ask it where it talks. Add it here - the "
             + "declaration is only worth having if something checks it against the adapter."),
@@ -146,6 +165,16 @@ public sealed class VenueDeclarationTests
             r => StubResponse.Json(r.Query("cursor") is null ? BybitPayloads.LinearInstrumentsPage1 : BybitPayloads.LinearInstrumentsPage2)),
         ("Kucoin", "spot") => new Routes().On("GET", "/api/v2/symbols", KucoinPayloads.Symbols),
         ("Kucoin", "futures") => new Routes().On("GET", "/api/v1/contracts/active", KucoinPayloads.FuturesContracts),
+        ("Bitget", "spot") => new Routes().On("GET", BitgetInstrumentProvider.SpotSymbolsPath, BitgetPayloads.SpotSymbols),
+
+        // Both perpetual families answer on one path and are told apart by the product type, and each contract's
+        // margin rates are a second request away - which is why the tier route is here as well.
+        ("Bitget", "usdt-futures") => new Routes()
+            .On("GET", BitgetInstrumentProvider.ContractsPath, BitgetPayloads.UsdtContracts)
+            .On("GET", BitgetInstrumentProvider.PositionTiersPath, BitgetPayloads.BtcUsdtPositionTiers),
+        ("Bitget", "usdc-futures") => new Routes()
+            .On("GET", BitgetInstrumentProvider.ContractsPath, BitgetPayloads.UsdcContracts)
+            .On("GET", BitgetInstrumentProvider.PositionTiersPath, BitgetPayloads.BtcPerpPositionTiers),
         _ => throw new InvalidOperationException(
             $"{venue}'s {family} family declares the instrument classes it returns and there is no catalog fixture "
             + "here to check the claim against. Add one: a class list nothing verifies is a guess in a table."),
@@ -175,6 +204,16 @@ public sealed class VenueDeclarationTests
                 BybitDataClientConfig c = (BybitDataClientConfig)config;
                 using BybitHttp http = new(c);
                 BybitInstrumentProvider provider = new(http, c.ProductType);
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Bitget":
+            {
+                BitgetDataClientConfig c = (BitgetDataClientConfig)config;
+                using BitgetHttp http = new(c);
+                BitgetInstrumentProvider provider = new(http);
                 await provider.LoadAllAsync(CancellationToken.None);
                 instruments = provider.GetAll();
                 break;
@@ -222,34 +261,44 @@ public sealed class VenueDeclarationTests
     }
 
     [Fact]
-    public void A_venue_declares_each_instrument_class_in_exactly_one_family()
+    public void A_class_two_families_hold_is_answered_by_the_first_of_them_on_purpose()
     {
         // FamilyFor answers "which family handles a swap on this venue" by taking the first that lists the class, so
-        // two families listing one class is a question with two answers and an answer that depends on declaration
-        // order. A venue that really does offer one class two ways - inverse and linear perpetuals, say - has to say
-        // which is the one to use rather than leaving it to whoever wrote the list.
+        // two families listing one class is a question whose answer depends on declaration order. That used to be
+        // forbidden outright, and it was the right rule while every venue that shipped held each class once.
+        //
+        // Bitget does not. It holds perpetual swaps two ways - 805 contracts margined in USDT and 49 in USDC, in two
+        // product types with differently spelled symbols - and both are real markets a host can trade. Forbidding it
+        // would have meant declaring one of them and leaving the other undeclared, which is the worse failure of the
+        // two this file guards against: an undeclared market is one no host can find, while an order-dependent
+        // answer is at least an answer.
+        //
+        // So the rule is now that order-dependence has to be deliberate. A class claimed twice must be answered by
+        // the FIRST family that claims it, and the families claiming it must be distinguishable by the configuration
+        // they declare - otherwise a host reading the declaration could not select between them at all and the
+        // ordering really would be arbitrary.
         foreach ((string venue, VenueDescriptor descriptor) in Declarations())
         {
             foreach (InstrumentClass instrumentClass in Enum.GetValues<InstrumentClass>())
             {
-                string[] claiming = descriptor.Families
-                    .Where(f => f.InstrumentClasses.Contains(instrumentClass))
-                    .Select(f => f.Name)
-                    .ToArray();
+                VenueFamily[] claiming = [.. descriptor.Families.Where(f => f.InstrumentClasses.Contains(instrumentClass))];
+                if (claiming.Length == 0)
+                {
+                    continue;
+                }
 
-                Assert.True(
-                    claiming.Length <= 1,
-                    $"{venue} declares {instrumentClass} in {string.Join(" and ", claiming)}, so which one handles it "
-                    + "depends on the order they are written in. Say which, or split the class.");
+                Assert.Equal(claiming[0], descriptor.FamilyFor(instrumentClass));
+
+                Assert.Equal(
+                    claiming.Length,
+                    claiming.Select(f => string.Join(";", f.Config.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => c.Key + "=" + c.Value)))
+                        .Distinct(StringComparer.Ordinal)
+                        .Count());
             }
 
             foreach (VenueFamily family in descriptor.Families)
             {
                 Assert.NotEmpty(family.InstrumentClasses);
-                foreach (InstrumentClass instrumentClass in family.InstrumentClasses)
-                {
-                    Assert.Equal(family, descriptor.FamilyFor(instrumentClass));
-                }
             }
         }
     }
@@ -262,7 +311,7 @@ public sealed class VenueDeclarationTests
         // really goes. A host reading the declaration to show a user what a node talks to, or to decide whether a
         // venue is reachable from where it runs, is reading these two strings.
         VenueFamily family = Family(venue, name);
-        (string http, string? ws) = Talks(venue, Configure(venue, family));
+        (string http, string? ws, _) = Talks(venue, Configure(venue, family));
 
         Assert.Equal(family.HttpBase, http);
 
@@ -286,11 +335,12 @@ public sealed class VenueDeclarationTests
         // socket is a root plus /v5/public/<category>, and declaring the full path produced a URL that, written
         // back, had the category appended to it a second time. It read perfectly and connected nowhere.
         VenueFamily family = Family(venue, name);
-        (string defaultHttp, string? defaultWs) = Talks(venue, Configure(venue, family));
-        (string writtenBack, string? writtenBackWs) = Talks(venue, Configure(venue, family, family.HttpBase, family.WsBase));
+        (string defaultHttp, string? defaultWs, string? defaultMarket) = Talks(venue, Configure(venue, family));
+        (string writtenBack, string? writtenBackWs, string? writtenBackMarket) = Talks(venue, Configure(venue, family, family.HttpBase, family.WsBase));
 
         Assert.Equal(defaultHttp, writtenBack);
         Assert.Equal(defaultWs, writtenBackWs);
+        Assert.Equal(defaultMarket, writtenBackMarket);
     }
 
     [Theory]
@@ -302,15 +352,16 @@ public sealed class VenueDeclarationTests
         // talks: Binance's two families differ by host, Bybit's by the path its socket is opened on.
         VenueFamily family = Family(venue, name);
         VenueDescriptor descriptor = Declarations().Single(d => d.Venue == venue).Descriptor;
-        (string http, string? ws) = Talks(venue, Configure(venue, family));
+        (string http, string? ws, string? market) = Talks(venue, Configure(venue, family));
 
         foreach (VenueFamily other in descriptor.Families.Where(f => f.Name != name))
         {
-            (string otherHttp, string? otherWs) = Talks(venue, Configure(venue, other));
+            (string otherHttp, string? otherWs, string? otherMarket) = Talks(venue, Configure(venue, other));
             Assert.True(
-                http != otherHttp || ws != otherWs,
-                $"{venue}'s {name} and {other.Name} are configured differently and talk to exactly the same place, "
-                + "so nothing here can tell whether the declared settings really select the family they claim to.");
+                http != otherHttp || ws != otherWs || market != otherMarket,
+                $"{venue}'s {name} and {other.Name} are configured differently and ask for exactly the same market "
+                + "in exactly the same place, so nothing here can tell whether the declared settings really select "
+                + "the family they claim to.");
         }
     }
 
