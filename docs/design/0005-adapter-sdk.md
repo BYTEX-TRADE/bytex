@@ -178,7 +178,7 @@ public sealed record KernelServices(IClock Clock, ICache Cache, IMessageBus Mess
 ```
 
 Venue-specific configs derive from the base records (for example
-`BinanceDataClientConfig { ApiKey, ApiSecret, AccountType (Spot|UsdMFutures), BaseUrlHttp, BaseUrlWs }`).
+`BinanceDataClientConfig { ApiKey, ApiSecret, AccountType (Spot|UsdMFutures|CoinMFutures), BaseUrlHttp, BaseUrlWs }`).
 Secrets are resolved from environment variables when the config value is
 `null`; adapters document the variable names they read.
 

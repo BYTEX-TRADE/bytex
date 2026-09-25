@@ -155,6 +155,94 @@ public sealed class BrokerIdTests
         Assert.DoesNotContain(rig.Server.RequestsTo("/api/v3/order"), r => r.Method == "POST");
     }
 
+    [Fact]
+    public async Task The_prefix_travels_on_the_coin_margined_family_too_and_comes_back_off_again()
+    {
+        // The mechanism is the venue's and not a family's, so the same prefix has to reach the coin-margined host
+        // and the same translation has to undo it. Worth its own test rather than assumed from the spot one: this
+        // family's order path is a different path and its reports arrive as a different event, and a prefix that
+        // went out and did not come back would leave every fill attributed to no order at all.
+        await using BinanceExecRig rig = new(BinanceAccountType.CoinMFutures, brokerId: Broker);
+        WsSession session = await rig.ConnectAsync("[]");
+        rig.Routes
+            .On("POST", "/dapi/v1/order", """{"orderId":1,"status":"NEW"}""")
+            .On("DELETE", "/dapi/v1/order", """{"orderId":1,"status":"CANCELED"}""");
+
+        // One whole contract, which is what this family trades in.
+        MarketOrder order = rig.Orders.Market(rig.Instrument.Id, OrderSide.Buy, rig.Qty(1m));
+        await rig.SubmitAsync(order);
+        Assert.IsType<OrderSubmitted>(await rig.Sink.NextOrderEventAsync());
+
+        RecordedRequest placed = rig.Server.RequestsTo("/dapi/v1/order").Last(r => r.Method == "POST");
+        Assert.Equal(Broker + order.ClientOrderId.Value, placed.Query("newClientOrderId"));
+        Assert.Equal("BTCUSD_PERP", placed.Query("symbol"));
+        Assert.Equal("1", placed.Query("quantity"));
+
+        // A cancel names the order by the id the venue was given, or it cancels an order this host never heard of.
+        await rig.Client.CancelOrderAsync(
+            new CancelOrder(rig.Kernel.Services.TraderId, BinanceExecRig.Strategy, order.InstrumentId, order.ClientOrderId, null, null, Guid.NewGuid(), TestKernel.Now),
+            CancellationToken.None).WaitAsync(Wait.Timeout);
+
+        Assert.Equal(
+            Broker + order.ClientOrderId.Value,
+            rig.Server.RequestsTo("/dapi/v1/order").Last(r => r.Method == "DELETE").Query("origClientOrderId"));
+
+        // The cancel's own event, named by the ENGINE's id: the prefix is the venue's business and must not reach
+        // anything a strategy reads.
+        OrderPendingCancel pending = Assert.IsType<OrderPendingCancel>(await rig.Sink.NextOrderEventAsync());
+        Assert.Equal(order.ClientOrderId, pending.ClientOrderId);
+
+        // And the venue's report of that order, under the id IT was given, still finds the engine's order.
+        await session.SendTextAsync(CoinMOrderUpdate.Replace("OID", Broker + order.ClientOrderId.Value, StringComparison.Ordinal));
+
+        OrderFilled fill = Assert.IsType<OrderFilled>(await rig.Sink.NextOrderEventAsync());
+        Assert.Equal(order.ClientOrderId, fill.ClientOrderId);
+        Assert.DoesNotContain(Broker, fill.ClientOrderId.Value, StringComparison.Ordinal);
+
+        // In the coin, because a coin-margined contract is charged in the coin it settles in.
+        Assert.Equal(Core.Model.Primitives.Currencies.BTC, fill.Commission.Currency);
+    }
+
+    [Fact]
+    public async Task The_length_limit_is_applied_on_the_coin_margined_family_before_an_order_is_sent()
+    {
+        // The same limit and the same refusal. The length at which this family refuses an id could not be measured
+        // - an order cannot be placed without a key - so the venue's documented 36 is applied, and the direction is
+        // the safe one: a refusal names both of the things that were too long, where a truncated id is an order the
+        // engine can no longer match to anything the venue says about it.
+        await using BinanceExecRig rig = new(BinanceAccountType.CoinMFutures, brokerId: new string('b', 30));
+        await rig.ConnectAsync("[]");
+        rig.Routes.On("POST", "/dapi/v1/order", """{"orderId":1,"status":"NEW"}""");
+
+        await rig.SubmitAsync(rig.Orders.Market(rig.Instrument.Id, OrderSide.Buy, rig.Qty(1m)));
+
+        OrderRejected rejected = Assert.IsType<OrderRejected>(await rig.Sink.NextOrderEventAsync());
+        Assert.Contains("broker id prefix", rejected.Reason, StringComparison.Ordinal);
+        Assert.Contains(
+            BinanceVenue.MaxClientOrderIdLength.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            rejected.Reason,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(rig.Server.RequestsTo("/dapi/v1/order"), r => r.Method == "POST");
+    }
+
+    /// <summary>
+    /// The coin-margined family's own order report, in the shape its documentation gives: an ORDER_TRADE_UPDATE
+    /// whose <c>o</c> object carries the same fields this adapter reads on the USD-margined family, plus a margin
+    /// asset and a position side it does not read.
+    /// <para>
+    /// Written from documentation rather than recorded, and that limit is worth saying out loud: an order event
+    /// cannot be produced on the live venue without a key and an order. What it is here for is the TRANSLATION
+    /// rather than the venue's spelling - the prefixed id going out and the engine's own id coming back.
+    /// </para>
+    /// </summary>
+    private const string CoinMOrderUpdate = """
+        {"e":"ORDER_TRADE_UPDATE","E":1790373660000,"T":1790373659999,"o":{
+          "s":"BTCUSD_PERP","c":"OID","S":"BUY","o":"MARKET","f":"GTC","q":"1","p":"0","ap":"83732.5",
+          "x":"TRADE","X":"FILLED","i":1,"l":"1","z":"1","L":"83732.5","n":"0.0000048","N":"BTC",
+          "T":1790373659999,"t":11,"b":"0","a":"0","m":false,"R":false,"wt":"CONTRACT_PRICE",
+          "ot":"MARKET","ps":"BOTH","cp":false,"rp":"0","pP":false,"ma":"BTC"}}
+        """;
+
     // ----- Bybit: a header, outside the signature -----
 
     [Fact]

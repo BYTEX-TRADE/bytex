@@ -69,6 +69,41 @@ change public APIs; a patch version only fixes.
   asked for by underlying. The coins come from the contracts the client holds,
   one request each - which also means a client holding USDC linear contracts is
   now asked about them instead of only about its USDT ones.
+- Binance's COIN-M (coin-margined) futures as a third family beside spot and
+  USDⓈ-margined futures, selected with `accountType: coinMFutures`: data,
+  execution, catalog, bar history and funding history on the venue's `dapi`
+  host. Its contracts are quoted in USD, sized in a whole number of USD
+  contracts, and margined and settled in the base coin - so they are inverse,
+  and notional, margin, profit, commission and funding all come out in the coin
+  and all go through one over the price. An instrument carries the venue's own
+  `contractSize` as its multiplier, measured as 100 USD on every BTCUSD
+  contract and 10 on the other 27, because a size left at one values a BTCUSD
+  position at a hundredth of what it is and margin, commission and the
+  liquidation price all follow it down.
+
+  A third family and not a flag on the second: measured against the live venue,
+  the two disagree about the host, the endpoint version of every account read
+  (`/dapi/v1/balance` where the other is `/fapi/v2/balance`, and neither path
+  exists under the other's version), the field a contract's tradability is
+  published in (`contractStatus`, with no `status` at all - so a reader looking
+  for the sibling's field took every pending and delivering contract for
+  tradable), the fee schedule, and how many sockets its market data needs.
+  Instrument ids keep the venue's own spelling - `BTCUSD_PERP` and
+  `BTCUSD_261225` - because the venue has already marked which contract is
+  which, and a second marking would have to be undone from an id that no longer
+  says which family it came from. The instrument class comes from the venue's
+  `contractType` field, never from the symbol.
+
+  Its `exchangeInfo` ignores its own `symbol` filter, the same defect as the
+  USD-margined family's and measured on this one rather than assumed from it:
+  all 30 contracts come back for a symbol that exists, one that does not, and a
+  pair. Its leverage brackets are behind the signed endpoint on its own host,
+  so margin falls back to the venue-wide default and `maxLeverage` is null -
+  "the venue did not say" rather than unlimited - and the leverage guard refuses
+  a configured leverage above the ceiling wherever a key read one. Reachable
+  from `catalog fetch-instruments --instrument-type CoinMFutures`, and
+  `verify-keys` now asks whether a key with futures enabled really reaches that
+  host, because one permission covers both futures markets on two addresses.
 
 - A Hyperliquid adapter: perpetual futures, with data, execution, catalog and
   history. The fifth venue and the first whose credential is not a key pair the

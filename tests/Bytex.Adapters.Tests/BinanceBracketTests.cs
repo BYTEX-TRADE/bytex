@@ -23,6 +23,11 @@ namespace Bytex.Adapters.Tests;
 // unauthenticated call, the web interface's own bracket feed rejects it, and no futures-data path serves it. So the
 // two cases below - with a key and without - are the whole of what this venue can be asked, and each has to say
 // something honest.
+//
+// The coin-margined family is the same story on its own host, measured there rather than inferred from here: its
+// bracket endpoint refuses an unauthenticated call with the same -2014, all 30 of its contracts publish the same
+// 5.0000 and 2.5000 whatever they are worth, and the SHAPE of its bracket answer cannot be established without a
+// key at all. Its half of this is in BinanceCoinMTests, beside the rest of what that family does differently.
 public sealed class BinanceBracketTests
 {
     /// <summary>What this venue answers for BTCUSDT's brackets: the widest tier first, the highest leverage in it.</summary>
@@ -59,7 +64,7 @@ public sealed class BinanceBracketTests
 
     private static Routes Venue() => new Routes()
         .On("GET", "/fapi/v1/exchangeInfo", BinancePayloads.FuturesExchangeInfo)
-        .On("GET", BinanceVenue.LeverageBracketPath, Brackets);
+        .On("GET", BinanceVenue.LeverageBracketPath(BinanceAccountType.UsdMFutures), Brackets);
 
     [Fact]
     public async Task With_a_key_the_margin_is_what_the_venue_really_requires()
@@ -115,13 +120,46 @@ public sealed class BinanceBracketTests
         // between the real margin and a default six times larger, which is worth a line in a log.
         await using LoopbackServer server = new(new Routes()
             .On("GET", "/fapi/v1/exchangeInfo", BinancePayloads.FuturesExchangeInfo)
-            .On("GET", BinanceVenue.LeverageBracketPath, _ => new StubResponse(401, """{"code":-2015,"msg":"Invalid API-key, IP, or permissions for action."}"""))
+            .On("GET", BinanceVenue.LeverageBracketPath(BinanceAccountType.UsdMFutures), _ => new StubResponse(401, """{"code":-2015,"msg":"Invalid API-key, IP, or permissions for action."}"""))
             .Handle);
 
         Instrument perp = await LoadAsync(server, withKey: true);
 
         Assert.Equal(0.05m, perp.MarginInit);
         Assert.Null(perp.MaxLeverage);
+    }
+
+    [Fact]
+    public async Task A_dated_contract_does_not_inherit_the_perpetuals_brackets_through_their_shared_pair()
+    {
+        // The line the coin-margined family's looser matching must not cross. Both of this family's contracts carry
+        // the pair BTCUSDT, and this venue names a dated contract's brackets by that contract's OWN symbol - so
+        // matching on the pair here would give the September contract the perpetual's margin and ceiling, which are
+        // not what the venue publishes for it. That is a wrong figure rather than a missing one, and a wrong margin
+        // is a floor that sizes and liquidates at the wrong price.
+        await using LoopbackServer server = new(Venue().Handle);
+
+        using BinanceHttp http = new(
+            new BinanceDataClientConfig
+            {
+                AccountType = BinanceAccountType.UsdMFutures,
+                BaseUrlHttp = server.HttpBase,
+                ApiKey = "test-key",
+                ApiSecret = "test-secret",
+            },
+            null);
+
+        BinanceInstrumentProvider provider = new(http, BinanceAccountType.UsdMFutures, new InstrumentProviderConfig { LoadAll = true }, null);
+        await provider.LoadAllAsync(CancellationToken.None);
+
+        Instrument perp = provider.Find(InstrumentId.Parse("BTCUSDT-PERP.BINANCE"))!;
+        Instrument dated = provider.Find(InstrumentId.Parse("BTCUSDT_250926.BINANCE"))!;
+
+        Assert.Equal(125m, perp.MaxLeverage);
+
+        // Nothing named this contract, so nothing is claimed about it: the venue-wide default and a null ceiling.
+        Assert.Null(dated.MaxLeverage);
+        Assert.Equal(0.05m, dated.MarginInit);
     }
 
     [Fact]
@@ -144,7 +182,7 @@ public sealed class BinanceBracketTests
         BinanceInstrumentProvider provider = new(http, BinanceAccountType.Spot, new InstrumentProviderConfig { LoadAll = true }, null);
         await provider.LoadAllAsync(CancellationToken.None);
 
-        Assert.Empty(server.RequestsTo(BinanceVenue.LeverageBracketPath));
+        Assert.Empty(server.RequestsTo(BinanceVenue.LeverageBracketPath(BinanceAccountType.UsdMFutures)));
 
         Instrument spot = provider.Find(InstrumentId.Parse("BTCUSDT.BINANCE"))!;
         Assert.Equal(0m, spot.MarginInit);

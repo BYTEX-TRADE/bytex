@@ -60,6 +60,14 @@ public static class BinanceHistory
         // This venue filters by a candle's open time, so a window asked for from its own start comes back without the
         // bar that opens before it and closes inside it - the first moment of the period would be uncovered. One
         // interval earlier is asked for, and BarWindow decides what belongs.
+        //
+        // A candle row is the same twelve fields on all three families, and all three stamp element 0 with the
+        // OPEN and element 6 with the CLOSE, in milliseconds, the close being one millisecond short of the next
+        // open - measured on the coin-margined family on 2026-09-25 as 59,999 between them on a minute bar. The
+        // close plus that millisecond is the bar's real end, which is what a bar is stamped with below. What
+        // element 5 MEANS differs - base units on spot and USD-margined futures, a number of contracts on the
+        // coin-margined one - and it needs no branch here, because it is the unit that family's instrument is
+        // sized in either way.
         long? from = start is { } s ? Math.Max(0, s.ToMilliseconds() - intervalMs) : null;
         long to = (end ?? now).ToMilliseconds();
 
@@ -142,8 +150,17 @@ public static class BinanceHistory
     /// <summary>
     /// Every funding rate charged between <paramref name="start"/> and <paramref name="end"/>, oldest first.
     /// <para>
-    /// `/fapi/v1/fundingRate` answers oldest first, a thousand rows to a page, so a period longer than that is walked
-    /// forwards from where the last page ended. Only a futures host has the endpoint: spot pays no funding.
+    /// The venue's <c>fundingRate</c> read answers oldest first, a thousand rows to a page, so a period longer than
+    /// that is walked forwards from where the last page ended. Only a futures host has the endpoint: spot pays no
+    /// funding. Both futures hosts serve it under their own prefix, which is why the path is the client's rather
+    /// than written out here.
+    /// </para>
+    /// <para>
+    /// Measured on the coin-margined family on 2026-09-25: 1,000 rows came back for a limit of 1,000 from a start
+    /// in 2021 and 1,001 was refused, so the page size is the same; asked with no limit at all it answers 500
+    /// rather than the USD-margined family's 100, which is why the limit is always sent rather than left to the
+    /// venue. A DATED contract of that family answers an empty array - BTCUSD_261225 returned <c>[]</c> - which is
+    /// correct and not a gap: a contract that delivers converges by delivering and is charged no funding.
     /// </para>
     /// </summary>
     public static Task<IReadOnlyList<FundingRateUpdate>> FetchFundingRatesAsync(
