@@ -483,13 +483,19 @@ public sealed class VenueDeclarationTests
     public void Default_fees_are_fractions_of_a_trade_rather_than_percentages(string venue, string name)
     {
         // Ten basis points is 0.001 here. Written as 0.1 it reads the same to a person and costs a hundred times as
-        // much in a backtest, which is the mistake that makes a strategy look unprofitable rather than broken.
+        // much in a backtest, which is the mistake that makes a strategy look unprofitable rather than broken. That
+        // is what the magnitude bound is for, and it applies to a rebate just as much - a rebate written as a
+        // percentage is the same error with the sign reversed.
         VenueFamily family = Family(venue, name);
 
-        foreach (decimal fee in new[] { family.DefaultFees.Maker, family.DefaultFees.Taker })
-        {
-            Assert.InRange(fee, 0m, 0.01m);
-        }
+        // A maker rate may be negative: some venues pay for liquidity rather than charging for it, and a venue that
+        // publishes a rebate has to be able to declare it. Declaring zero instead would understate what trading
+        // there is worth, and would not be what the venue says.
+        Assert.InRange(family.DefaultFees.Maker, -0.01m, 0.01m);
+
+        // A taker rate may not. No venue pays for taking liquidity, so a negative here is a sign error, and it would
+        // flatter every result by exactly what trading costs.
+        Assert.InRange(family.DefaultFees.Taker, 0m, 0.01m);
     }
 
     [Theory]

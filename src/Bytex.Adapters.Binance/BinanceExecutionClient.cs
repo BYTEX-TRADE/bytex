@@ -84,6 +84,10 @@ public sealed class BinanceExecutionClient : ExecutionClientBase
             return;
         }
 
+        // Before anything is sent. This venue would accept the request, grant what it allows, and trade on - so a
+        // strategy written for more than it grants would run at a size it was never tested at, silently.
+        LeverageGuard.EnsureGranted(leverage, Tradable(), BinanceVenue.Venue.Value);
+
         // What this client will actually trade, which is what the node holds rather than only what the provider was
         // asked to load: a node given its instruments directly has an empty provider and still places orders.
         foreach (Instrument instrument in Tradable())

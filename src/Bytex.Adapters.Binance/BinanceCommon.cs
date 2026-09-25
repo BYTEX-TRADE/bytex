@@ -97,6 +97,16 @@ public static class BinanceVenue
     public const string LeveragePath = "/fapi/v1/leverage";
 
     /// <summary>
+    /// Where this venue publishes the margin it really requires, per symbol and per notional bracket. Signed, and
+    /// there is no public equivalent: measured 2026-09-25, the unauthenticated call is refused, the web interface's
+    /// own bracket feed rejects it, and no futures-data path serves it.
+    /// </summary>
+    public const string LeverageBracketPath = "/fapi/v1/leverageBracket";
+
+    /// <summary>What the brackets request costs against the venue's weight budget.</summary>
+    public const int LeverageBracketWeight = 1;
+
+    /// <summary>
     /// What this venue publishes as a percentage rather than a fraction. Its own exchangeInfo gives margin per
     /// symbol as `requiredMarginPercent` and `maintMarginPercent` - "5.0000" meaning a twentieth - while the engine
     /// holds margin as a fraction of notional. Named because a factor of a hundred is the kind of mistake that

@@ -189,7 +189,21 @@ public sealed record VenueKey
 /// </summary>
 public sealed record VenueKeyPart(string Name, string Variable, bool Secret, bool Required = true);
 
-/// <summary>Maker and taker as fractions - 0.001 is ten basis points.</summary>
+/// <summary>
+/// Maker and taker as fractions of a trade - 0.001 is ten basis points.
+/// <para>
+/// <paramref name="Maker"/> may be NEGATIVE, and that is a rebate: the venue pays for the liquidity rather than
+/// charging for it, which some venues do on their whole derivative family. A venue that publishes one has to be able
+/// to declare it, because publishing zero instead understates what trading there is worth and is simply not what the
+/// venue says.
+/// </para>
+/// <para>
+/// <paramref name="Taker"/> is not allowed to be negative. No venue pays for taking liquidity, so a negative taker
+/// rate is a sign error rather than a rebate, and it would flatter every result by exactly the amount trading costs.
+/// </para>
+/// </summary>
+/// <param name="Maker">The maker rate; negative where the venue pays a rebate.</param>
+/// <param name="Taker">The taker rate, which a venue always charges.</param>
 public sealed record VenueFees(decimal Maker, decimal Taker);
 
 /// <summary>A dataset a venue publishes for free: what it holds and where it is.</summary>

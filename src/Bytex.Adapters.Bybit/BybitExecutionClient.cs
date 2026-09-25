@@ -109,6 +109,10 @@ public sealed class BybitExecutionClient : ExecutionClientBase
         IReadOnlyList<Instrument> tradable =
             [.. Services.Cache.Instruments(Venue).Concat(_instruments.GetAll()).DistinctBy(i => i.Id)];
 
+        // Before anything is sent. This venue publishes its ceiling per symbol in the same response the instruments
+        // came from, so there is never a reason to find out by having a lower one silently granted instead.
+        LeverageGuard.EnsureGranted(leverage, tradable, BybitVenue.Venue.Value);
+
         foreach (Instrument instrument in tradable)
         {
             try

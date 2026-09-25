@@ -86,6 +86,14 @@ public sealed class KucoinFuturesExecutionClient : ExecutionClientBase
             }
         }
 
+        // Before the socket opens and anything can trade. This venue states its ceiling on each contract, and it
+        // takes a leverage on EVERY order rather than holding one - so a figure it will not grant is not refused
+        // once at connect by the venue, it is quietly lowered on every order that carries it.
+        LeverageGuard.EnsureGranted(
+            _config.Leverage,
+            Services.Cache.Instruments(Venue).Concat(_instruments.GetAll()).DistinctBy(i => i.Id),
+            KucoinVenue.Venue.Value);
+
         await PublishAccountStateAsync(ct).ConfigureAwait(false);
 
         (Uri first, TimeSpan ping) = await KucoinStream.AddressAsync(_http, privateStream: true, _config.BaseUrlWs, ct).ConfigureAwait(false);
