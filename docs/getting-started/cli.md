@@ -236,7 +236,7 @@ When a check fails, `failure` names the reason:
 | `env_file_missing` | The environment file does not exist or cannot be read |
 | `no_key_in_file` | The file has no key or no secret for this venue; nothing was sent |
 | `venue_unknown` | `--venue` is not `BINANCE`, `BYBIT` or `KUCOIN` |
-| `bad_key` | The venue does not know the key (Bybit 10003, Binance -2014, KuCoin 400003) |
+| `bad_key` | The venue does not know the key (Bybit 10003, Binance -2014, KuCoin 400003, Gate `INVALID_KEY`) |
 | `bad_key_or_ip` | Binance -2015: the key, the calling address or the permissions are wrong; the venue does not say which |
 | `bad_signature` | The secret does not match the key (Bybit 10004, Binance -1022) |
 | `key_expired` | Bybit 33004 |

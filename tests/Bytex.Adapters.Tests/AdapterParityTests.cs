@@ -92,6 +92,33 @@ public sealed class AdapterParityTests
                 ["GenerateFillReportsAsync"] = Parity.Own,
                 ["GeneratePositionStatusReportsAsync"] = Parity.Own,
             },
+            // Gate's rows describe its SPOT clients, which is what this table finds by naming convention. Its two
+            // derivative markets have clients of their own - GateFuturesExecutionClient and its delivery subclass -
+            // and the tests in Gate/ compare those against these, because a table that cannot see them would let one
+            // of the three markets quietly stop answering something the other two answer.
+            ["Gate"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubmitOrderAsync"] = Parity.Own,
+                ["SubmitOrderListAsync"] = Parity.Base,
+                ["ModifyOrderAsync"] = Parity.Own,
+                ["CancelOrderAsync"] = Parity.Own,
+                ["CancelAllOrdersAsync"] = Parity.Own,
+                ["BatchCancelOrdersAsync"] = Parity.Base,
+
+                // As Bybit and KuCoin: answered by the base out of this venue's own order report, which is below.
+                ["QueryOrderAsync"] = Parity.Base,
+
+                ["GenerateMassStatusAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportsAsync"] = Parity.Own,
+                ["GenerateFillReportsAsync"] = Parity.Own,
+
+                // A cash account holds no position, so this answers an empty list - but it is the adapter that
+                // says so rather than the base, which is the difference between a deliberate answer and a gap.
+                ["GeneratePositionStatusReportsAsync"] = Parity.Own,
+            },
             ["Kucoin"] = new(StringComparer.Ordinal)
             {
                 ["ConnectAsync"] = Parity.Own,
@@ -151,6 +178,14 @@ public sealed class AdapterParityTests
                 ["UnsubscribeAsync"] = Parity.Own,
                 ["RequestAsync"] = Parity.Own,
             },
+            ["Gate"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubscribeAsync"] = Parity.Own,
+                ["UnsubscribeAsync"] = Parity.Own,
+                ["RequestAsync"] = Parity.Own,
+            },
             ["Kucoin"] = new(StringComparer.Ordinal)
             {
                 ["ConnectAsync"] = Parity.Own,
@@ -187,6 +222,12 @@ public sealed class AdapterParityTests
                 ["LoadAsync"] = Parity.Own,
             },
             ["Bybit"] = new(StringComparer.Ordinal)
+            {
+                ["LoadAllAsync"] = Parity.Own,
+                ["LoadIdsAsync"] = Parity.Base,
+                ["LoadAsync"] = Parity.Own,
+            },
+            ["Gate"] = new(StringComparer.Ordinal)
             {
                 ["LoadAllAsync"] = Parity.Own,
                 ["LoadIdsAsync"] = Parity.Base,
@@ -476,6 +517,31 @@ public sealed class AdapterParityTests
             ["BrokerTag"] = Owed.Has,
 
             ["BrokerProgramme"] = Owed.Has,
+        },
+        ["Gate"] = new(StringComparer.Ordinal)
+        {
+            // One helper for all three markets: it reads the family off the http client's own product, because the
+            // three answer three different candle shapes and a caller storing history has no business knowing that.
+            ["HistoryBars"] = Owed.Has,
+
+            // Owed by the perpetual family and answered for it. The dated contracts settle at expiry and the spot
+            // pairs are not margined, so neither is charged funding and neither has any to fetch.
+            ["HistoryFunding"] = Owed.Has,
+
+            ["VerifyKeys"] = Owed.Has,
+            ["Declaration"] = Owed.Has,
+
+            // Nothing here carries an id, and on the owner's ruling that is a default no-op rather than a refusal.
+            ["BrokerTag"] = Owed.NotApplicable,
+
+            // The venue runs an API broker programme and names its mechanism only on the programme page - an
+            // additional channel id, applied for through a business manager - without publishing the header's
+            // spelling or its value format anywhere in the API reference. So nothing can be carried before somebody
+            // applies, and an id invented from a third-party client's source would be a magic string with no source.
+            //
+            // Unclaimed rather than NotApplicable, because it does apply: every trade routed here earns a rebate
+            // nobody is collecting. It is not Missing either - the venue trades correctly.
+            ["BrokerProgramme"] = Owed.Unclaimed,
         },
         ["Kucoin"] = new(StringComparer.Ordinal)
         {

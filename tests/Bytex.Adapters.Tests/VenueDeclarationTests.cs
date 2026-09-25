@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Gate;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Tests.Fixtures;
 using Bytex.Adapters.Tests.Support;
@@ -129,6 +130,10 @@ public sealed class VenueDeclarationTests
 
         // KuCoin has no socket base to resolve: the venue answers a REST call with the address, per connection.
         "Kucoin" => (KucoinVenue.HttpBase((IKucoinSettings)config), null),
+
+        // Gate's three families differ in BOTH: spot answers on the general host and its own socket, and the two
+        // derivative markets on the derivatives host with a socket path per settled market.
+        "Gate" => (GateVenue.HttpBase((IGateSettings)config), GateVenue.WsBase((IGateSettings)config)),
         _ => throw new InvalidOperationException(
             $"{venue} declares itself and this test does not know how to ask it where it talks. Add it here - the "
             + "declaration is only worth having if something checks it against the adapter."),
@@ -146,6 +151,9 @@ public sealed class VenueDeclarationTests
             r => StubResponse.Json(r.Query("cursor") is null ? BybitPayloads.LinearInstrumentsPage1 : BybitPayloads.LinearInstrumentsPage2)),
         ("Kucoin", "spot") => new Routes().On("GET", "/api/v2/symbols", KucoinPayloads.Symbols),
         ("Kucoin", "futures") => new Routes().On("GET", "/api/v1/contracts/active", KucoinPayloads.FuturesContracts),
+        ("Gate", "spot") => new Routes().On("GET", "/api/v4/spot/currency_pairs", GatePayloads.CurrencyPairs),
+        ("Gate", "futures") => new Routes().On("GET", "/api/v4/futures/usdt/contracts", GatePayloads.FuturesContracts),
+        ("Gate", "delivery") => new Routes().On("GET", "/api/v4/delivery/usdt/contracts", GatePayloads.DeliveryContracts),
         _ => throw new InvalidOperationException(
             $"{venue}'s {family} family declares the instrument classes it returns and there is no catalog fixture "
             + "here to check the claim against. Add one: a class list nothing verifies is a guess in a table."),
@@ -187,6 +195,22 @@ public sealed class VenueDeclarationTests
                 InstrumentProviderBase provider = c.ProductType == KucoinProductType.Futures
                     ? new KucoinFuturesInstrumentProvider(http)
                     : new KucoinInstrumentProvider(http);
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Gate":
+            {
+                GateDataClientConfig c = (GateDataClientConfig)config;
+                using GateHttp http = new(c);
+                InstrumentProviderBase provider = c.ProductType switch
+                {
+                    GateProductType.Futures => new GateFuturesInstrumentProvider(http),
+                    GateProductType.Delivery => new GateDeliveryInstrumentProvider(http),
+                    _ => new GateInstrumentProvider(http),
+                };
+
                 await provider.LoadAllAsync(CancellationToken.None);
                 instruments = provider.GetAll();
                 break;

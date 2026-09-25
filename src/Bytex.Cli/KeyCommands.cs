@@ -5,6 +5,7 @@ using System.Security.Authentication;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Gate;
 using Bytex.Adapters.Kucoin;
 using Bytex.Live.Network;
 using Microsoft.Extensions.Logging;
@@ -30,7 +31,7 @@ internal static class KeyCommands
 
     public static Command Build(Option<string> logLevel)
     {
-        Option<string> venue = new("--venue") { Description = "BINANCE | BYBIT | KUCOIN", Required = true };
+        Option<string> venue = new("--venue") { Description = "BINANCE | BYBIT | GATE | KUCOIN", Required = true };
         Option<string> envFile = new("--env-file") { Description = "File with KEY=VALUE lines (for example BYBIT_API_KEY=...; KuCoin also needs KUCOIN_API_PASSPHRASE)", Required = true };
         Option<bool> json = new("--json") { Description = "Print the result as JSON and nothing else on standard output" };
         Option<string?> baseUrl = new("--base-url") { Description = "Override the venue's REST address (a proxy or a test venue)" };
@@ -74,8 +75,12 @@ internal static class KeyCommands
                         RequireKey(KucoinVenue.EnvApiPassphrase, KucoinVenue.EnvApiPassphrase);
                         await VerifyKucoinAsync(parseResult.GetValue(baseUrl), loggerFactory, report, limit.Token).ConfigureAwait(false);
                         break;
+                    case "GATE":
+                        RequireKey(GateVenue.EnvApiKey, GateVenue.EnvApiSecret);
+                        await VerifyGateAsync(parseResult.GetValue(baseUrl), loggerFactory, report, limit.Token).ConfigureAwait(false);
+                        break;
                     default:
-                        report.Fail("venue", new Failure("venue_unknown", null, null, "expected BINANCE, BYBIT or KUCOIN"));
+                        report.Fail("venue", new Failure("venue_unknown", null, null, "expected BINANCE, BYBIT, GATE or KUCOIN"));
                         break;
                 }
             }
@@ -365,6 +370,65 @@ internal static class KeyCommands
         }
     }
 
+    /// <summary>
+    /// Gate's key test. Two parts and no passphrase, so there is nothing to guess and no fallback to try - which is
+    /// the whole of what makes this shorter than KuCoin's.
+    /// <para>
+    /// <c>/account/detail</c> is the one signed call that answers with what the KEY is rather than with what the
+    /// account holds: the user id, the address allow list and the key's mode. The permissions a Gate key carries are
+    /// not published on any endpoint, so what the key may DO is found the only way the venue offers - by reading the
+    /// spot account, which a read-only key can do and a key with no spot permission cannot.
+    /// </para>
+    /// </summary>
+    private static async Task VerifyGateAsync(string? baseUrl, ILoggerFactory loggerFactory, Report report, CancellationToken ct)
+    {
+        using GateHttp http = new(new GateExecutionClientConfig { BaseUrlHttp = baseUrl }, loggerFactory.CreateLogger("gate"), requireCredentials: true);
+        JsonElement detail = await http.GetSignedAsync("/account/detail", null, ct).ConfigureAwait(false);
+        report.KeyAccepted = true;
+        report.Checks.Add(new Check("ok", "auth", $"user {Mask(Field(detail, "user_id"))}"));
+
+        string allowList = Field(detail, "ip_whitelist");
+        bool restricted = allowList.Length > 0 && allowList != "[]";
+        report.IpRestricted = restricted;
+        report.Checks.Add(new Check(
+            restricted ? "ok" : "warn",
+            "ip-allow-list",
+            restricted ? allowList : "no IP restriction; restrict the key to this machine"));
+
+        // Gate publishes no endpoint that lists a key's permissions, so trading rights cannot be reported as a fact.
+        // Reading the spot account is the nearest thing the venue offers: it succeeds on a read-only key and fails on
+        // one with no spot access at all, which is worth knowing and is not the same question.
+        try
+        {
+            await http.GetSignedAsync("/spot/accounts", null, ct).ConfigureAwait(false);
+            report.Spot = true;
+            report.Checks.Add(new Check("ok", "account", "spot account readable"));
+        }
+        catch (GateApiException e)
+        {
+            report.Spot = false;
+            report.Checks.Add(new Check("warn", "account", "spot account query returned " + e.Label + ": " + e.Msg));
+        }
+
+        try
+        {
+            await http.GetSignedAsync("/futures/usdt/accounts", null, ct).ConfigureAwait(false);
+            report.Futures = true;
+            report.Checks.Add(new Check("ok", "futures-account", "USDT futures account readable"));
+        }
+        catch (GateApiException e)
+        {
+            report.Futures = false;
+            report.Checks.Add(new Check("warn", "futures-account", "futures account query returned " + e.Label + ": " + e.Msg));
+        }
+
+        report.Checks.Add(new Check(
+            "warn",
+            "permissions",
+            "Gate publishes no endpoint that lists what a key may do, so trading and withdrawal rights cannot be "
+            + "checked here. Create the key without withdrawal permission and confirm it on the venue's own key page."));
+    }
+
     private static string Field(JsonElement e, string name) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out JsonElement p)
         ? p.ValueKind == JsonValueKind.String ? p.GetString() ?? string.Empty : p.ValueKind == JsonValueKind.Number ? p.GetRawText() : string.Empty
         : string.Empty;
@@ -379,6 +443,8 @@ internal static class KeyCommands
                 return new Failure("env_file_missing", null, null, e.Message);
             case BybitApiException bybit:
                 return new Failure(BybitCode(bybit.Code) ?? "venue_error", null, bybit.Code.ToString(CultureInfo.InvariantCulture), e.Message);
+            case GateApiException gate:
+                return new Failure(GateCode(gate.Label) ?? (gate.HttpStatus is (int)HttpStatusCode.TooManyRequests ? "rate_limited" : "venue_error"), gate.HttpStatus, gate.Label.Length > 0 ? gate.Label : null, e.Message);
             case KucoinApiException kucoin:
                 return new Failure(KucoinCode(kucoin.Code) ?? (kucoin.HttpStatus is (int)HttpStatusCode.TooManyRequests ? "rate_limited" : "venue_error"), kucoin.HttpStatus == 200 ? null : kucoin.HttpStatus, kucoin.Code, e.Message);
             case VenueHttpException http:
@@ -463,6 +529,25 @@ internal static class KeyCommands
         "403000" => "geo_blocked",
         "429000" => "rate_limited",
         "1015" => "rate_limited",
+        _ => null,
+    };
+
+    /// <summary>
+    /// What Gate's own refusal labels mean. The venue answers with a WORD rather than a number - every other venue
+    /// here answers with a code - so this table is keyed on strings, and a label it does not know is reported as it
+    /// came rather than translated into a guess.
+    /// </summary>
+    private static string? GateCode(string label) => label switch
+    {
+        "INVALID_KEY" => "bad_key",
+        "INVALID_SIGNATURE" => "bad_signature",
+        "MISSING_REQUIRED_HEADER" => "bad_signature",
+        "REQUEST_EXPIRED" => "clock_skew",
+        "IP_FORBIDDEN" => "ip_not_allowed",
+        "READ_ONLY" => "permission_denied",
+        "FORBIDDEN" => "permission_denied",
+        "USER_NOT_FOUND" => "bad_key",
+        "TOO_MANY_REQUESTS" => "rate_limited",
         _ => null,
     };
 

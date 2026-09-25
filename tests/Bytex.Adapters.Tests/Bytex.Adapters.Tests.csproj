@@ -12,6 +12,7 @@
     <ProjectReference Include="../../src/Bytex.Live/Bytex.Live.csproj" />
     <ProjectReference Include="../../src/Bytex.Adapters.Binance/Bytex.Adapters.Binance.csproj" />
     <ProjectReference Include="../../src/Bytex.Adapters.Bybit/Bytex.Adapters.Bybit.csproj" />
+    <ProjectReference Include="../../src/Bytex.Adapters.Gate/Bytex.Adapters.Gate.csproj" />
     <ProjectReference Include="../../src/Bytex.Adapters.Kucoin/Bytex.Adapters.Kucoin.csproj" />
     <ProjectReference Include="../../src/Bytex.Adapters.Tardis/Bytex.Adapters.Tardis.csproj" />
   </ItemGroup>
