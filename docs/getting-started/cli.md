@@ -188,7 +188,7 @@ bytex verify-keys --venue BINANCE --env-file keys/binance.env --json
 
 | Option | Effect |
 |---|---|
-| `--venue` | `BINANCE`, `BYBIT` or `KUCOIN` |
+| `--venue` | `BINANCE`, `BYBIT`, `KRAKEN` or `KUCOIN`. Kraken is two platforms behind one name, so the report says which of them the key works on |
 | `--env-file` | The same `KEY=VALUE` file the node loads |
 | `--json` | Print the result as JSON and nothing else on standard output; the log goes to standard error |
 | `--timeout` | Seconds the whole check may take, 30 by default; `0` waits for as long as the venue takes |
@@ -235,8 +235,8 @@ When a check fails, `failure` names the reason:
 |---|---|
 | `env_file_missing` | The environment file does not exist or cannot be read |
 | `no_key_in_file` | The file has no key or no secret for this venue; nothing was sent |
-| `venue_unknown` | `--venue` is not `BINANCE`, `BYBIT` or `KUCOIN` |
-| `bad_key` | The venue does not know the key (Bybit 10003, Binance -2014, KuCoin 400003) |
+| `venue_unknown` | `--venue` is not `BINANCE`, `BYBIT`, `KRAKEN` or `KUCOIN` |
+| `bad_key` | The venue does not know the key (Bybit 10003, Binance -2014, KuCoin 400003, Kraken `EAPI:Invalid key`) |
 | `bad_key_or_ip` | Binance -2015: the key, the calling address or the permissions are wrong; the venue does not say which |
 | `bad_signature` | The secret does not match the key (Bybit 10004, Binance -1022) |
 | `key_expired` | Bybit 33004 |

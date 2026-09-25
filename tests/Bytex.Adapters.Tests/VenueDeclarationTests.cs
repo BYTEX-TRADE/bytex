@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Tests.Fixtures;
 using Bytex.Adapters.Tests.Support;
@@ -129,6 +130,11 @@ public sealed class VenueDeclarationTests
 
         // KuCoin has no socket base to resolve: the venue answers a REST call with the address, per connection.
         "Kucoin" => (KucoinVenue.HttpBase((IKucoinSettings)config), null),
+
+        // Kraken's spot family declares its PUBLIC socket base, which is what a data client opens: the venue serves
+        // public and private data on two different hosts and refuses each on the other's, so the private host is
+        // derived from this one rather than declared beside it.
+        "Kraken" => (KrakenVenue.HttpBase((IKrakenSettings)config), KrakenVenue.WsBase((IKrakenSettings)config)),
         _ => throw new InvalidOperationException(
             $"{venue} declares itself and this test does not know how to ask it where it talks. Add it here - the "
             + "declaration is only worth having if something checks it against the adapter."),
@@ -146,6 +152,13 @@ public sealed class VenueDeclarationTests
             r => StubResponse.Json(r.Query("cursor") is null ? BybitPayloads.LinearInstrumentsPage1 : BybitPayloads.LinearInstrumentsPage2)),
         ("Kucoin", "spot") => new Routes().On("GET", "/api/v2/symbols", KucoinPayloads.Symbols),
         ("Kucoin", "futures") => new Routes().On("GET", "/api/v1/contracts/active", KucoinPayloads.FuturesContracts),
+        ("Kraken", "spot") => new Routes().On("GET", "/0/public/AssetPairs", KrakenPayloads.AssetPairs),
+
+        // Two routes, because a contract carries the uid of its fee schedule rather than its rates, and the
+        // provider fetches both.
+        ("Kraken", "futures") => new Routes()
+            .On("GET", "/derivatives/api/v3/instruments", KrakenPayloads.Instruments)
+            .On("GET", "/derivatives/api/v3/feeschedules", KrakenPayloads.FeeSchedules),
         _ => throw new InvalidOperationException(
             $"{venue}'s {family} family declares the instrument classes it returns and there is no catalog fixture "
             + "here to check the claim against. Add one: a class list nothing verifies is a guess in a table."),
@@ -187,6 +200,18 @@ public sealed class VenueDeclarationTests
                 InstrumentProviderBase provider = c.ProductType == KucoinProductType.Futures
                     ? new KucoinFuturesInstrumentProvider(http)
                     : new KucoinInstrumentProvider(http);
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Kraken":
+            {
+                KrakenDataClientConfig c = (KrakenDataClientConfig)config;
+                using KrakenHttp http = new(c);
+                InstrumentProviderBase provider = c.ProductType == KrakenProductType.Futures
+                    ? new KrakenFuturesInstrumentProvider(http)
+                    : new KrakenInstrumentProvider(http);
                 await provider.LoadAllAsync(CancellationToken.None);
                 instruments = provider.GetAll();
                 break;
