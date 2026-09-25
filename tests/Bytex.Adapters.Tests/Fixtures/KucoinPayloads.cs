@@ -109,11 +109,11 @@ internal static class KucoinPayloads
         [
           {"symbol":"XBTUSDTM","type":"FFWCSX","status":"Open","baseCurrency":"XBT","quoteCurrency":"USDT","settleCurrency":"USDT",
            "multiplier":0.001,"lotSize":1,"tickSize":0.1,"maxOrderQty":1000000,"maxPrice":1000000.0,
-           "makerFeeRate":0.0002,"takerFeeRate":0.0006,"initialMargin":0.008,"maintainMargin":0.004,
+           "makerFeeRate":0.0002,"takerFeeRate":0.0006,"initialMargin":0.008,"maintainMargin":0.004,"maxLeverage":125,
            "isInverse":false,"expireDate":null,"fundingRateGranularity":28800000},
           {"symbol":"DOGEUSDTM","type":"FFWCSX","status":"Open","baseCurrency":"DOGE","quoteCurrency":"USDT","settleCurrency":"USDT",
            "multiplier":10.0,"lotSize":1,"tickSize":0.00001,"maxOrderQty":1000000,"maxPrice":1000.0,
-           "makerFeeRate":0.0002,"takerFeeRate":0.0006,"initialMargin":0.01,"maintainMargin":0.005,
+           "makerFeeRate":0.0002,"takerFeeRate":0.0006,"initialMargin":0.01,"maintainMargin":0.005,"maxLeverage":75,
            "isInverse":false,"expireDate":null,"fundingRateGranularity":28800000},
           {"symbol":"XBTUSDM","type":"FFWCSX","status":"Open","baseCurrency":"XBT","quoteCurrency":"USD","settleCurrency":"XBT",
            "multiplier":-1.0,"lotSize":1,"tickSize":0.1,"maxOrderQty":1000000,"maxPrice":1000000.0,

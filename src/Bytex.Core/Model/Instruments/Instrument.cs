@@ -61,6 +61,7 @@ public abstract class Instrument
         MinPrice = spec.MinPrice;
         MarginInit = spec.MarginInit;
         MarginMaint = spec.MarginMaint;
+        MaxLeverage = spec.MaxLeverage;
         MakerFee = spec.MakerFee;
         TakerFee = spec.TakerFee;
         TsEvent = spec.TsEvent;
@@ -115,6 +116,21 @@ public abstract class Instrument
 
     /// <summary>Maintenance margin requirement as a fraction of notional.</summary>
     public decimal MarginMaint { get; }
+
+    /// <summary>
+    /// The most leverage this venue will grant on this instrument, or null where the venue does not publish it
+    /// without a key.
+    /// <para>
+    /// A venue fact and not a policy: every venue has one, it differs per instrument, and until it was read nothing
+    /// in the engine knew a maximum existed - so a run asking for more than the venue grants could only find out
+    /// when the venue refused an order, in the venue's own words, after the strategy had decided to trade.
+    /// </para>
+    /// <para>
+    /// Null means the venue keeps it behind a credential rather than that it is unlimited, which are opposite things
+    /// to anyone deciding whether a configured leverage is reachable.
+    /// </para>
+    /// </summary>
+    public decimal? MaxLeverage { get; }
 
     /// <summary>
     /// The share of a position's notional that has to be posted to open it at that leverage. Leverage is what the
@@ -265,6 +281,9 @@ public sealed record InstrumentSpec
     public decimal MarginInit { get; init; }
 
     public decimal MarginMaint { get; init; }
+
+    /// <summary>The most leverage the venue will grant here; null where the venue publishes it only to a key holder.</summary>
+    public decimal? MaxLeverage { get; init; }
 
     public decimal MakerFee { get; init; }
 

@@ -158,22 +158,42 @@ public sealed class BybitVenueAndInstrumentTests
         await provider.LoadAllAsync(CancellationToken.None);
 
         Assert.Equal(2, provider.Count);
-        Assert.Equal(2, server.Requests.Count);
-        Assert.Equal("linear", server.Requests[0].Query("category"));
-        Assert.Equal("cursor-page-2", server.Requests[1].Query("cursor"));
+
+        // Counted per route, because loading a category now also asks once what the venue requires per symbol.
+        // Pinning the total would make this test fail for the next thing the provider legitimately needs.
+        IReadOnlyList<RecordedRequest> pages = server.RequestsTo("/v5/market/instruments-info");
+        Assert.Equal(2, pages.Count);
+        Assert.Equal("linear", pages[0].Query("category"));
+        Assert.Equal("cursor-page-2", pages[1].Query("cursor"));
+        Assert.Single(server.RequestsTo(BybitVenue.RiskLimitPath));
     }
 
     [Fact]
     public async Task A_linear_perpetual_gets_the_PERP_suffix_qtyStep_settle_coin_and_derivative_fees()
     {
-        await using LoopbackServer server = new(new Routes().On("GET", "/v5/market/instruments-info", BybitPayloads.LinearInstrumentsPage1.Replace("cursor-page-2", string.Empty, StringComparison.Ordinal)).Handle);
+        await using LoopbackServer server = new(new Routes()
+            .On("GET", "/v5/market/instruments-info", BybitPayloads.LinearInstrumentsPage1.Replace("cursor-page-2", string.Empty, StringComparison.Ordinal))
+            .On("GET", BybitVenue.RiskLimitPath, BybitPayloads.LinearRiskLimits)
+            .Handle);
         using BybitHttp http = Http(server, BybitProductType.Linear);
         BybitInstrumentProvider provider = new(http, BybitProductType.Linear);
 
         await provider.LoadAsync(InstrumentId.Parse("BTCUSDT-PERP.BYBIT"), CancellationToken.None);
 
         CryptoPerpetual perp = Assert.IsType<CryptoPerpetual>(provider.Find(InstrumentId.Parse("BTCUSDT-PERP.BYBIT")));
-        Assert.Equal("BTCUSDT", Assert.Single(server.Requests).Query("symbol"));
+        Assert.Equal("BTCUSDT", Assert.Single(server.RequestsTo("/v5/market/instruments-info")).Query("symbol"));
+
+        // R4.12: what the venue requires, not what the adapter assumed. These were 0.05 and 0.025 for every
+        // contract - the initial figure 7.6 times this one - and because InitialMarginRate takes the LARGER of
+        // 1/leverage and the instrument's margin, that made the wrong number a floor: everything above 20x
+        // silently cost the margin of 20x. The tier matters too, and the payload carries a second one to prove the
+        // lowest is chosen rather than the first row taken.
+        Assert.Equal(0.0066m, perp.MarginInit);
+        Assert.Equal(0.0033m, perp.MarginMaint);
+
+        // And the ceiling the venue grants, which nothing knew existed. It comes from the instruments response
+        // rather than the risk limits, so it costs no extra request.
+        Assert.Equal(100m, perp.MaxLeverage);
         Assert.Equal(InstrumentClass.Swap, perp.InstrumentClass);
         Assert.Equal("USDT", perp.SettlementCurrency.Code);
         Assert.Equal(new Price(0.1m, 1), perp.PriceIncrement);

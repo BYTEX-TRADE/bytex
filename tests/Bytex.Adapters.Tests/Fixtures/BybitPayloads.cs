@@ -64,6 +64,24 @@ internal static class BybitPayloads
         }
         """);
 
+    /// <summary>
+    /// What this venue answered for BTCUSDT's linear risk limits on 2026-09-25, first two tiers. The lowest tier is
+    /// the instrument's margin - 0.66 percent initial and 0.33 percent maintenance - and the second is here so the
+    /// test proves the tier is chosen rather than the first row taken.
+    /// </summary>
+    public static readonly string LinearRiskLimits = Envelope("""
+        {
+          "category": "linear",
+          "list": [
+            { "id": 1, "symbol": "BTCUSDT", "riskLimitValue": "300000", "maintenanceMargin": "0.0033",
+              "initialMargin": "0.0066", "isLowestRisk": 1, "maxLeverage": "150.00", "mmDeduction": "" },
+            { "id": 2, "symbol": "BTCUSDT", "riskLimitValue": "2000000", "maintenanceMargin": "0.005",
+              "initialMargin": "0.01", "isLowestRisk": 0, "maxLeverage": "100.00", "mmDeduction": "510" }
+          ],
+          "nextPageCursor": ""
+        }
+        """);
+
     public const string TopOfBookSnapshot = """
         {"topic":"orderbook.1.BTCUSDT","type":"snapshot","ts":1672304484978,"data":{"s":"BTCUSDT","b":[["16493.50","0.006"]],"a":[["16611.00","0.029"]],"u":18521288,"seq":7961638724},"cts":1672304484976}
         """;

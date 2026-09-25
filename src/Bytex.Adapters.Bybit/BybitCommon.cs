@@ -147,6 +147,23 @@ public static class BybitVenue
     /// </summary>
     public const int ErrorParamsInvalid = 10001;
 
+    /// <summary>Where this venue publishes the margin it requires per symbol, by risk tier. Public, no key.</summary>
+    public const string RiskLimitPath = "/v5/market/risk-limit";
+
+    /// <summary>
+    /// The tier a position starts in, as this venue marks it. Risk tiers raise the margin as a position grows, and
+    /// the instrument's own margin is the requirement at the smallest size - everything above it is the venue
+    /// charging more, which is the venue's business and not a property of the instrument.
+    /// </summary>
+    public const int LowestRiskTier = 1;
+
+    /// <summary>
+    /// How many risk-limit rows to ask for at once. The rows are tiers rather than symbols - a single page of a
+    /// thousand covered fifteen symbols when this was measured - so the walk is over tiers and the cursor decides
+    /// when it ends.
+    /// </summary>
+    public const int RiskLimitPage = 1000;
+
     /// <summary>
     /// The header a broker id travels in on this venue. It is not part of the signed payload, so carrying one leaves
     /// the request this venue authenticates byte-for-byte unchanged - which is why this venue's mechanism costs an
@@ -397,6 +414,9 @@ public sealed class BybitInstrumentProvider : InstrumentProviderBase
 
     public override async Task LoadAllAsync(CancellationToken ct, IReadOnlyDictionary<string, string>? filters = null)
     {
+        // Once for the whole category, before any instrument is built: what this venue requires is a fact about each
+        // symbol and asking per symbol would be one request per contract.
+        Dictionary<string, (decimal Initial, decimal Maintenance)> riskLimits = await RiskLimitsAsync(null, ct).ConfigureAwait(false);
         string? cursor = null;
         int loaded = 0;
         do
@@ -410,7 +430,7 @@ public sealed class BybitInstrumentProvider : InstrumentProviderBase
             JsonElement result = await _http.GetPublicAsync("/v5/market/instruments-info", query, ct).ConfigureAwait(false);
             foreach (JsonElement item in result.GetProperty("list").EnumerateArray())
             {
-                Instrument? instrument = Parse(item);
+                Instrument? instrument = Parse(item, riskLimits);
                 if (instrument is null)
                 {
                     continue;
@@ -434,7 +454,8 @@ public sealed class BybitInstrumentProvider : InstrumentProviderBase
 
     public override async Task LoadAsync(InstrumentId id, CancellationToken ct)
     {
-        Dictionary<string, string> query = new() { ["category"] = _http.Category, ["symbol"] = BybitVenue.ToRawSymbol(id) };
+        string raw = BybitVenue.ToRawSymbol(id);
+        Dictionary<string, string> query = new() { ["category"] = _http.Category, ["symbol"] = raw };
         JsonElement result;
         try
         {
@@ -448,17 +469,96 @@ public sealed class BybitInstrumentProvider : InstrumentProviderBase
             return;
         }
 
-        foreach (JsonElement item in result.GetProperty("list").EnumerateArray())
+        // What the venue requires here, asked for only once it has confirmed it lists the symbol. The family
+        // resolver probes each family with exactly this call to find out which one owns an instrument, so a probe
+        // that comes back empty must stay one request rather than two.
+        JsonElement[] listed = [.. result.GetProperty("list").EnumerateArray()];
+        Dictionary<string, (decimal Initial, decimal Maintenance)> riskLimits = listed.Length == 0
+            ? []
+            : await RiskLimitsAsync(raw, ct).ConfigureAwait(false);
+
+        foreach (JsonElement item in listed)
         {
             // Only the instrument that was asked for, so "load one" means one on every venue whatever it returns.
-            if (Parse(item) is { } instrument && instrument.Id == id)
+            if (Parse(item, riskLimits) is { } instrument && instrument.Id == id)
             {
                 Add(instrument);
             }
         }
     }
 
-    private Instrument? Parse(JsonElement item)
+    /// <summary>
+    /// What this venue requires per symbol, at the tier a position starts in (R4.12). Read rather than assumed: the
+    /// adapter used to declare 0.05 initial and 0.025 maintenance for every contract, and this venue's own risk
+    /// limits give 0.0066 and 0.0033 on BTCUSDT - the initial figure was 7.6 times the truth.
+    /// <para>
+    /// That was not cosmetic. <see cref="Instrument.InitialMarginRate"/> takes the LARGER of 1/leverage and the
+    /// instrument's margin, so a wrong 0.05 was a floor: every leverage above 20x silently cost the margin of 20x,
+    /// on a venue that grants 150x.
+    /// </para>
+    /// <para>
+    /// One symbol asks for one symbol; a whole category walks the cursor, because a page of these is tiers and not
+    /// symbols. Spot never calls this - nothing is borrowed there, so its margin is zero rather than unpublished.
+    /// </para>
+    /// </summary>
+    private async Task<Dictionary<string, (decimal Initial, decimal Maintenance)>> RiskLimitsAsync(string? symbol, CancellationToken ct)
+    {
+        Dictionary<string, (decimal, decimal)> limits = new(StringComparer.Ordinal);
+        if (_productType == BybitProductType.Spot)
+        {
+            return limits;
+        }
+
+        string? cursor = null;
+        do
+        {
+            Dictionary<string, string> query = new(StringComparer.Ordinal)
+            {
+                ["category"] = _http.Category,
+                ["limit"] = BybitVenue.RiskLimitPage.ToString(CultureInfo.InvariantCulture),
+            };
+
+            if (symbol is not null)
+            {
+                query["symbol"] = symbol;
+            }
+
+            if (cursor is { Length: > 0 })
+            {
+                query["cursor"] = cursor;
+            }
+
+            JsonElement result;
+            try
+            {
+                result = await _http.GetPublicAsync(BybitVenue.RiskLimitPath, query, ct).ConfigureAwait(false);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                // A venue that will not say what it requires leaves the instruments to their fallback below, which
+                // is stated where it is used. Logged rather than thrown: an instrument list is still worth having.
+                Log.LogWarning(e, "Bybit did not answer for its {Category} risk limits, so margin falls back to the ceiling its leverage implies", _http.Category);
+                return limits;
+            }
+
+            foreach (JsonElement row in result.GetProperty("list").EnumerateArray())
+            {
+                if (row.Long("isLowestRisk") != BybitVenue.LowestRiskTier)
+                {
+                    continue;
+                }
+
+                limits[row.Str("symbol")] = (row.Dec("initialMargin"), row.Dec("maintenanceMargin"));
+            }
+
+            cursor = result.TryGetProperty("nextPageCursor", out JsonElement next) ? next.GetString() : null;
+        }
+        while (symbol is null && cursor is { Length: > 0 });
+
+        return limits;
+    }
+
+    private Instrument? Parse(JsonElement item, IReadOnlyDictionary<string, (decimal Initial, decimal Maintenance)> riskLimits)
     {
         if (item.Str("status") != "Trading")
         {
@@ -467,6 +567,14 @@ public sealed class BybitInstrumentProvider : InstrumentProviderBase
 
         string raw = item.Str("symbol");
         JsonElement priceFilter = item.GetProperty("priceFilter");
+
+        // The ceiling the venue grants here, and the margin it requires at the tier a position starts in. A symbol
+        // the risk-limit walk did not cover falls back to what the ceiling implies, which is stated at its use.
+        decimal maxLeverage = item.TryGetProperty("leverageFilter", out JsonElement leverageFilter) ? leverageFilter.Dec("maxLeverage") : 0m;
+        decimal implied = maxLeverage > 0m ? 1m / maxLeverage : 0m;
+        (decimal Initial, decimal Maintenance) margin = riskLimits.TryGetValue(raw, out (decimal Initial, decimal Maintenance) published)
+            ? published
+            : (implied, implied);
         JsonElement lotFilter = item.GetProperty("lotSizeFilter");
         decimal tickSize = priceFilter.Dec("tickSize");
         decimal step = _productType == BybitProductType.Spot ? lotFilter.Dec("basePrecision") : lotFilter.Dec("qtyStep");
@@ -506,8 +614,20 @@ public sealed class BybitInstrumentProvider : InstrumentProviderBase
             MaxPrice = priceFilter.Dec("maxPrice") > 0m ? new Price(priceFilter.Dec("maxPrice"), pricePrecision) : null,
             MakerFee = _productType == BybitProductType.Spot ? 0.001m : 0.0002m,
             TakerFee = _productType == BybitProductType.Spot ? 0.001m : 0.00055m,
-            MarginInit = _productType == BybitProductType.Spot ? 0m : 0.05m,
-            MarginMaint = _productType == BybitProductType.Spot ? 0m : 0.025m,
+            // Read from the venue rather than assumed. This pair was 0.05 and 0.025 for every contract while the
+            // venue's own risk limits give 0.0066 and 0.0033 on BTCUSDT - the initial figure was 7.6 times the
+            // truth, and because InitialMarginRate takes the LARGER of 1/leverage and this number, that made it a
+            // floor: every leverage above 20x silently cost the margin of 20x on a venue granting 150x.
+            //
+            // The fallback when the venue would not answer is the margin its own ceiling implies, 1/maxLeverage,
+            // which is the least it can accept by definition rather than a number anybody chose. Maintenance falls
+            // back to the same figure, which liquidates earlier than the venue would rather than later - the
+            // survivable direction to be wrong in when the real number is unknown.
+            MarginInit = _productType == BybitProductType.Spot ? 0m : margin.Initial,
+            MarginMaint = _productType == BybitProductType.Spot ? 0m : margin.Maintenance,
+
+            // Free: this venue states its own ceiling per symbol in the response the instrument came from.
+            MaxLeverage = _productType == BybitProductType.Spot || maxLeverage <= 0m ? null : maxLeverage,
             TsEvent = now,
             TsInit = now,
         };

@@ -97,6 +97,24 @@ public static class BinanceVenue
     public const string LeveragePath = "/fapi/v1/leverage";
 
     /// <summary>
+    /// What this venue publishes as a percentage rather than a fraction. Its own exchangeInfo gives margin per
+    /// symbol as `requiredMarginPercent` and `maintMarginPercent` - "5.0000" meaning a twentieth - while the engine
+    /// holds margin as a fraction of notional. Named because a factor of a hundred is the kind of mistake that
+    /// produces a plausible number.
+    /// </summary>
+    public const decimal MarginPercentToFraction = 100m;
+
+    /// <summary>
+    /// What this venue asks for when a symbol publishes no figure of its own. These were the adapter's hard-coded
+    /// values for every contract; they are the venue-wide default and nothing more, which is why they are now a
+    /// fallback behind the published per-symbol number rather than the answer.
+    /// </summary>
+    public const decimal DefaultMarginInit = 0.05m;
+
+    /// <inheritdoc cref="DefaultMarginInit"/>
+    public const decimal DefaultMarginMaint = 0.025m;
+
+    /// <summary>
     /// This venue's leverage is a whole number: its own documentation gives the field as an integer from 1 to 125.
     /// Named here so the refusal below quotes the venue rather than an assumption.
     /// </summary>

@@ -83,6 +83,22 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
         }
     }
 
+    /// <summary>
+    /// What this venue requires here, from the same response the instrument came from (R4.12). Published per symbol
+    /// as a percentage - "5.0000" meaning a twentieth - where the engine holds a fraction of notional.
+    /// <para>
+    /// Read rather than assumed: the adapter carried one hard-coded pair for all 909 contracts, which happened to
+    /// match BTCUSDT and was a guess on every other one. A symbol that publishes nothing keeps the venue-wide
+    /// default, because a zero here would mean this venue asks for no margin at all.
+    /// </para>
+    /// </summary>
+    private static decimal PublishedMargin(JsonElement symbol, string field, decimal whenAbsent) =>
+        symbol.TryGetProperty(field, out JsonElement published)
+            && decimal.TryParse(published.ValueKind == JsonValueKind.String ? published.GetString() : published.GetRawText(), NumberStyles.Float, CultureInfo.InvariantCulture, out decimal percent)
+            && percent > 0m
+                ? percent / BinanceVenue.MarginPercentToFraction
+                : whenAbsent;
+
     private Instrument? Parse(JsonElement symbol)
     {
         string status = symbol.StrOpt("status") ?? "TRADING";
@@ -162,8 +178,17 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
             MaxPrice = maxPrice > 0m ? new Price(maxPrice, pricePrecision) : null,
             MakerFee = _accountType == BinanceAccountType.Spot ? 0.001m : 0.0002m,
             TakerFee = _accountType == BinanceAccountType.Spot ? 0.001m : 0.0005m,
-            MarginInit = _accountType == BinanceAccountType.Spot ? 0m : 0.05m,
-            MarginMaint = _accountType == BinanceAccountType.Spot ? 0m : 0.025m,
+            // Read from the venue rather than assumed. This venue publishes margin per symbol in the same
+            // response the instruments come from, as a percentage; the adapter used to carry one hard-coded pair for
+            // all of them, which happened to match BTCUSDT and was a guess everywhere else. A spot account borrows
+            // nothing, so its margin is zero rather than unpublished.
+            MarginInit = _accountType == BinanceAccountType.Spot ? 0m : PublishedMargin(symbol, "requiredMarginPercent", BinanceVenue.DefaultMarginInit),
+            MarginMaint = _accountType == BinanceAccountType.Spot ? 0m : PublishedMargin(symbol, "maintMarginPercent", BinanceVenue.DefaultMarginMaint),
+
+            // Null, and deliberately: this venue keeps its notional brackets behind a signed endpoint, so the most
+            // leverage it will grant cannot be read from public data. Null says "not published", which is a
+            // different thing from unlimited to anybody deciding whether a configured leverage is reachable.
+            MaxLeverage = null,
             TsEvent = now,
             TsInit = now,
             Info = new Dictionary<string, string>(StringComparer.Ordinal) { ["raw"] = symbol.GetRawText() },

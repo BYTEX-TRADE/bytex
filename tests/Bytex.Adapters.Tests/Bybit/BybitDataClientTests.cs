@@ -157,7 +157,11 @@ public sealed class BybitDataClientTests
         await using Rig rig = await new Rig(type: type).ConnectAsync();
 
         Assert.Equal(route, rig.Session.Path);
-        Assert.Equal(type == BybitProductType.Spot ? "spot" : "linear", Assert.Single(rig.Server.Requests).Query("category"));
+        // Scoped to the instruments route: a derivative category now also asks the venue what margin it requires,
+        // and that is a second request which says nothing about which stream was opened.
+        Assert.Equal(
+            type == BybitProductType.Spot ? "spot" : "linear",
+            Assert.Single(rig.Server.RequestsTo("/v5/market/instruments-info")).Query("category"));
         Assert.Single(rig.Sink.Instruments);
         Assert.True(rig.Client.IsConnected);
     }
