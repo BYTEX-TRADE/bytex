@@ -9,6 +9,28 @@ change public APIs; a patch version only fixes.
 
 ### Added
 
+- A Hyperliquid adapter: perpetual futures, with data, execution, catalog and
+  history. The fifth venue and the first whose credential is not a key pair the
+  exchange issued - authentication is a wallet signature over EIP-712 typed
+  data, so the credential is a secp256k1 private key that controls an address
+  and the address is the account. The signing (Keccak-256, recoverable
+  secp256k1 ECDSA, and the MessagePack encoding the venue re-derives the digest
+  from) is written against the framework alone, with no new dependency, and was
+  verified against the live venue without an account: signing with a key nobody
+  has funded and reading back the address the venue recovered checks the whole
+  pipeline, field order included, and it recovered the signing address for
+  every action the adapter sends on both networks.
+
+  Three of the venue's facts are unlike the others and are declared rather than
+  discovered. Its margins come from the venue - `maxLeverage` per asset, with
+  maintenance margin at half the initial margin, measured against three live
+  positions to the last decimal place, rather than the flat 0.05/0.025 two
+  other adapters carry. It has no market order at all, so one becomes an
+  immediate-or-cancel limit through the book. And its candle read serves only
+  about the last 5000 bars of an interval, counted from now and not from the
+  window asked for, so there is a period of history it cannot be asked for at
+  any page size - which the adapter says rather than returning quietly short.
+
 - A node type declares whether it changes an order after placing it
   (`amendsOrders` on the node catalog), true for `act.modify`, `act.trail`,
   `act.moveStop` and `risk.exit`. A venue family already states whether it

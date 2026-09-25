@@ -4,6 +4,7 @@
 |---|---|---|---|---|
 | Binance spot and USDⓈ-M futures | `BINANCE` | yes | yes | [binance.md](binance.md) |
 | Bybit spot and linear perpetuals | `BYBIT` | yes | yes | [bybit.md](bybit.md) |
+| Hyperliquid perpetuals | `HYPERLIQUID` | yes | yes | [hyperliquid.md](hyperliquid.md) |
 | KuCoin spot | `KUCOIN` | yes | yes | [kucoin.md](kucoin.md) |
 | Tardis historical data | `TARDIS` | historical only | — | [tardis.md](tardis.md) |
 | Sandbox (simulated execution on live data) | `SANDBOX` | — | yes | [sandbox.md](sandbox.md) |

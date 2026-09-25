@@ -5,6 +5,7 @@ using System.Security.Authentication;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Hyperliquid;
 using Bytex.Adapters.Kucoin;
 using Bytex.Live.Network;
 using Microsoft.Extensions.Logging;
@@ -30,8 +31,8 @@ internal static class KeyCommands
 
     public static Command Build(Option<string> logLevel)
     {
-        Option<string> venue = new("--venue") { Description = "BINANCE | BYBIT | KUCOIN", Required = true };
-        Option<string> envFile = new("--env-file") { Description = "File with KEY=VALUE lines (for example BYBIT_API_KEY=...; KuCoin also needs KUCOIN_API_PASSPHRASE)", Required = true };
+        Option<string> venue = new("--venue") { Description = "BINANCE | BYBIT | HYPERLIQUID | KUCOIN", Required = true };
+        Option<string> envFile = new("--env-file") { Description = "File with KEY=VALUE lines (for example BYBIT_API_KEY=...; KuCoin also needs KUCOIN_API_PASSPHRASE; Hyperliquid takes HYPERLIQUID_PRIVATE_KEY and no key pair at all)", Required = true };
         Option<bool> json = new("--json") { Description = "Print the result as JSON and nothing else on standard output" };
         Option<string?> baseUrl = new("--base-url") { Description = "Override the venue's REST address (a proxy or a test venue)" };
         Option<double> timeout = new("--timeout") { Description = "Seconds the whole check may take before it is reported as unreachable; 0 waits for as long as the venue takes", DefaultValueFactory = _ => 30 };
@@ -74,8 +75,15 @@ internal static class KeyCommands
                         RequireKey(KucoinVenue.EnvApiPassphrase, KucoinVenue.EnvApiPassphrase);
                         await VerifyKucoinAsync(parseResult.GetValue(baseUrl), loggerFactory, report, limit.Token).ConfigureAwait(false);
                         break;
+                    case "HYPERLIQUID":
+                        // ONE variable, and it is not a key pair: this venue issues nothing. The credential is a
+                        // private key, so RequireKey is asked for the same name twice rather than for a secret
+                        // that does not exist.
+                        RequireKey(HyperliquidVenue.EnvPrivateKey, HyperliquidVenue.EnvPrivateKey);
+                        await VerifyHyperliquidAsync(parseResult.GetValue(baseUrl), loggerFactory, report, limit.Token).ConfigureAwait(false);
+                        break;
                     default:
-                        report.Fail("venue", new Failure("venue_unknown", null, null, "expected BINANCE, BYBIT or KUCOIN"));
+                        report.Fail("venue", new Failure("venue_unknown", null, null, "expected BINANCE, BYBIT, HYPERLIQUID or KUCOIN"));
                         break;
                 }
             }
@@ -365,6 +373,110 @@ internal static class KeyCommands
         }
     }
 
+    /// <summary>
+    /// This venue's key test, which is a different question from every other venue's.
+    /// <para>
+    /// There is no key to authenticate and no endpoint that says what a key may do. The credential is a secp256k1
+    /// private key, the venue never sees it, and it issues no permissions - so the whole of what can be established
+    /// is WHICH ACCOUNT the key controls and WHAT KIND of key it is, and both of those are answered by arithmetic
+    /// and public reads rather than by asking the venue about a key.
+    /// </para>
+    /// <para>
+    /// The kind matters more here than a permission list does elsewhere. A key whose own address IS the account is
+    /// the account's wallet key: it can move the funds, and there is nothing to switch that off, which is the
+    /// loudest warning this report can carry. A key whose address differs is an API wallet the account approved -
+    /// it can trade and cannot withdraw - and it is the one anybody should be running a node with.
+    /// </para>
+    /// <para>
+    /// What this cannot establish: whether the venue has really approved an API wallet. The read that lists an
+    /// account's agents answered with an empty array on every live account tried, so its populated shape was never
+    /// seen and cannot be parsed on trust. The only proof would be a signed action, and every action this venue
+    /// takes changes something - so the report says which key it is holding and stops short of claiming the venue
+    /// agrees.
+    /// </para>
+    /// </summary>
+    private static async Task VerifyHyperliquidAsync(string? baseUrl, ILoggerFactory loggerFactory, Report report, CancellationToken ct)
+    {
+        HyperliquidExecutionClientConfig config = new() { BaseUrlHttp = baseUrl };
+        HyperliquidCredentials credentials;
+        try
+        {
+            credentials = HyperliquidVenue.Credentials(config);
+        }
+        catch (ArgumentException e)
+        {
+            // A key that is not 32 bytes of hex, or is zero, or is past the curve's order. Caught here because it
+            // is the commonest mistake on this venue - a pasted address instead of a key - and a stack trace would
+            // say nothing about which.
+            // Without the parameter name the framework appends, which names an argument of a method the reader of
+            // this report has never seen.
+            report.Fail("auth", new Failure("bad_key", null, null, e.Message.Split(" (Parameter", StringSplitOptions.None)[0]));
+            return;
+        }
+
+        using HyperliquidHttp http = new(config, loggerFactory.CreateLogger("hyperliquid"), requireCredentials: true);
+        string signer = credentials.Signer!;
+        bool isWalletKey = signer.Equals(credentials.Account, StringComparison.OrdinalIgnoreCase);
+
+        // Accepted, in the only sense this venue has one: the key is a valid scalar and it controls this address.
+        // Nothing was sent to establish it, which is why nothing can refuse it.
+        report.KeyAccepted = true;
+        report.Checks.Add(new Check("ok", "auth", $"signs as {signer}, trading the account {credentials.Account}"));
+
+        report.CanWithdraw = isWalletKey;
+        report.Checks.Add(isWalletKey
+            ? new Check(
+                "warn",
+                "withdraw",
+                "this is the ACCOUNT'S OWN WALLET KEY, so it can move the funds and nothing can restrict it. "
+                + $"Approve an API wallet instead and set {HyperliquidVenue.EnvAccountAddress} to this account.")
+            : new Check(
+                "ok",
+                "withdraw",
+                "an API wallet: it signs for the account and cannot withdraw. Whether the venue has approved it "
+                + "cannot be read, so a refused order is the other thing to check."));
+
+        // There is nothing to restrict a key to an address here: the key is not registered anywhere, so no
+        // allow-list exists to be set. Said out loud rather than left blank, because a blank reads as "not checked".
+        report.IpRestricted = false;
+        report.Checks.Add(new Check("ok", "ip-allow-list", "not a concept on this venue: the key is never registered, so there is nothing to restrict"));
+
+        JsonElement state = await http.InfoAsync(
+            HyperliquidReads.ClearinghouseState,
+            new Dictionary<string, object>(StringComparer.Ordinal) { [HyperliquidReads.User] = credentials.Account },
+            ct).ConfigureAwait(false);
+
+        string equity = state.TryGetProperty("marginSummary", out JsonElement summary) ? Field(summary, "accountValue") : string.Empty;
+        int positions = state.TryGetProperty("assetPositions", out JsonElement held) && held.ValueKind == JsonValueKind.Array
+            ? held.GetArrayLength()
+            : 0;
+
+        // Reading the account proves the address is one the venue knows, which is the half of "can this trade" that
+        // does not need a write. An account with no collateral signs perfectly well and every order is refused.
+        report.CanTrade = equity.Length > 0 && decimal.TryParse(equity, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal value) && value > 0m;
+        report.Futures = true;
+        report.Spot = false;
+        report.Checks.Add(new Check(
+            report.CanTrade == true ? "ok" : "warn",
+            "account",
+            equity.Length == 0
+                ? "the venue holds no perpetuals account for this address"
+                : $"{equity} {HyperliquidVenue.QuoteCurrency} of collateral, {positions} open position(s)"
+                    + (report.CanTrade == true ? string.Empty : "; an order on an empty account is refused")));
+
+        JsonElement fees = await http.InfoAsync(
+            HyperliquidReads.UserFees,
+            new Dictionary<string, object>(StringComparer.Ordinal) { [HyperliquidReads.User] = credentials.Account },
+            ct).ConfigureAwait(false);
+
+        string maker = Field(fees, "userAddRate");
+        string taker = Field(fees, "userCrossRate");
+        if (maker.Length > 0 || taker.Length > 0)
+        {
+            report.Checks.Add(new Check("ok", "fees", $"maker {maker}, taker {taker} on perpetuals"));
+        }
+    }
+
     private static string Field(JsonElement e, string name) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out JsonElement p)
         ? p.ValueKind == JsonValueKind.String ? p.GetString() ?? string.Empty : p.ValueKind == JsonValueKind.Number ? p.GetRawText() : string.Empty
         : string.Empty;
@@ -379,6 +491,14 @@ internal static class KeyCommands
                 return new Failure("env_file_missing", null, null, e.Message);
             case BybitApiException bybit:
                 return new Failure(BybitCode(bybit.Code) ?? "venue_error", null, bybit.Code.ToString(CultureInfo.InvariantCulture), e.Message);
+            case HyperliquidApiException hyperliquid:
+                // No code to carry: this venue refuses with an English sentence and nothing structured. The one
+                // worth separating is the refusal that means the digest was wrong rather than the key.
+                return new Failure(
+                    hyperliquid.Detail.Contains("recover signer", StringComparison.OrdinalIgnoreCase) ? "bad_signature" : "venue_error",
+                    hyperliquid.HttpStatus == 200 ? null : hyperliquid.HttpStatus,
+                    null,
+                    e.Message);
             case KucoinApiException kucoin:
                 return new Failure(KucoinCode(kucoin.Code) ?? (kucoin.HttpStatus is (int)HttpStatusCode.TooManyRequests ? "rate_limited" : "venue_error"), kucoin.HttpStatus == 200 ? null : kucoin.HttpStatus, kucoin.Code, e.Message);
             case VenueHttpException http:

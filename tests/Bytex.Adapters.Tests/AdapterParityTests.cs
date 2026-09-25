@@ -92,6 +92,36 @@ public sealed class AdapterParityTests
                 ["GenerateFillReportsAsync"] = Parity.Own,
                 ["GeneratePositionStatusReportsAsync"] = Parity.Own,
             },
+            ["Hyperliquid"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubmitOrderAsync"] = Parity.Own,
+                ["SubmitOrderListAsync"] = Parity.Base,
+                ["ModifyOrderAsync"] = Parity.Own,
+                ["CancelOrderAsync"] = Parity.Own,
+
+                // The base's loop over single cancels, and correct here for a reason worth writing down: this
+                // venue HAS a cancel-all action, and it cancels every order on the ACCOUNT rather than on one
+                // instrument. The command names an instrument, a strategy and a side, so the venue's own action
+                // would cancel orders the caller did not ask about - including another node's on the same
+                // account, which on this venue is an address anything can share.
+                ["CancelAllOrdersAsync"] = Parity.Base,
+
+                // Likewise: the venue takes a batch of cancels in one signed action, and the base's loop sends
+                // one each. Slower and identical in effect; a batch would be worth having and is not needed for
+                // correctness.
+                ["BatchCancelOrdersAsync"] = Parity.Base,
+
+                // As the other three venues: answered by the base out of this venue's own order report.
+                ["QueryOrderAsync"] = Parity.Base,
+
+                ["GenerateMassStatusAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportsAsync"] = Parity.Own,
+                ["GenerateFillReportsAsync"] = Parity.Own,
+                ["GeneratePositionStatusReportsAsync"] = Parity.Own,
+            },
             ["Kucoin"] = new(StringComparer.Ordinal)
             {
                 ["ConnectAsync"] = Parity.Own,
@@ -151,6 +181,14 @@ public sealed class AdapterParityTests
                 ["UnsubscribeAsync"] = Parity.Own,
                 ["RequestAsync"] = Parity.Own,
             },
+            ["Hyperliquid"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubscribeAsync"] = Parity.Own,
+                ["UnsubscribeAsync"] = Parity.Own,
+                ["RequestAsync"] = Parity.Own,
+            },
             ["Kucoin"] = new(StringComparer.Ordinal)
             {
                 ["ConnectAsync"] = Parity.Own,
@@ -190,6 +228,16 @@ public sealed class AdapterParityTests
             {
                 ["LoadAllAsync"] = Parity.Own,
                 ["LoadIdsAsync"] = Parity.Base,
+                ["LoadAsync"] = Parity.Own,
+            },
+            ["Hyperliquid"] = new(StringComparer.Ordinal)
+            {
+                ["LoadAllAsync"] = Parity.Own,
+                ["LoadIdsAsync"] = Parity.Base,
+
+                // Implemented, and worth a line because the venue has no per-instrument read at all: `meta` takes
+                // no filter, so this reads the whole universe and adds the one asked for. The capability is about
+                // what the ADAPTER can do, and it can.
                 ["LoadAsync"] = Parity.Own,
             },
             ["Kucoin"] = new(StringComparer.Ordinal)
@@ -477,6 +525,33 @@ public sealed class AdapterParityTests
 
             ["BrokerProgramme"] = Owed.Has,
         },
+        ["Hyperliquid"] = new(StringComparer.Ordinal)
+        {
+            ["HistoryBars"] = Owed.Has,
+            ["HistoryFunding"] = Owed.Has,
+
+            // A key test that answers a different question from the other venues', because this venue issues no
+            // key: what can be established is which account the private key controls and whether it is the
+            // account's own wallet key - which can withdraw - or an API wallet, which cannot.
+            ["VerifyKeys"] = Owed.Has,
+
+            ["Declaration"] = Owed.Has,
+
+            // Nothing carries an id, as on KuCoin and for the same reason: the mechanism needs more than one
+            // configured string.
+            ["BrokerTag"] = Owed.NotApplicable,
+
+            // And a programme that really exists, measured rather than assumed. The venue runs builder codes: an
+            // order may carry a `builder` object naming an address AND a fee in tenths of a basis point, the
+            // account has to have approved that builder's maximum fee with a signed action of its own, and the
+            // referral read reports what a builder has earned under `builderRewards`. The `maxBuilderFee` read
+            // answered 0 for an unapproved pair, with no key, which is how the mechanism was confirmed to be
+            // published rather than undisclosed.
+            //
+            // Unclaimed and not NotApplicable, because it does apply: an address plus a fee cannot be expressed
+            // by one configured id, so every trade routed here earns a rebate nobody collects.
+            ["BrokerProgramme"] = Owed.Unclaimed,
+        },
         ["Kucoin"] = new(StringComparer.Ordinal)
         {
             ["HistoryBars"] = Owed.Has,
@@ -566,6 +641,33 @@ public sealed class AdapterParityTests
         }
     }
 
+
+    [Fact]
+    public void A_venue_that_declares_itself_is_registered_where_a_host_can_find_it()
+    {
+        // Found by trying it rather than by reasoning about it, which is the only way this one shows up. Every test
+        // in this project passed with the fifth venue fully built, fully declared and INVISIBLE: `bytex venues`
+        // lists what the plugin registry holds, the registry is filled by hand in one method, and an adapter that
+        // is not named there declares itself to nobody. A host onboarding from the declaration would not know the
+        // venue existed.
+        //
+        // Read off the source rather than by building a registry, for the same reason the verify-keys row above is:
+        // the method that fills it is private, and what matters is that somebody wrote the line.
+        string source = File.ReadAllText(Source("src", "Bytex.Cli", "Program.cs"));
+
+        foreach (string venue in ShippedVenues())
+        {
+            bool declares = Assembly.Load("Bytex.Adapters." + venue).GetTypes()
+                .Any(t => !t.IsAbstract && typeof(IVenuePlugin).IsAssignableFrom(t));
+
+            if (!declares)
+            {
+                continue;
+            }
+
+            Assert.Contains($"new {venue}Plugin()", source, StringComparison.Ordinal);
+        }
+    }
 
     [Fact]
     public void A_venue_that_claims_a_declaration_has_a_plugin_that_describes_it()

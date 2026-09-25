@@ -1,6 +1,8 @@
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Hyperliquid;
 using Bytex.Adapters.Kucoin;
+using Bytex.Adapters.Tests.Fixtures;
 using Bytex.Adapters.Tests.Support;
 using Bytex.Core.Adapters;
 using Bytex.Core.Model.Identifiers;
@@ -61,6 +63,7 @@ public sealed class InstrumentNotFoundParityTests
         "Binance.usdm-futures",
         "Bybit.spot",
         "Bybit.linear",
+        "Hyperliquid.perpetuals",
         "Kucoin.spot",
         "Kucoin.futures",
     ];
@@ -87,6 +90,12 @@ private static (string Method, string Path, int Status, string Body) NotFound(st
         // And the other family of the same venue refuses it, with the venue's parameter-error code.
         "Bybit.linear" => ("GET", "/v5/market/instruments-info", 200, """{"retCode":10001,"retMsg":"params error: symbol invalid","result":{"category":"","list":[],"nextPageCursor":""},"retExtInfo":{},"time":1790320625451}"""),
 
+        // The second family that IGNORES THE FILTER, and it does not even have one to ignore: `meta` takes no
+        // arguments at all, so asking about one asset and asking about all of them is the same request. Measured -
+        // sent with a coin and a name field set to BTC it answered with all 234 assets and the same 17628 bytes as
+        // the bare request. Six real entries stand for them here.
+        "Hyperliquid.perpetuals" => ("POST", HyperliquidVenue.InfoPath, 200, HyperliquidPayloads.Meta),
+
         // HTTP 200 with the refusal in the body, which is why a caller checking the status learns nothing.
         "Kucoin.spot" => ("GET", "/api/v2/symbols/NOTACOIN-USDT", 200, """{"msg":"Trading pair NOTACOIN-USDT does not exist.","code":"900001"}"""),
         "Kucoin.futures" => ("GET", "/api/v1/contracts/NOTACOINUSDTM", 200, """{"msg":"The contract information you requested does not exist.","code":"404000"}"""),
@@ -101,6 +110,7 @@ private static InstrumentId Unknown(string family) => InstrumentId.Parse(family 
         "Binance.usdm-futures" => "NOTACOINUSDT-PERP.BINANCE",
         "Bybit.spot" => "NOTACOINUSDT.BYBIT",
         "Bybit.linear" => "NOTACOINUSDT-PERP.BYBIT",
+        "Hyperliquid.perpetuals" => "NOTACOIN-PERP.HYPERLIQUID",
         "Kucoin.spot" => "NOTACOIN-USDT.KUCOIN",
         "Kucoin.futures" => "NOTACOINUSDT-PERP.KUCOIN",
         _ => throw new InvalidOperationException(family),
@@ -120,6 +130,8 @@ private static InstrumentProviderBase Provider(string family, LoopbackServer ser
         "Bybit.linear" => new BybitInstrumentProvider(
             new BybitHttp(new BybitDataClientConfig { ProductType = BybitProductType.Linear, BaseUrlHttp = server.HttpBase }),
             BybitProductType.Linear),
+        "Hyperliquid.perpetuals" => new HyperliquidInstrumentProvider(
+            new HyperliquidHttp(new HyperliquidDataClientConfig { BaseUrlHttp = server.HttpBase })),
         "Kucoin.spot" => new KucoinInstrumentProvider(
             new KucoinHttp(new KucoinDataClientConfig { BaseUrlHttp = server.HttpBase })),
         "Kucoin.futures" => new KucoinFuturesInstrumentProvider(

@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Hyperliquid;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Tests.Fixtures;
 using Bytex.Adapters.Tests.Support;
@@ -129,6 +130,10 @@ public sealed class VenueDeclarationTests
 
         // KuCoin has no socket base to resolve: the venue answers a REST call with the address, per connection.
         "Kucoin" => (KucoinVenue.HttpBase((IKucoinSettings)config), null),
+
+        // One host for everything and a fixed socket, which is why both are strings here where KuCoin's socket is
+        // a null. The declared bases are ROOTS - /info, /exchange and /ws hang off them - so this compares roots.
+        "Hyperliquid" => (HyperliquidVenue.HttpBase((IHyperliquidSettings)config), HyperliquidVenue.WsBase((IHyperliquidSettings)config)),
         _ => throw new InvalidOperationException(
             $"{venue} declares itself and this test does not know how to ask it where it talks. Add it here - the "
             + "declaration is only worth having if something checks it against the adapter."),
@@ -146,6 +151,10 @@ public sealed class VenueDeclarationTests
             r => StubResponse.Json(r.Query("cursor") is null ? BybitPayloads.LinearInstrumentsPage1 : BybitPayloads.LinearInstrumentsPage2)),
         ("Kucoin", "spot") => new Routes().On("GET", "/api/v2/symbols", KucoinPayloads.Symbols),
         ("Kucoin", "futures") => new Routes().On("GET", "/api/v1/contracts/active", KucoinPayloads.FuturesContracts),
+
+        // A POST to one path, with the read named in the BODY. This venue has no path per resource, so there is
+        // nothing narrower to route on - which is the shape the whole adapter is built around.
+        ("Hyperliquid", "perpetuals") => new Routes().On("POST", HyperliquidVenue.InfoPath, HyperliquidPayloads.Meta),
         _ => throw new InvalidOperationException(
             $"{venue}'s {family} family declares the instrument classes it returns and there is no catalog fixture "
             + "here to check the claim against. Add one: a class list nothing verifies is a guess in a table."),
@@ -187,6 +196,16 @@ public sealed class VenueDeclarationTests
                 InstrumentProviderBase provider = c.ProductType == KucoinProductType.Futures
                     ? new KucoinFuturesInstrumentProvider(http)
                     : new KucoinInstrumentProvider(http);
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Hyperliquid":
+            {
+                HyperliquidDataClientConfig c = (HyperliquidDataClientConfig)config;
+                using HyperliquidHttp http = new(c);
+                HyperliquidInstrumentProvider provider = new(http);
                 await provider.LoadAllAsync(CancellationToken.None);
                 instruments = provider.GetAll();
                 break;
