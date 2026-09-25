@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>bytex</AssemblyName>
+    <RootNamespace>Bytex.Cli</RootNamespace>
+    <Description>Command-line interface for the BYTEX trading engine.</Description>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>bytex</ToolCommandName>
+    <PackageId>Bytex.Cli</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bytex.Core\Bytex.Core.csproj" />
+    <ProjectReference Include="..\Bytex.Data\Bytex.Data.csproj" />
+    <ProjectReference Include="..\Bytex.Backtest\Bytex.Backtest.csproj" />
+    <ProjectReference Include="..\Bytex.Live\Bytex.Live.csproj" />
+    <ProjectReference Include="..\Bytex.Indicators\Bytex.Indicators.csproj" />
+    <ProjectReference Include="..\Bytex.Documents\Bytex.Documents.csproj" />
+    <ProjectReference Include="..\Bytex.Persistence.Redis\Bytex.Persistence.Redis.csproj" />
+    <ProjectReference Include="..\Bytex.Adapters.Binance\Bytex.Adapters.Binance.csproj" />
+    <ProjectReference Include="..\Bytex.Adapters.Bybit\Bytex.Adapters.Bybit.csproj" />
+    <ProjectReference Include="..\Bytex.Adapters.Kucoin\Bytex.Adapters.Kucoin.csproj" />
+    <ProjectReference Include="..\Bytex.Adapters.Tardis\Bytex.Adapters.Tardis.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,29 @@
+<Solution>
+  <Folder Name="/examples/">
+    <Project Path="examples/Bytex.Examples/Bytex.Examples.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Bytex.Adapters.Binance/Bytex.Adapters.Binance.csproj" />
+    <Project Path="src/Bytex.Adapters.Bybit/Bytex.Adapters.Bybit.csproj" />
+    <Project Path="src/Bytex.Adapters.Kucoin/Bytex.Adapters.Kucoin.csproj" />
+    <Project Path="src/Bytex.Adapters.Tardis/Bytex.Adapters.Tardis.csproj" />
+    <Project Path="src/Bytex.Backtest/Bytex.Backtest.csproj" />
+    <Project Path="src/Bytex.Cli/Bytex.Cli.csproj" />
+    <Project Path="src/Bytex.Core/Bytex.Core.csproj" />
+    <Project Path="src/Bytex.Data/Bytex.Data.csproj" />
+    <Project Path="src/Bytex.Documents/Bytex.Documents.csproj" />
+    <Project Path="src/Bytex.Indicators/Bytex.Indicators.csproj" />
+    <Project Path="src/Bytex.Live/Bytex.Live.csproj" />
+    <Project Path="src/Bytex.Persistence.Redis/Bytex.Persistence.Redis.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Bytex.Adapters.Tests/Bytex.Adapters.Tests.csproj" />
+    <Project Path="tests/Bytex.Backtest.Tests/Bytex.Backtest.Tests.csproj" />
+    <Project Path="tests/Bytex.Cli.Tests/Bytex.Cli.Tests.csproj" />
+    <Project Path="tests/Bytex.Core.Tests/Bytex.Core.Tests.csproj" />
+    <Project Path="tests/Bytex.Data.Tests/Bytex.Data.Tests.csproj" />
+    <Project Path="tests/Bytex.Documents.Tests/Bytex.Documents.Tests.csproj" />
+    <Project Path="tests/Bytex.Indicators.Tests/Bytex.Indicators.Tests.csproj" />
+    <Project Path="tests/Bytex.Live.Tests/Bytex.Live.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,40 @@
+## Build output
+bin/
+obj/
+out/
+artifacts/
+*.nupkg
+*.snupkg
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.swp
+*.DotSettings.user
+
+## Test and coverage output
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+## Local configuration and secrets
+*.local.json
+secrets.json
+.env
+.env.*
+
+## Data and runtime state. Anchored to the repository root: unanchored, "data/" matches ANY directory of that
+## name, which silently swallowed src/Bytex.Core/Model/Data - a new source file there was ignored, built locally
+## and never reached CI.
+/data/
+/logs/
+*.log
+
+## OS
+.DS_Store
+Thumbs.db

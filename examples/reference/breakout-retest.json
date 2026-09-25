@@ -1,0 +1,26 @@
+{
+  "name": "breakout-retest",
+  "description": "The shipped breakout-retest example over the same three thousand bars. The case that sizes by risk percent, so the positions are large and the commissions on them are the number to watch.",
+  "document": "breakout-retest",
+  "bars": 3000,
+  "seed": 7,
+  "startPrice": "50000",
+  "startingBalances": [
+    "1000000 USDT",
+    "10 BTC"
+  ],
+  "currency": "USDT",
+  "expect": {
+    "fills": 341,
+    "positions": 5,
+    "closedPositions": 5,
+    "endingBalance": "1061685.29422634",
+    "realizedPnl": "61685.29422632",
+    "commissions": "10251.82683572",
+    "maxDrawdown": "23535.78772218",
+    "simulation": [
+      "bookDepth",
+      "partialFills"
+    ]
+  }
+}

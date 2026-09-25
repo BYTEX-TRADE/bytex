@@ -1,0 +1,64 @@
+{
+  "run": {
+    "engine": {
+      "runId": "ema-cross-search",
+      "kernel": {
+        "traderId": "BACKTESTER-001",
+        "environment": "backtest",
+        "loadState": false,
+        "saveState": false,
+        "executionEngine": { "logEvents": false }
+      }
+    },
+    "venues": [
+      {
+        "venue": "SIM",
+        "omsType": "netting",
+        "accountType": "cash",
+        "startingBalances": ["1000000 USDT", "10 BTC"],
+        "barExecution": "ohlcPath"
+      }
+    ],
+    "data": [
+      {
+        "catalogPath": "./catalog",
+        "dataKind": "bars",
+        "barType": "BTCUSDT.SIM-1-MINUTE-LAST-EXTERNAL"
+      }
+    ],
+    "strategies": [
+      {
+        "providerId": "bytex.importable",
+        "name": "Bytex.Examples.Strategies.EmaCross",
+        "payload": {
+          "strategyId": "EmaCross-001",
+          "instrumentId": "BTCUSDT.SIM",
+          "barType": "BTCUSDT.SIM-1-MINUTE-LAST-EXTERNAL",
+          "fastPeriod": 10,
+          "slowPeriod": 30,
+          "tradeSize": 0.5
+        }
+      }
+    ],
+    "outputDirectory": "./reports"
+  },
+  "space": [
+    { "path": "fastPeriod", "min": 4, "max": 30, "step": 2 },
+    { "path": "slowPeriod", "min": 20, "max": 120, "step": 5 },
+    { "path": "tradeSize", "choices": ["0.25", "0.5", "1.0"] }
+  ],
+  "population": 16,
+  "generations": 8,
+  "elites": 2,
+  "crossoverRate": 0.5,
+  "mutationRate": 0.2,
+  "tournamentSize": 3,
+  "seed": 7,
+  "maxParallel": 4,
+  "stopAfterGenerationsWithoutImprovement": 3,
+  "objective": {
+    "figure": "returnPercent",
+    "currency": "USDT",
+    "minimize": false
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0",
+  "id": "example-support-bounce",
+  "name": "Support bounce",
+  "description": "Waits for price to hold above the lowest low of the range for several bars, buys the bounce, and protects it with a stop under the support and a target at the range midpoint.",
+  "metadata": { "template": true, "tags": ["ranging", "example"], "createdWith": "bytex/0.1.0", "difficulty": "simple", "runMode": "constant", "marketRegime": "ranging" },
+  "instruments": [ { "ref": "primary", "instrumentId": "BTCUSDT.SIM" } ],
+  "barTypes": [ { "ref": "main", "instrument": "primary", "step": 1, "aggregation": "minute", "priceType": "last", "source": "external" } ],
+  "parameters": [
+    { "name": "lookback", "type": "int", "label": "Range lookback (bars)", "value": "40", "min": "10", "max": "400", "step": "1" },
+    { "name": "holdBars", "type": "int", "label": "Hold above support for (bars)", "value": "3", "min": "1", "max": "50", "step": "1" },
+    { "name": "bufferAtr", "type": "decimal", "label": "Buffer under support (ATR)", "value": "0.5", "min": "0.1", "max": "3", "step": "0.1" },
+    { "name": "size", "type": "decimal", "label": "Trade size (BTC)", "value": "0.25", "min": "0.001", "max": "10", "step": "0.05" }
+  ],
+  "nodes": [
+    { "id": "bars", "type": "data.bars", "params": { "barType": "main" } },
+    { "id": "range", "type": "level.range", "params": { "lookback": { "$param": "lookback" } } },
+    { "id": "atr", "type": "ind.atr", "params": { "period": 14 } },
+    { "id": "nearSupport", "type": "ind.distance", "params": { "unit": "percent" } },
+    { "id": "closeEnough", "type": "cond.compare", "params": { "op": "lt", "value": "0.3" } },
+    { "id": "aboveSupport", "type": "cond.compare", "params": { "op": "gt" } },
+    { "id": "held", "type": "cond.holdFor", "params": { "bars": { "$param": "holdBars" } } },
+    { "id": "setup", "type": "cond.all" },
+    { "id": "buy", "type": "act.order", "params": { "side": "buy", "orderType": "market", "sizing": { "mode": "fixed", "value": { "$param": "size" } }, "onlyWhenFlat": true } },
+    { "id": "protect", "type": "risk.exit", "params": {
+        "stop": { "anchor": "level", "offset": { "unit": "atr", "value": { "$param": "bufferAtr" } } },
+        "target": { "unit": "level", "value": "0" },
+        "trail": { "enabled": false, "afterR": "1", "to": "breakeven", "value": "0" } } }
+  ],
+  "edges": [
+    { "from": "bars:bars", "to": "range:bars" },
+    { "from": "bars:bars", "to": "atr:bars" },
+    { "from": "bars:close", "to": "nearSupport:value" },
+    { "from": "range:low", "to": "nearSupport:reference" },
+    { "from": "nearSupport:value", "to": "closeEnough:a" },
+    { "from": "bars:close", "to": "aboveSupport:a" },
+    { "from": "range:low", "to": "aboveSupport:b" },
+    { "from": "aboveSupport:out", "to": "held:in" },
+    { "from": "closeEnough:out", "to": "setup:a" },
+    { "from": "held:out", "to": "setup:b" },
+    { "from": "setup:out", "to": "buy:trigger" },
+    { "from": "buy:position", "to": "protect:position" },
+    { "from": "range:low", "to": "protect:stopLevel" },
+    { "from": "range:mid", "to": "protect:targetLevel" },
+    { "from": "atr:value", "to": "protect:atr" }
+  ],
+  "phases": [
+    { "id": "entry", "name": "Entry", "nodes": ["closeEnough", "aboveSupport", "held", "setup"], "initial": true },
+    { "id": "manage", "name": "In position", "nodes": [] }
+  ],
+  "transitions": [
+    { "from": "entry", "to": "manage", "on": "buy:filled" },
+    { "from": "manage", "to": "entry", "on": "protect:closed" }
+  ],
+  "repeat": { "enabled": true }
+}

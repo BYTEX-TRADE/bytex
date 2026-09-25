@@ -1,0 +1,17 @@
+{
+  "engine": { "runId": "document-ema-cross", "kernel": { "traderId": "BACKTESTER-001" } },
+  "venues": [
+    { "venue": "SIM", "accountType": "cash", "startingBalances": ["1000000 USDT", "10 BTC"] }
+  ],
+  "data": [
+    { "catalogPath": "./catalog", "dataKind": "bars", "barType": "BTCUSDT.SIM-1-MINUTE-LAST-EXTERNAL" }
+  ],
+  "strategies": [
+    {
+      "providerId": "bytex.document",
+      "name": "EMA cross (document)",
+      "payload": { "documentPath": "./documents/ema-cross.json", "strategyId": "EmaCrossDoc-001", "parameterOverrides": { "fast": 8, "slow": 34 } }
+    }
+  ],
+  "outputDirectory": "./reports"
+}

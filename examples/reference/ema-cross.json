@@ -1,0 +1,26 @@
+{
+  "name": "ema-cross",
+  "description": "The shipped EMA-cross example over three thousand one-minute bars of the seeded random walk every test in this repository uses. The trend-following case: many small trades, most of them losing, and the fees they pay are most of the difference.",
+  "document": "ema-cross",
+  "bars": 3000,
+  "seed": 7,
+  "startPrice": "50000",
+  "startingBalances": [
+    "1000000 USDT",
+    "10 BTC"
+  ],
+  "currency": "USDT",
+  "expect": {
+    "fills": 157,
+    "positions": 51,
+    "closedPositions": 50,
+    "endingBalance": "971765.94944096",
+    "realizedPnl": "-1030.30555904",
+    "commissions": "2571.30349514",
+    "maxDrawdown": "1751.30434184",
+    "simulation": [
+      "bookDepth",
+      "partialFills"
+    ]
+  }
+}

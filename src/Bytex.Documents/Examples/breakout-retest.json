@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0",
+  "id": "example-breakout-retest",
+  "name": "Breakout retest",
+  "description": "Buys when the close breaks above the 20-bar range with RSI below 70, protects the position with a stop below the range low, targets 2R, and trails to breakeven after 1R.",
+  "metadata": { "template": true, "tags": ["breakout", "example"], "createdWith": "bytex/0.1.0", "difficulty": "simple", "runMode": "constant", "marketRegime": "trending" },
+  "instruments": [ { "ref": "primary", "instrumentId": "BTCUSDT.SIM" } ],
+  "barTypes": [ { "ref": "main", "instrument": "primary", "step": 1, "aggregation": "minute", "priceType": "last", "source": "external" } ],
+  "parameters": [
+    { "name": "lookback", "type": "int", "label": "Range lookback (bars)", "value": "20", "min": "5", "max": "200", "step": "1" },
+    { "name": "atrMult", "type": "decimal", "label": "Stop distance (ATR)", "value": "1.5", "min": "0.5", "max": "5", "step": "0.25" },
+    { "name": "rsiCap", "type": "decimal", "label": "RSI cap", "value": "70", "min": "50", "max": "90", "step": "1" },
+    { "name": "riskPct", "type": "decimal", "label": "Risk per trade (%)", "value": "1", "min": "0.1", "max": "5", "step": "0.1" }
+  ],
+  "nodes": [
+    { "id": "bars", "type": "data.bars", "params": { "barType": "main" } },
+    { "id": "range", "type": "level.range", "params": { "lookback": { "$param": "lookback" }, "excludeCurrent": true } },
+    { "id": "atr", "type": "ind.atr", "params": { "period": 14 } },
+    { "id": "rsi", "type": "ind.rsi", "params": { "period": 14 } },
+    { "id": "breakout", "type": "cond.cross", "params": { "direction": "above", "confirm": "barClose" } },
+    { "id": "rsiOk", "type": "cond.compare", "params": { "op": "lt", "value": { "$param": "rsiCap" } } },
+    { "id": "entry", "type": "cond.all" },
+    { "id": "buy", "type": "act.order", "params": { "side": "buy", "orderType": "market", "sizing": { "mode": "riskPercent", "value": { "$param": "riskPct" } }, "onlyWhenFlat": true } },
+    { "id": "protect", "type": "risk.exit", "params": {
+        "stop": { "anchor": "level", "offset": { "unit": "atr", "value": { "$param": "atrMult" } } },
+        "target": { "unit": "r", "value": "2" },
+        "trail": { "enabled": true, "afterR": "1", "to": "breakeven", "value": "0" },
+        "timeStopBars": 0 } }
+  ],
+  "edges": [
+    { "from": "bars:bars", "to": "range:bars" },
+    { "from": "bars:bars", "to": "atr:bars" },
+    { "from": "bars:bars", "to": "rsi:bars" },
+    { "from": "bars:close", "to": "breakout:value" },
+    { "from": "range:high", "to": "breakout:reference" },
+    { "from": "rsi:value", "to": "rsiOk:a" },
+    { "from": "breakout:out", "to": "entry:a" },
+    { "from": "rsiOk:out", "to": "entry:b" },
+    { "from": "entry:out", "to": "buy:trigger" },
+    { "from": "range:low", "to": "buy:stop" },
+    { "from": "atr:value", "to": "buy:atr" },
+    { "from": "buy:position", "to": "protect:position" },
+    { "from": "range:low", "to": "protect:stopLevel" },
+    { "from": "atr:value", "to": "protect:atr" }
+  ],
+  "phases": [
+    { "id": "entry", "name": "Entry", "nodes": ["breakout", "rsiOk", "entry"], "initial": true },
+    { "id": "manage", "name": "In position", "nodes": [] }
+  ],
+  "transitions": [
+    { "from": "entry", "to": "manage", "on": "buy:filled" },
+    { "from": "manage", "to": "entry", "on": "protect:closed" }
+  ],
+  "repeat": { "enabled": true },
+  "modes": { "live": { "allowAiAnnotationConditions": false } }
+}

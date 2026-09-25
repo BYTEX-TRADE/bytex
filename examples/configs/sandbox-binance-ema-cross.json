@@ -1,0 +1,47 @@
+{
+  "kernel": {
+    "traderId": "SANDBOX-001",
+    "environment": "sandbox",
+    "loadState": false,
+    "saveState": false
+  },
+  "dataClients": [
+    {
+      "factory": "BINANCE",
+      "clientId": "BINANCE",
+      "config": {
+        "accountType": "spot",
+        "instrumentProvider": { "loadIds": ["BTCUSDT.BINANCE"] }
+      }
+    }
+  ],
+  "executionClients": [
+    {
+      "factory": "SANDBOX",
+      "clientId": "BINANCE-SANDBOX",
+      "config": {
+        "venue": "BINANCE",
+        "accountType": "cash",
+        "startingBalances": ["100000 USDT", "1 BTC"]
+      }
+    }
+  ],
+  "strategies": [
+    {
+      "providerId": "bytex.importable",
+      "name": "Bytex.Examples.Strategies.EmaCross",
+      "payload": {
+        "strategyId": "EmaCross-001",
+        "instrumentId": "BTCUSDT.BINANCE",
+        "barType": "BTCUSDT.BINANCE-1-MINUTE-LAST-INTERNAL",
+        "fastPeriod": 5,
+        "slowPeriod": 13,
+        "tradeSize": 0.01
+      }
+    }
+  ],
+  "reconcileOnStart": false,
+  "cancelOrdersOnStop": true,
+  "closePositionsOnStop": false,
+  "heartbeatInterval": "00:01:00"
+}
