@@ -45,8 +45,7 @@ public sealed class ShippedArtifactsTests
         Assert.NotEmpty(released);
 
         // A row like "| **0.3** ✅ |" in the README, or a heading like "## 0.3 · Risk ✅" in the roadmap.
-        Regex ticked = new(@"(?:\|\s*\*\*|##\s*)(\d+\.\d+)(?:\*\*)?[^|
-]*✅", RegexOptions.Multiline, TimeSpan.FromSeconds(1));
+        Regex ticked = new(@"(?:\|\s*\*\*|##\s*)(\d+\.\d+)(?:\*\*)?[^|\r\n]*✅", RegexOptions.Multiline, TimeSpan.FromSeconds(1));
         foreach ((string path, string text) in DocumentsAndTheReadme())
         {
             foreach (Match milestone in ticked.Matches(text))
