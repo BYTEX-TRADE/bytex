@@ -113,6 +113,33 @@ public sealed class AdapterParityTests
                 ["GeneratePositionStatusReportsAsync"] = Parity.Own,
             },
 
+            // OKX brings three markets through ONE client, where KuCoin's two markets need two: its endpoints are
+            // shared and an instType parameter selects the market, so there is no second client for this table to
+            // miss. What it cannot do is cancel-all - the venue has no such endpoint for these markets - so that
+            // row is Own rather than Base: the open orders are read and cancelled in batches, which is work the
+            // base's loop over single cancels would do one request at a time.
+            ["Okx"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubmitOrderAsync"] = Parity.Own,
+                ["SubmitOrderListAsync"] = Parity.Base,
+                ["ModifyOrderAsync"] = Parity.Own,
+                ["CancelOrderAsync"] = Parity.Own,
+                ["CancelAllOrdersAsync"] = Parity.Own,
+                ["BatchCancelOrdersAsync"] = Parity.Base,
+
+                // As Bybit and KuCoin: answered by the base out of this venue's own order report, which is
+                // implemented below.
+                ["QueryOrderAsync"] = Parity.Base,
+
+                ["GenerateMassStatusAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportsAsync"] = Parity.Own,
+                ["GenerateFillReportsAsync"] = Parity.Own,
+                ["GeneratePositionStatusReportsAsync"] = Parity.Own,
+            },
+
             // Tardis is a history source. There is nothing to trade on and no execution client to trade with, which
             // is why every command is None rather than Silent - it cannot be asked at all.
             ["Tardis"] = new(StringComparer.Ordinal)
@@ -159,6 +186,14 @@ public sealed class AdapterParityTests
                 ["RequestAsync"] = Parity.Own,
                 ["UnsubscribeAsync"] = Parity.Own,
             },
+            ["Okx"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubscribeAsync"] = Parity.Own,
+                ["UnsubscribeAsync"] = Parity.Own,
+                ["RequestAsync"] = Parity.Own,
+            },
             ["Tardis"] = new(StringComparer.Ordinal)
             {
                 // There is no socket to open, so the base's bookkeeping - mark connected, tell the sink - is the
@@ -193,6 +228,12 @@ public sealed class AdapterParityTests
                 ["LoadAsync"] = Parity.Own,
             },
             ["Kucoin"] = new(StringComparer.Ordinal)
+            {
+                ["LoadAllAsync"] = Parity.Own,
+                ["LoadIdsAsync"] = Parity.Base,
+                ["LoadAsync"] = Parity.Own,
+            },
+            ["Okx"] = new(StringComparer.Ordinal)
             {
                 ["LoadAllAsync"] = Parity.Own,
                 ["LoadIdsAsync"] = Parity.Base,
@@ -501,6 +542,32 @@ public sealed class AdapterParityTests
             // Unclaimed and not NotApplicable, because it does apply: every trade routed here earns a rebate that
             // nobody is collecting. It is not Missing either - the venue trades correctly and shipping it was not
             // a mistake.
+            ["BrokerProgramme"] = Owed.Unclaimed,
+        },
+        ["Okx"] = new(StringComparer.Ordinal)
+        {
+            ["HistoryBars"] = Owed.Has,
+
+            // Owed by the swap family and answered for it. Spot pays no funding and neither do the dated futures -
+            // a contract that delivers converges by delivering - so this is a venue-level row that one of three
+            // families makes true.
+            ["HistoryFunding"] = Owed.Has,
+
+            ["VerifyKeys"] = Owed.Has,
+            ["Declaration"] = Owed.Has,
+
+            // Nothing here carries an id, on the same default-no-op terms as KuCoin: a configured id is ignored, so
+            // nothing above the adapter has to know which venues have a programme.
+            ["BrokerTag"] = Owed.NotApplicable,
+
+            // The venue runs a broker programme and publishes its mechanism ONLY TO APPROVED APPLICANTS. What an
+            // order would have to carry - a tag, a header, a credential - is not in the public documentation at
+            // all, so nothing can be built before somebody applies: this is not adapter work waiting to be
+            // scheduled, it waits on a decision.
+            //
+            // Unclaimed and not NotApplicable, because it does apply: every trade routed here earns a rebate that
+            // nobody is collecting. Not Missing either - the venue trades correctly and shipping it is not a
+            // mistake.
             ["BrokerProgramme"] = Owed.Unclaimed,
         },
         ["Tardis"] = new(StringComparer.Ordinal)

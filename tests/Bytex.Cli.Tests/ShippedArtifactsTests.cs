@@ -14,7 +14,8 @@ public sealed class ShippedArtifactsTests
     private static readonly string[] _packageProjects =
     [
         "Bytex.Core", "Bytex.Indicators", "Bytex.Documents", "Bytex.Data", "Bytex.Backtest", "Bytex.Live",
-        "Bytex.Adapters.Binance", "Bytex.Adapters.Bybit", "Bytex.Adapters.Kucoin", "Bytex.Adapters.Tardis",
+        "Bytex.Adapters.Binance", "Bytex.Adapters.Bybit", "Bytex.Adapters.Kucoin", "Bytex.Adapters.Okx",
+        "Bytex.Adapters.Tardis",
         "Bytex.Persistence.Redis", "Bytex.Cli",
     ];
 
@@ -45,8 +46,15 @@ public sealed class ShippedArtifactsTests
         Assert.NotEmpty(released);
 
         // A row like "| **0.3** ✅ |" in the README, or a heading like "## 0.3 · Risk ✅" in the roadmap.
-        Regex ticked = new(@"(?:\|\s*\*\*|##\s*)(\d+\.\d+)(?:\*\*)?[^|
-]*✅", RegexOptions.Multiline, TimeSpan.FromSeconds(1));
+        //
+        // The two line endings are ESCAPED rather than written as a real line break inside the pattern, which is
+        // how this read until a fifth adapter had to be added to the list above. A real break made what the
+        // character class excludes a property of the file's BYTES: anything that renormalised the file - which is
+        // what this repository's own .gitattributes does to it the moment it is committed - dropped the carriage
+        // return out of the class and left a regex that still compiled, still matched, and would have accepted a
+        // version heading with a stray carriage return in it. Escaped, it says what it means whatever the file's
+        // line endings are, and the file can be edited.
+        Regex ticked = new(@"(?:\|\s*\*\*|##\s*)(\d+\.\d+)(?:\*\*)?[^|\r\n]*✅", RegexOptions.Multiline, TimeSpan.FromSeconds(1));
         foreach ((string path, string text) in DocumentsAndTheReadme())
         {
             foreach (Match milestone in ticked.Matches(text))

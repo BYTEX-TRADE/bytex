@@ -6,6 +6,7 @@ using System.Text.Json;
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
 using Bytex.Adapters.Kucoin;
+using Bytex.Adapters.Okx;
 using Bytex.Live.Network;
 using Microsoft.Extensions.Logging;
 
@@ -30,8 +31,8 @@ internal static class KeyCommands
 
     public static Command Build(Option<string> logLevel)
     {
-        Option<string> venue = new("--venue") { Description = "BINANCE | BYBIT | KUCOIN", Required = true };
-        Option<string> envFile = new("--env-file") { Description = "File with KEY=VALUE lines (for example BYBIT_API_KEY=...; KuCoin also needs KUCOIN_API_PASSPHRASE)", Required = true };
+        Option<string> venue = new("--venue") { Description = "BINANCE | BYBIT | KUCOIN | OKX", Required = true };
+        Option<string> envFile = new("--env-file") { Description = "File with KEY=VALUE lines (for example BYBIT_API_KEY=...; KuCoin and OKX also need a passphrase)", Required = true };
         Option<bool> json = new("--json") { Description = "Print the result as JSON and nothing else on standard output" };
         Option<string?> baseUrl = new("--base-url") { Description = "Override the venue's REST address (a proxy or a test venue)" };
         Option<double> timeout = new("--timeout") { Description = "Seconds the whole check may take before it is reported as unreachable; 0 waits for as long as the venue takes", DefaultValueFactory = _ => 30 };
@@ -74,8 +75,13 @@ internal static class KeyCommands
                         RequireKey(KucoinVenue.EnvApiPassphrase, KucoinVenue.EnvApiPassphrase);
                         await VerifyKucoinAsync(parseResult.GetValue(baseUrl), loggerFactory, report, limit.Token).ConfigureAwait(false);
                         break;
+                    case "OKX":
+                        RequireKey(OkxVenue.EnvApiKey, OkxVenue.EnvApiSecret);
+                        RequireKey(OkxVenue.EnvApiPassphrase, OkxVenue.EnvApiPassphrase);
+                        await VerifyOkxAsync(parseResult.GetValue(baseUrl), loggerFactory, report, limit.Token).ConfigureAwait(false);
+                        break;
                     default:
-                        report.Fail("venue", new Failure("venue_unknown", null, null, "expected BINANCE, BYBIT or KUCOIN"));
+                        report.Fail("venue", new Failure("venue_unknown", null, null, "expected BINANCE, BYBIT, KUCOIN or OKX"));
                         break;
                 }
             }
@@ -365,6 +371,70 @@ internal static class KeyCommands
         }
     }
 
+    /// <summary>
+    /// OKX: the key's own record says what it may do and where it may be used, and the account is then read to prove
+    /// the key works on it.
+    /// <para>
+    /// One report for the whole venue and not one per market, which is this venue's own doing: it has one unified
+    /// account covering spot, perpetuals and dated futures, and it publishes one permission list for all three. So a
+    /// key that may trade may trade all three markets, and this report says so rather than inventing a distinction
+    /// the venue does not make.
+    /// </para>
+    /// </summary>
+    private static async Task VerifyOkxAsync(string? baseUrl, ILoggerFactory loggerFactory, Report report, CancellationToken ct)
+    {
+        using OkxHttp http = new(new OkxDataClientConfig { BaseUrlHttp = baseUrl }, loggerFactory.CreateLogger("okx"), requireCredentials: true);
+        JsonElement config = First(await http.GetSignedAsync("/api/v5/account/config", null, ct).ConfigureAwait(false));
+
+        report.KeyAccepted = true;
+        report.Checks.Add(new Check("ok", "auth", $"key for account {Mask(Field(config, "uid"))}, account level {Field(config, "acctLv")}"));
+
+        // The venue's permission word for the whole key: "read_only" or "trade", optionally with more beside it.
+        string[] permissions = Field(config, "perm")
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+        bool canTrade = permissions.Contains("trade", StringComparer.OrdinalIgnoreCase);
+        bool canWithdraw = permissions.Any(p => p.Contains("withdraw", StringComparison.OrdinalIgnoreCase));
+        report.CanTrade = canTrade;
+        report.Spot = canTrade;
+        report.Futures = canTrade;
+        report.CanWithdraw = canWithdraw;
+        report.Checks.Add(new Check("ok", "permissions", (canTrade ? "trade" : "read-only") + (permissions.Length > 0 ? " · " + string.Join(", ", permissions) : string.Empty)));
+        report.Checks.Add(new Check(canWithdraw ? "warn" : "ok", "withdraw", canWithdraw ? "withdrawal permission PRESENT; create a key without it" : "withdrawal permission absent"));
+
+        string ips = Field(config, "ip");
+        bool restricted = ips.Length > 0;
+        report.IpRestricted = restricted;
+        report.Checks.Add(new Check(restricted ? "ok" : "warn", "ip-allow-list", restricted ? ips : "no IP restriction; restrict the key to this machine"));
+
+        // Which side of a netting account a strategy will trade on. Not a permission and not a failure, but the one
+        // account setting that changes what an order has to carry: in long/short mode the venue demands a position
+        // side on every derivative order, and this adapter sends none - so a node would be refused, and a report
+        // that stayed silent about it would be green in front of a node that cannot place an order.
+        string positionMode = Field(config, "posMode");
+        bool netMode = positionMode.Length == 0 || positionMode.Equals("net_mode", StringComparison.OrdinalIgnoreCase);
+        report.Checks.Add(new Check(
+            netMode ? "ok" : "warn",
+            "position-mode",
+            netMode
+                ? "net mode, which is what this engine trades"
+                : $"{positionMode}: derivative orders need a position side this engine does not send. Switch the account to net mode."));
+
+        try
+        {
+            await http.GetSignedAsync("/api/v5/account/balance", null, ct).ConfigureAwait(false);
+            report.Checks.Add(new Check("ok", "account", "unified account readable"));
+        }
+        catch (OkxApiException e)
+        {
+            report.Checks.Add(new Check("warn", "account", "balance query returned " + e.Code + ": " + e.Msg));
+        }
+    }
+
+    /// <summary>The first row of an OKX answer, which is an array even where exactly one row can ever come back.</summary>
+    private static JsonElement First(JsonElement data) =>
+        data.ValueKind == JsonValueKind.Array && data.GetArrayLength() > 0 ? data[0] : data;
+
     private static string Field(JsonElement e, string name) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out JsonElement p)
         ? p.ValueKind == JsonValueKind.String ? p.GetString() ?? string.Empty : p.ValueKind == JsonValueKind.Number ? p.GetRawText() : string.Empty
         : string.Empty;
@@ -381,6 +451,8 @@ internal static class KeyCommands
                 return new Failure(BybitCode(bybit.Code) ?? "venue_error", null, bybit.Code.ToString(CultureInfo.InvariantCulture), e.Message);
             case KucoinApiException kucoin:
                 return new Failure(KucoinCode(kucoin.Code) ?? (kucoin.HttpStatus is (int)HttpStatusCode.TooManyRequests ? "rate_limited" : "venue_error"), kucoin.HttpStatus == 200 ? null : kucoin.HttpStatus, kucoin.Code, e.Message);
+            case OkxApiException okx:
+                return new Failure(OkxCode(okx.Code) ?? (okx.HttpStatus is (int)HttpStatusCode.TooManyRequests ? "rate_limited" : "venue_error"), okx.HttpStatus == 200 ? null : okx.HttpStatus, okx.Code, e.Message);
             case VenueHttpException http:
                 return ClassifyHttp(http);
             case HttpRequestException or OperationCanceledException or TimeoutException or AuthenticationException or System.Net.Sockets.SocketException:
@@ -463,6 +535,31 @@ internal static class KeyCommands
         "403000" => "geo_blocked",
         "429000" => "rate_limited",
         "1015" => "rate_limited",
+        _ => null,
+    };
+
+    /// <summary>
+    /// OKX's refusals, in the terms this report speaks. Two of these were measured against the live venue with no
+    /// key and with a made-up one - 50103 for a missing key header and 50111 for a key it does not know - and the
+    /// rest come from the venue's own list, because it checks the key before anything else and will not say what it
+    /// thinks of a signature or a passphrase until a real key is presented.
+    /// </summary>
+    private static string? OkxCode(string code) => code switch
+    {
+        // Measured: a request with no key header at all, and one with a key the venue does not have.
+        "50103" or "50111" => "bad_key",
+
+        "50113" => "bad_signature",
+        "50104" or "50105" => "bad_key",
+        "50102" => "clock_skew",
+        "50110" => "ip_not_allowed",
+        "50100" or "50114" => "permission_denied",
+
+        // The one refusal that is neither the key nor the account: a live key sent to the demo account, or the other
+        // way round. Worth its own word, because the key is perfectly good and nothing about it needs changing.
+        "50101" => "wrong_environment",
+
+        "50011" or "50061" => "rate_limited",
         _ => null,
     };
 
