@@ -24,8 +24,12 @@ namespace Bytex.Adapters.Tests;
 //   KUCOIN   spot          {"code":"900001",...}                          throws
 //   KUCOIN   futures       {"code":"404000",...}                          throws
 //
-// Six combinations, four behaviours, and BOTH multi-family venues disagree with themselves. A host cannot write one
-// piece of code against that, so it writes six, or it writes one and breaks on the families it did not try - which
+// That was six combinations and four behaviours, with BOTH multi-family venues disagreeing with themselves. The
+// table below has grown to 18 families across 8 venues as the 0.7 venues landed, and every one of them is
+// held to the same two rules - so the measurements above are the ORIGINAL finding rather than the whole list.
+//
+// A host cannot write one piece of code against behaviour like that, so it writes six, or it writes one and
+// breaks on the families it did not try - which
 // is what happened: a person typing BTC where KuCoin's futures market says XBT got an HTTP 500 carrying the raw
 // string "KuCoin error 404000", and the only way to stop it was for the caller to hold that number itself. Nothing
 // above an adapter should know a venue's error codes; that is what adapters are for.

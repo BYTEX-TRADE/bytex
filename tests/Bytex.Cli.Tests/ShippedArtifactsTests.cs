@@ -274,7 +274,15 @@ public sealed class ShippedArtifactsTests
     private static readonly string[] _knownProviders = ["bytex.importable", "bytex.document"];
     private static readonly string[] _knownDataKinds = ["bars", "quotes", "trades", "deltas"];
     private static readonly string[] _knownEnvironments = ["backtest", "sandbox", "live"];
-    private static readonly string[] _knownFactories = ["BINANCE", "BYBIT", "KRAKEN", "KUCOIN", "TARDIS", "SANDBOX"];
+    /// <summary>
+    /// Every factory an example configuration may name. All eight venues, because five arrived at once and only one
+    /// of them was added here - so the first example naming any of the other four would have failed a test about
+    /// something else entirely, with a message about an unknown factory rather than a missing entry in this list.
+    /// </summary>
+    private static readonly string[] _knownFactories =
+    [
+        "BINANCE", "BITGET", "BYBIT", "GATE", "HYPERLIQUID", "KRAKEN", "KUCOIN", "OKX", "TARDIS", "SANDBOX",
+    ];
 
     public static TheoryData<string> ExampleConfigs()
     {
