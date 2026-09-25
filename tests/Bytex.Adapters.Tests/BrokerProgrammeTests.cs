@@ -1,6 +1,7 @@
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Gate;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Tests.Support;
 using Bytex.Core.Adapters;
@@ -42,6 +43,11 @@ public sealed class BrokerProgrammeTests
 
         ("Bybit", BrokerProgramme.Carried),
         ("Kucoin", BrokerProgramme.NotCarried),
+
+        // Gate runs an API broker programme and discloses its mechanism only to approved applicants: the programme
+        // page names an additional channel id and the API reference never mentions it, so there is nothing to carry
+        // until somebody applies. That is a different "no" from KuCoin's, whose mechanism IS published.
+        ("Gate", BrokerProgramme.MechanismUndisclosed),
     ];
 
     private static VenueDescriptor Describe(string venue) => venue switch
@@ -50,6 +56,7 @@ public sealed class BrokerProgrammeTests
         "Bitget" => new BitgetPlugin().Describe(),
         "Bybit" => new BybitPlugin().Describe(),
         "Kucoin" => new KucoinPlugin().Describe(),
+        "Gate" => new GatePlugin().Describe(),
         _ => throw new ArgumentOutOfRangeException(nameof(venue), venue, "not a declared venue"),
     };
 

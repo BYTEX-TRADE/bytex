@@ -1,6 +1,7 @@
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Gate;
 using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Okx;
@@ -84,6 +85,9 @@ public sealed class InstrumentNotFoundParityTests
         // answers with every contract it lists. That is Binance's USD-margined defect on a second venue.
         "Kraken.spot",
         "Kraken.futures",
+        "Gate.spot",
+        "Gate.futures",
+        "Gate.delivery",
     ];
 
 private static (string Method, string Path, int Status, string Body) NotFound(string family) => family switch
@@ -133,6 +137,15 @@ private static (string Method, string Path, int Status, string Body) NotFound(st
         // "load this one instrument" is a request for the venue unless the adapter keeps only the one it asked for.
         "Kraken.futures" => ("GET", "/derivatives/api/v3/instruments", 200, KrakenPayloads.Instruments),
 
+        // HTTP 400 with a LABEL rather than a number, and spot needs two of them: a well-formed but unlisted pair
+        // is INVALID_CURRENCY, while a pair written without this venue's underscore is INVALID_CURRENCY_PAIR. The
+        // second is the likeliest mistake here, because it is how every other venue spells the same pair.
+        "Gate.spot" => ("GET", "/api/v4/spot/currency_pairs/NOTACOIN_USDT", 400, """{"label":"INVALID_CURRENCY","message":"Invalid currency NOTACOIN"}"""),
+
+        // Both derivative markets answer the same label and send no message at all with it, which is worth
+        // recording: a client that reported the message would report an empty string.
+        "Gate.futures" => ("GET", "/api/v4/futures/usdt/contracts/NOTACOIN_USDT", 400, """{"label":"CONTRACT_NOT_FOUND"}"""),
+        "Gate.delivery" => ("GET", "/api/v4/delivery/usdt/contracts/NOTACOIN_USDT_20261009", 400, """{"label":"CONTRACT_NOT_FOUND"}"""),
         _ => throw new InvalidOperationException(
             $"{family} ships a catalog and there is no recorded answer here for an instrument it does not list. Add "
             + "what the LIVE family really says - its sibling's answer is not it, as both of these venues prove."),
@@ -161,6 +174,10 @@ private static InstrumentId Unknown(string family) => InstrumentId.Parse(family 
         "Kraken.spot" => "NOTACOIN-USD.KRAKEN",
         "Kraken.futures" => "PF_NOTACOINUSD.KRAKEN",
 
+        // Gate names an instrument exactly as the venue does, underscore and all, so the id IS the raw symbol.
+        "Gate.spot" => "NOTACOIN_USDT.GATE",
+        "Gate.futures" => "NOTACOIN_USDT.GATE",
+        "Gate.delivery" => "NOTACOIN_USDT_20261009.GATE",
         _ => throw new InvalidOperationException(family),
     });
 
@@ -195,6 +212,12 @@ private static InstrumentProviderBase Provider(string family, LoopbackServer ser
             new KrakenHttp(new KrakenDataClientConfig { BaseUrlHttp = server.HttpBase })),
         "Kraken.futures" => new KrakenFuturesInstrumentProvider(
             new KrakenHttp(new KrakenDataClientConfig { ProductType = KrakenProductType.Futures, BaseUrlHttp = server.HttpBase })),
+        "Gate.spot" => new GateInstrumentProvider(
+            new GateHttp(new GateDataClientConfig { BaseUrlHttp = server.HttpBase })),
+        "Gate.futures" => new GateFuturesInstrumentProvider(
+            new GateHttp(new GateDataClientConfig { ProductType = GateProductType.Futures, BaseUrlHttp = server.HttpBase })),
+        "Gate.delivery" => new GateDeliveryInstrumentProvider(
+            new GateHttp(new GateDataClientConfig { ProductType = GateProductType.Delivery, BaseUrlHttp = server.HttpBase })),
         _ => throw new InvalidOperationException(family),
     };
 
@@ -260,6 +283,16 @@ public async Task Asking_a_family_for_an_instrument_it_does_not_list_leaves_the_
 
         // And the two sets are disjoint: a code cannot be both "your key version is wrong" and "no such symbol".
         Assert.Empty(KucoinVenue.ErrorsThatMeanNoSuchInstrument.Intersect(KucoinVenue.ErrorsThatAreNotTheKeyVersion, StringComparer.Ordinal));
+
+        // The same line on Gate, whose refusals are words rather than numbers. Nothing about the key, the clock, the
+        // rate limit or the address may be read as "no such instrument".
+        Assert.DoesNotContain("INVALID_KEY", GateVenue.ErrorsThatMeanNoSuchInstrument);
+        Assert.DoesNotContain("INVALID_SIGNATURE", GateVenue.ErrorsThatMeanNoSuchInstrument);
+        Assert.DoesNotContain("TOO_MANY_REQUESTS", GateVenue.ErrorsThatMeanNoSuchInstrument);
+        Assert.DoesNotContain("IP_FORBIDDEN", GateVenue.ErrorsThatMeanNoSuchInstrument);
+        Assert.Equal(
+            ["CONTRACT_NOT_FOUND", "INVALID_CURRENCY", "INVALID_CURRENCY_PAIR"],
+            GateVenue.ErrorsThatMeanNoSuchInstrument.Order(StringComparer.Ordinal).ToArray());
     }
 
     [Theory]

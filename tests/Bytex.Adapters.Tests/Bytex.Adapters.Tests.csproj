@@ -13,6 +13,7 @@
     <ProjectReference Include="../../src/Bytex.Adapters.Binance/Bytex.Adapters.Binance.csproj" />
     <ProjectReference Include="../../src/Bytex.Adapters.Bitget/Bytex.Adapters.Bitget.csproj" />
     <ProjectReference Include="../../src/Bytex.Adapters.Bybit/Bytex.Adapters.Bybit.csproj" />
+    <ProjectReference Include="../../src/Bytex.Adapters.Gate/Bytex.Adapters.Gate.csproj" />
     <ProjectReference Include="../../src/Bytex.Adapters.Kraken/Bytex.Adapters.Kraken.csproj" />
     <ProjectReference Include="../../src/Bytex.Adapters.Kucoin/Bytex.Adapters.Kucoin.csproj" />
     <ProjectReference Include="../../src/Bytex.Adapters.Okx/Bytex.Adapters.Okx.csproj" />

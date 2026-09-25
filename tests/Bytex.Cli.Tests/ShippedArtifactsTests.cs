@@ -14,8 +14,8 @@ public sealed class ShippedArtifactsTests
     private static readonly string[] _packageProjects =
     [
         "Bytex.Core", "Bytex.Indicators", "Bytex.Documents", "Bytex.Data", "Bytex.Backtest", "Bytex.Live",
-        "Bytex.Adapters.Binance", "Bytex.Adapters.Bitget", "Bytex.Adapters.Bybit", "Bytex.Adapters.Kraken",
-        "Bytex.Adapters.Kucoin", "Bytex.Adapters.Okx", "Bytex.Adapters.Tardis",
+        "Bytex.Adapters.Binance", "Bytex.Adapters.Bitget", "Bytex.Adapters.Bybit", "Bytex.Adapters.Gate",
+        "Bytex.Adapters.Kraken", "Bytex.Adapters.Kucoin", "Bytex.Adapters.Okx", "Bytex.Adapters.Tardis",
         "Bytex.Persistence.Redis", "Bytex.Cli",
     ];
 

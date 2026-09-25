@@ -18,6 +18,7 @@ dotnet add package Bytex.Data        # Parquet catalog and CSV loaders
 dotnet add package Bytex.Live        # live trading node, sandbox execution
 dotnet add package Bytex.Adapters.Binance
 dotnet add package Bytex.Adapters.Bybit
+dotnet add package Bytex.Adapters.Gate
 dotnet add package Bytex.Adapters.Kucoin
 dotnet add package Bytex.Adapters.Tardis
 dotnet add package Bytex.Persistence.Redis
@@ -59,6 +60,7 @@ variables and never log them:
 |---|---|
 | Binance | `BINANCE_API_KEY`, `BINANCE_API_SECRET` |
 | Bybit | `BYBIT_API_KEY`, `BYBIT_API_SECRET` |
+| Gate | `GATE_API_KEY`, `GATE_API_SECRET` |
 | Kraken | `KRAKEN_API_KEY`, `KRAKEN_API_SECRET` — but a spot key and a futures key are separate credentials in those same two variables, and neither works on the other platform |
 | KuCoin | `KUCOIN_API_KEY`, `KUCOIN_API_SECRET`, `KUCOIN_API_PASSPHRASE` (optional `KUCOIN_API_KEY_VERSION`) |
 | Tardis | `TARDIS_API_KEY` |

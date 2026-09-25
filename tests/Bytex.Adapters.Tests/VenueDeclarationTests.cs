@@ -3,6 +3,7 @@ using System.Text.Json;
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Gate;
 using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
 using Bytex.Adapters.Okx;
@@ -163,6 +164,11 @@ public sealed class VenueDeclarationTests
         // derived from this one rather than declared beside it.
         "Kraken" => (KrakenVenue.HttpBase((IKrakenSettings)config), KrakenVenue.WsBase((IKrakenSettings)config), null),
 
+        // Gate's three families differ in BOTH: spot answers on the general host and its own socket, and the two
+        // derivative markets on the derivatives host with a socket path per settled market. The address alone tells
+        // them apart, so there is no market selector to ask this venue for.
+        "Gate" => (GateVenue.HttpBase((IGateSettings)config), GateVenue.WsBase((IGateSettings)config), null),
+
         _ => throw new InvalidOperationException(
             $"{venue} declares itself and this test does not know how to ask it where it talks. Add it here - the "
             + "declaration is only worth having if something checks it against the adapter."),
@@ -213,6 +219,10 @@ public sealed class VenueDeclarationTests
         ("Bitget", "usdc-futures") => new Routes()
             .On("GET", BitgetInstrumentProvider.ContractsPath, BitgetPayloads.UsdcContracts)
             .On("GET", BitgetInstrumentProvider.PositionTiersPath, BitgetPayloads.BtcPerpPositionTiers),
+
+        ("Gate", "spot") => new Routes().On("GET", "/api/v4/spot/currency_pairs", GatePayloads.CurrencyPairs),
+        ("Gate", "futures") => new Routes().On("GET", "/api/v4/futures/usdt/contracts", GatePayloads.FuturesContracts),
+        ("Gate", "delivery") => new Routes().On("GET", "/api/v4/delivery/usdt/contracts", GatePayloads.DeliveryContracts),
 
         _ => throw new InvalidOperationException(
             $"{venue}'s {family} family declares the instrument classes it returns and there is no catalog fixture "
@@ -292,6 +302,22 @@ public sealed class VenueDeclarationTests
                 InstrumentProviderBase provider = c.ProductType == KrakenProductType.Futures
                     ? new KrakenFuturesInstrumentProvider(http)
                     : new KrakenInstrumentProvider(http);
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Gate":
+            {
+                GateDataClientConfig c = (GateDataClientConfig)config;
+                using GateHttp http = new(c);
+                InstrumentProviderBase provider = c.ProductType switch
+                {
+                    GateProductType.Futures => new GateFuturesInstrumentProvider(http),
+                    GateProductType.Delivery => new GateDeliveryInstrumentProvider(http),
+                    _ => new GateInstrumentProvider(http),
+                };
+
                 await provider.LoadAllAsync(CancellationToken.None);
                 instruments = provider.GetAll();
                 break;
