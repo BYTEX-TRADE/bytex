@@ -17,9 +17,13 @@ dotnet add package Bytex.Backtest    # backtesting
 dotnet add package Bytex.Data        # Parquet catalog and CSV loaders
 dotnet add package Bytex.Live        # live trading node, sandbox execution
 dotnet add package Bytex.Adapters.Binance
+dotnet add package Bytex.Adapters.Bitget
 dotnet add package Bytex.Adapters.Bybit
 dotnet add package Bytex.Adapters.Gate
+dotnet add package Bytex.Adapters.Hyperliquid
+dotnet add package Bytex.Adapters.Kraken
 dotnet add package Bytex.Adapters.Kucoin
+dotnet add package Bytex.Adapters.Okx
 dotnet add package Bytex.Adapters.Tardis
 dotnet add package Bytex.Persistence.Redis
 ```
@@ -59,8 +63,11 @@ variables and never log them:
 | Venue | Variables |
 |---|---|
 | Binance | `BINANCE_API_KEY`, `BINANCE_API_SECRET` |
+| Bitget | `BITGET_API_KEY`, `BITGET_API_SECRET`, `BITGET_API_PASSPHRASE` |
 | Bybit | `BYBIT_API_KEY`, `BYBIT_API_SECRET` |
 | Gate | `GATE_API_KEY`, `GATE_API_SECRET` |
+| Hyperliquid | `HYPERLIQUID_PRIVATE_KEY`, and optionally `HYPERLIQUID_ACCOUNT_ADDRESS` — this is a wallet key rather than an exchange-issued credential, so read that venue's page before holding one |
 | Kraken | `KRAKEN_API_KEY`, `KRAKEN_API_SECRET` — but a spot key and a futures key are separate credentials in those same two variables, and neither works on the other platform |
 | KuCoin | `KUCOIN_API_KEY`, `KUCOIN_API_SECRET`, `KUCOIN_API_PASSPHRASE` (optional `KUCOIN_API_KEY_VERSION`) |
+| OKX | `OKX_API_KEY`, `OKX_API_SECRET`, `OKX_API_PASSPHRASE` |
 | Tardis | `TARDIS_API_KEY` |
