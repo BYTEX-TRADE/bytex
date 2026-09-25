@@ -190,6 +190,16 @@ public sealed class VenueDeclarationTests
             "GET",
             "/v5/market/instruments-info",
             r => StubResponse.Json(r.Query("cursor") is null ? BybitPayloads.LinearInstrumentsPage1 : BybitPayloads.LinearInstrumentsPage2)),
+
+        // Two rows in one page, and both classes come out of the venue's contractType: the dated one is spelled
+        // BTCUSDZ26, with no dash anywhere, so a rule reading the class off the name would report two perpetuals.
+        ("Bybit", "inverse") => new Routes()
+            .On("GET", "/v5/market/instruments-info", BybitPayloads.InverseInstruments)
+            .On("GET", BybitVenue.RiskLimitPath, BybitPayloads.InverseRiskLimits),
+
+        // One class, and no risk-limit route beside it on purpose: this venue refuses that endpoint for the option
+        // category, and the provider is written not to ask.
+        ("Bybit", "option") => new Routes().On("GET", "/v5/market/instruments-info", BybitPayloads.OptionInstruments),
         ("Kucoin", "spot") => new Routes().On("GET", "/api/v2/symbols", KucoinPayloads.Symbols),
         ("Kucoin", "futures") => new Routes().On("GET", "/api/v1/contracts/active", KucoinPayloads.FuturesContracts),
 

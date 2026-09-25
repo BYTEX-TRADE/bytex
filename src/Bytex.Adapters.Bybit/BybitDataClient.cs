@@ -23,6 +23,12 @@ public sealed class BybitDataClient : DataClientBase
     private readonly HashSet<string> _topics = new(StringComparer.Ordinal);
     private readonly Dictionary<string, BarType> _klineTopics = new(StringComparer.Ordinal);
     private readonly Dictionary<InstrumentId, (decimal Bid, decimal Ask, decimal BidSize, decimal AskSize)> _bookTops = new();
+
+    /// <summary>
+    /// The options whose trades are subscribed. Kept because one option trade topic serves every contract on an
+    /// underlying, so dropping it when a single contract unsubscribes would stop the trades of all the others.
+    /// </summary>
+    private readonly HashSet<InstrumentId> _optionTradeSubscribers = new();
     private WebSocketClient? _ws;
 
     public BybitDataClient(ClientId clientId, BybitDataClientConfig config, KernelServices services)
@@ -112,12 +118,38 @@ public sealed class BybitDataClient : DataClientBase
 
                 return;
             case SubscribeQuoteTicks q:
-                AddTopic($"orderbook.1.{Raw(q.InstrumentId)}");
+                // Options take their top of book from the tickers topic, because this venue's orderbook.1 topic
+                // does not serve them: measured, the option socket accepts orderbook.1, lists it under
+                // successTopics and delivers nothing for it, while tickers carries bid, ask and both sizes.
+                AddTopic(_config.ProductType == BybitProductType.Option
+                    ? $"tickers.{Raw(q.InstrumentId)}"
+                    : $"orderbook.{BybitVenue.TopOfBookDepth}.{Raw(q.InstrumentId)}");
                 break;
+            case SubscribeTradeTicks t when _config.ProductType == BybitProductType.Option:
+                {
+                    // The option socket publishes trades PER UNDERLYING and not per contract: publicTrade.BTC
+                    // delivers every BTC option's trades, each row naming its own contract, while
+                    // publicTrade.<contract> is accepted, reported as a success and silent. So the subscription
+                    // names the underlying, which has to be known - it comes from the instrument and not from the
+                    // symbol's spelling.
+                    if (Underlying(t.InstrumentId) is not { } coin)
+                    {
+                        Sink.OnSubscriptionFailed(
+                            ClientId,
+                            command,
+                            $"{t.InstrumentId} is not loaded, so the underlying Bybit publishes its option trades under is unknown");
+                        return;
+                    }
+
+                    _optionTradeSubscribers.Add(t.InstrumentId);
+                    AddTopic($"publicTrade.{coin}");
+                    break;
+                }
+
             case SubscribeTradeTicks t:
                 AddTopic($"publicTrade.{Raw(t.InstrumentId)}");
                 break;
-            case SubscribeBars b when b.BarType.IsExternal:
+            case SubscribeBars b when b.BarType.IsExternal && BybitVenue.HasCandles(_config.ProductType):
                 {
                     string topic = $"kline.{BybitVenue.Interval(b.BarType.Spec)}.{Raw(b.BarType.InstrumentId)}";
                     _klineTopics[topic] = b.BarType;
@@ -126,11 +158,13 @@ public sealed class BybitDataClient : DataClientBase
                 }
 
             case SubscribeOrderBookDeltas d:
-                AddTopic($"orderbook.{(d.Depth <= 0 || d.Depth <= BybitVenue.SmallBookDepth ? BybitVenue.SmallBookDepth : BybitVenue.LargeBookDepth)}.{Raw(d.InstrumentId)}");
+                AddTopic($"orderbook.{BookDepth(d.Depth)}.{Raw(d.InstrumentId)}");
                 break;
-            case SubscribeMarkPrices m when _config.ProductType == BybitProductType.Linear:
-            case SubscribeIndexPrices when _config.ProductType == BybitProductType.Linear:
-            case SubscribeFundingRates when _config.ProductType == BybitProductType.Linear:
+            case SubscribeMarkPrices when _config.ProductType != BybitProductType.Spot:
+            case SubscribeIndexPrices when _config.ProductType != BybitProductType.Spot:
+                AddTopic($"tickers.{Raw(InstrumentOf(command))}");
+                break;
+            case SubscribeFundingRates when BybitVenue.PaysFunding(_config.ProductType):
                 AddTopic($"tickers.{Raw(InstrumentOf(command))}");
                 break;
             default:
@@ -138,6 +172,27 @@ public sealed class BybitDataClient : DataClientBase
                 break;
         }
     }
+
+    /// <summary>
+    /// Which of the venue's published book depths serves a requested one. The option socket publishes a different
+    /// pair from the other three families and silently ignores theirs, so the pair is chosen per family rather
+    /// than shared.
+    /// </summary>
+    private int BookDepth(int requested)
+    {
+        (int small, int large) = _config.ProductType == BybitProductType.Option
+            ? (BybitVenue.SmallOptionBookDepth, BybitVenue.LargeOptionBookDepth)
+            : (BybitVenue.SmallBookDepth, BybitVenue.LargeBookDepth);
+
+        return requested <= 0 || requested <= small ? small : large;
+    }
+
+    /// <summary>
+    /// The coin an option is written on, as the instrument states it - never read off the symbol. Null when this
+    /// client holds no such instrument, which is a question it cannot answer rather than one to guess at.
+    /// </summary>
+    private string? Underlying(InstrumentId id) =>
+        (_instruments.Find(id) ?? Services.Cache.Instrument(id))?.BaseCurrency?.Code;
 
     private static InstrumentId InstrumentOf(SubscribeCommand command) => command switch
     {
@@ -149,9 +204,16 @@ public sealed class BybitDataClient : DataClientBase
 
     public override Task UnsubscribeAsync(UnsubscribeCommand command, CancellationToken ct)
     {
+        if (command is UnsubscribeTradeTicks ut && _config.ProductType == BybitProductType.Option)
+        {
+            return UnsubscribeOptionTradesAsync(ut);
+        }
+
         string? topic = command switch
         {
-            UnsubscribeQuoteTicks q => $"orderbook.1.{Raw(q.InstrumentId)}",
+            UnsubscribeQuoteTicks q => _config.ProductType == BybitProductType.Option
+                ? $"tickers.{Raw(q.InstrumentId)}"
+                : $"orderbook.{BybitVenue.TopOfBookDepth}.{Raw(q.InstrumentId)}",
             UnsubscribeTradeTicks t => $"publicTrade.{Raw(t.InstrumentId)}",
             UnsubscribeBars b => $"kline.{BybitVenue.Interval(b.BarType.Spec)}.{Raw(b.BarType.InstrumentId)}",
             UnsubscribeMarkPrices m => $"tickers.{Raw(m.InstrumentId)}",
@@ -161,6 +223,32 @@ public sealed class BybitDataClient : DataClientBase
         if (topic is not null && _topics.Remove(topic))
         {
             _klineTopics.Remove(topic);
+            Send(new { op = "unsubscribe", args = new[] { topic } });
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Drops one option's trades, and the shared topic only when it was the last contract using it. This venue
+    /// publishes option trades per underlying, so the naive unsubscribe would have taken away the trades of every
+    /// other contract on the same coin - silently, while each of those subscriptions still looked alive.
+    /// </summary>
+    private Task UnsubscribeOptionTradesAsync(UnsubscribeTradeTicks command)
+    {
+        if (!_optionTradeSubscribers.Remove(command.InstrumentId) || Underlying(command.InstrumentId) is not { } coin)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (_optionTradeSubscribers.Any(id => Underlying(id) == coin))
+        {
+            return Task.CompletedTask;
+        }
+
+        string topic = $"publicTrade.{coin}";
+        if (_topics.Remove(topic))
+        {
             Send(new { op = "unsubscribe", args = new[] { topic } });
         }
 
@@ -201,7 +289,7 @@ public sealed class BybitDataClient : DataClientBase
             UnixNanos ts = root.Has("ts") ? root.Ms("ts") : Clock.Timestamp;
             string type = root.Str("type");
 
-            if (topic.StartsWith("orderbook.1.", StringComparison.Ordinal))
+            if (topic.StartsWith($"orderbook.{BybitVenue.TopOfBookDepth}.", StringComparison.Ordinal))
             {
                 HandleTopOfBook(data, ts, type == "snapshot");
             }
@@ -352,6 +440,11 @@ public sealed class BybitDataClient : DataClientBase
         }
 
         UnixNanos now = Clock.Timestamp;
+        if (_config.ProductType == BybitProductType.Option)
+        {
+            HandleOptionTopOfBook(instrument, d, ts, now);
+        }
+
         if (d.Has("markPrice"))
         {
             HandleData(new MarkPriceUpdate(instrument.Id, instrument.MakePrice(d.Dec("markPrice")), ts, now));
@@ -366,6 +459,47 @@ public sealed class BybitDataClient : DataClientBase
         {
             HandleData(new FundingRateUpdate(instrument.Id, d.Dec("fundingRate"), d.Has("nextFundingTime") ? d.Ms("nextFundingTime") : null, ts, now));
         }
+    }
+
+    /// <summary>
+    /// An option's top of book, which arrives on the tickers topic because this venue's orderbook.1 topic does not
+    /// serve options at all.
+    /// <para>
+    /// The field names are the option market's own - bidPrice and bidSize where the contract markets write
+    /// bid1Price and bid1Size - and a delta carries only what changed, so the side that did not change is carried
+    /// forward from the last one. A quote needs both sides, and a book with no bid or no ask is not a quote: these
+    /// contracts are illiquid enough that one-sided books are ordinary rather than exceptional.
+    /// </para>
+    /// </summary>
+    private void HandleOptionTopOfBook(Instrument instrument, JsonElement d, UnixNanos ts, UnixNanos now)
+    {
+        (decimal bid, decimal ask, decimal bidSize, decimal askSize) = _bookTops.GetValueOrDefault(instrument.Id);
+        if (d.Has("bidPrice"))
+        {
+            bid = d.Dec("bidPrice");
+            bidSize = d.Dec("bidSize");
+        }
+
+        if (d.Has("askPrice"))
+        {
+            ask = d.Dec("askPrice");
+            askSize = d.Dec("askSize");
+        }
+
+        _bookTops[instrument.Id] = (bid, ask, bidSize, askSize);
+        if (bid <= 0m || ask <= 0m)
+        {
+            return;
+        }
+
+        HandleData(new QuoteTick(
+            instrument.Id,
+            instrument.MakePrice(bid),
+            instrument.MakePrice(ask),
+            instrument.MakeQuantity(bidSize),
+            instrument.MakeQuantity(askSize),
+            ts,
+            now));
     }
 
     // ----- Historical requests -----

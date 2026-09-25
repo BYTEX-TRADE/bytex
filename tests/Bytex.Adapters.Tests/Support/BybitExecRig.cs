@@ -24,11 +24,11 @@ internal sealed class BybitExecRig : IAsyncDisposable
 
     public BybitExecRig(BybitProductType type, TriggerType defaultTrigger = TriggerType.LastPrice, string? brokerId = null, decimal? leverage = null, Microsoft.Extensions.Logging.ILoggerFactory? logs = null)
     {
-        Linear = type == BybitProductType.Linear;
-        Routes = new Routes().On("GET", "/v5/market/instruments-info", Linear ? BybitPayloads.LinearInstrumentsPage1.Replace("cursor-page-2", string.Empty, StringComparison.Ordinal) : BybitPayloads.SpotInstruments);
+        ProductType = type;
+        Routes = new Routes().On("GET", "/v5/market/instruments-info", Catalog(type));
         Server = new LoopbackServer(Routes.Handle);
         Kernel = new TestKernel(logs);
-        Instrument = Linear ? Perpetual() : Spot();
+        Instrument = InstrumentOf(type);
         Kernel.Kernel.Cache.AddInstrument(Instrument);
         Client = new BybitExecutionClient(new ClientId("BYBIT"), new BybitExecutionClientConfig
         {
@@ -49,7 +49,7 @@ internal sealed class BybitExecRig : IAsyncDisposable
 
     public static StrategyId Strategy { get; } = new("Probe-001");
 
-    public bool Linear { get; }
+    public BybitProductType ProductType { get; }
 
     public Routes Routes { get; }
 
@@ -65,7 +65,25 @@ internal sealed class BybitExecRig : IAsyncDisposable
 
     public OrderFactory Orders { get; }
 
-    public string Category => Linear ? "linear" : "spot";
+    public string Category => BybitVenue.Category(ProductType);
+
+    /// <summary>The contract data this venue answers for the family, in the shapes recorded from the live venue.</summary>
+    private static string Catalog(BybitProductType type) => type switch
+    {
+        BybitProductType.Linear => BybitPayloads.LinearInstrumentsPage1.Replace("cursor-page-2", string.Empty, StringComparison.Ordinal),
+        BybitProductType.Inverse => BybitPayloads.InverseInstruments,
+        BybitProductType.Option => BybitPayloads.OptionInstruments,
+        _ => BybitPayloads.SpotInstruments,
+    };
+
+    /// <summary>The one instrument the rig puts in the cache, matching the family the client is configured for.</summary>
+    private static Instrument InstrumentOf(BybitProductType type) => type switch
+    {
+        BybitProductType.Linear => Perpetual(),
+        BybitProductType.Inverse => InversePerpetual(),
+        BybitProductType.Option => Option(),
+        _ => Spot(),
+    };
 
     public Quantity Qty(decimal value) => Instrument.MakeQuantity(value);
 
@@ -103,6 +121,54 @@ internal sealed class BybitExecRig : IAsyncDisposable
         // Without it the leverage guard has no ceiling to check and a test of the guard proves nothing.
         MaxLeverage = 100m,
     });
+
+    /// <summary>
+    /// The BTCUSD inverse perpetual as this venue publishes it: quoted in USD, sized in whole USD contracts and
+    /// settled in BTC, with the ceiling and the margin the fixture's own leverageFilter and risk limits give.
+    /// </summary>
+    public static CryptoPerpetual InversePerpetual() => new(new InstrumentSpec
+    {
+        Id = InstrumentId.Parse("BTCUSD-PERP.BYBIT"),
+        RawSymbol = new Symbol("BTCUSD"),
+        AssetClass = AssetClass.Crypto,
+        InstrumentClass = InstrumentClass.Swap,
+        QuoteCurrency = Currencies.USD,
+        BaseCurrency = Currencies.BTC,
+        SettlementCurrency = Currencies.BTC,
+        IsInverse = true,
+        PricePrecision = 1,
+        SizePrecision = 0,
+        PriceIncrement = new Price(0.1m, 1),
+        SizeIncrement = new Quantity(1m, 0),
+        MarginInit = 0.01m,
+        MarginMaint = 0.005m,
+        MaxLeverage = 100m,
+    });
+
+    /// <summary>
+    /// One BTC put as this venue publishes it: a premium in USDT, a size in BTC, no margin and no ceiling - which
+    /// is what the venue says about an option rather than a gap in the fixture.
+    /// </summary>
+    public static OptionContract Option() => new(
+        new InstrumentSpec
+        {
+            Id = InstrumentId.Parse("BTC-25JUN27-106000-P-USDT.BYBIT"),
+            RawSymbol = new Symbol("BTC-25JUN27-106000-P-USDT"),
+            AssetClass = AssetClass.Crypto,
+            InstrumentClass = InstrumentClass.Option,
+            QuoteCurrency = Currencies.USDT,
+            BaseCurrency = Currencies.BTC,
+            SettlementCurrency = Currencies.USDT,
+            PricePrecision = 0,
+            SizePrecision = 2,
+            PriceIncrement = new Price(5m, 0),
+            SizeIncrement = new Quantity(0.01m, 2),
+        },
+        "BTC",
+        OptionKind.Put,
+        new Price(106_000m, 0),
+        UnixNanos.FromMilliseconds(1_789_950_000_000L),
+        UnixNanos.FromMilliseconds(1_813_910_400_000L));
 
     public Task SubmitAsync(Order order)
     {
