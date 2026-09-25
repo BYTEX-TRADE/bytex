@@ -1,6 +1,7 @@
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
 using Bytex.Adapters.Kucoin;
+using Bytex.Adapters.Okx;
 using Bytex.Adapters.Tests.Support;
 using Bytex.Core.Adapters;
 using Bytex.Core.Model.Identifiers;
@@ -63,6 +64,14 @@ public sealed class InstrumentNotFoundParityTests
         "Bybit.linear",
         "Kucoin.spot",
         "Kucoin.futures",
+
+        // Three families of one venue, and - unlike both of the multi-family venues above - all three answer this
+        // question identically: HTTP 200, code 51001, "Instrument ID ... doesn't exist.", measured on each. That is
+        // still three rows and not one, because a per-venue row is exactly how the Binance futures and Bybit linear
+        // families came to be declared covered by their siblings' answers.
+        "Okx.spot",
+        "Okx.swap",
+        "Okx.futures",
     ];
 
 private static (string Method, string Path, int Status, string Body) NotFound(string family) => family switch
@@ -90,6 +99,12 @@ private static (string Method, string Path, int Status, string Body) NotFound(st
         // HTTP 200 with the refusal in the body, which is why a caller checking the status learns nothing.
         "Kucoin.spot" => ("GET", "/api/v2/symbols/NOTACOIN-USDT", 200, """{"msg":"Trading pair NOTACOIN-USDT does not exist.","code":"900001"}"""),
         "Kucoin.futures" => ("GET", "/api/v1/contracts/NOTACOINUSDTM", 200, """{"msg":"The contract information you requested does not exist.","code":"404000"}"""),
+
+        // One endpoint and one answer for all three OKX markets, with HTTP 200 - so a caller checking the status
+        // learns nothing here either. Measured for each market in turn, and measured again for an id that exists in
+        // a DIFFERENT market: asked for the spot pair BTC-USDT under instType=SWAP, the venue gives this same
+        // refusal rather than the pair or its whole catalog.
+        "Okx.spot" or "Okx.swap" or "Okx.futures" => ("GET", "/api/v5/public/instruments", 200, """{"code":"51001","data":[],"msg":"Instrument ID, Instrument ID code, or Spread ID doesn't exist."}"""),
         _ => throw new InvalidOperationException(
             $"{family} ships a catalog and there is no recorded answer here for an instrument it does not list. Add "
             + "what the LIVE family really says - its sibling's answer is not it, as both of these venues prove."),
@@ -103,6 +118,12 @@ private static InstrumentId Unknown(string family) => InstrumentId.Parse(family 
         "Bybit.linear" => "NOTACOINUSDT-PERP.BYBIT",
         "Kucoin.spot" => "NOTACOIN-USDT.KUCOIN",
         "Kucoin.futures" => "NOTACOINUSDT-PERP.KUCOIN",
+
+        // The venue's own spellings, unchanged: this adapter adds no suffix and strips none, because OKX already
+        // distinguishes its three markets in the id itself.
+        "Okx.spot" => "NOTACOIN-USDT.OKX",
+        "Okx.swap" => "NOTACOIN-USDT-SWAP.OKX",
+        "Okx.futures" => "NOTACOIN-USD_UM-261030.OKX",
         _ => throw new InvalidOperationException(family),
     });
 
@@ -124,8 +145,17 @@ private static InstrumentProviderBase Provider(string family, LoopbackServer ser
             new KucoinHttp(new KucoinDataClientConfig { BaseUrlHttp = server.HttpBase })),
         "Kucoin.futures" => new KucoinFuturesInstrumentProvider(
             new KucoinHttp(new KucoinDataClientConfig { ProductType = KucoinProductType.Futures, BaseUrlHttp = server.HttpBase })),
+        "Okx.spot" => OkxProvider(server, OkxInstrumentType.Spot),
+        "Okx.swap" => OkxProvider(server, OkxInstrumentType.Swap),
+        "Okx.futures" => OkxProvider(server, OkxInstrumentType.Futures),
         _ => throw new InvalidOperationException(family),
     };
+
+    /// <summary>One provider per OKX market, all three from the same class: on this venue the market is a parameter.</summary>
+    private static InstrumentProviderBase OkxProvider(LoopbackServer server, OkxInstrumentType type) =>
+        new OkxInstrumentProvider(
+            new OkxHttp(new OkxDataClientConfig { InstrumentType = type, BaseUrlHttp = server.HttpBase }),
+            type);
 
     [Theory]
     [MemberData(nameof(Venues))]

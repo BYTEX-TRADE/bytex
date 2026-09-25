@@ -6,6 +6,7 @@
     <Project Path="src/Bytex.Adapters.Binance/Bytex.Adapters.Binance.csproj" />
     <Project Path="src/Bytex.Adapters.Bybit/Bytex.Adapters.Bybit.csproj" />
     <Project Path="src/Bytex.Adapters.Kucoin/Bytex.Adapters.Kucoin.csproj" />
+    <Project Path="src/Bytex.Adapters.Okx/Bytex.Adapters.Okx.csproj" />
     <Project Path="src/Bytex.Adapters.Tardis/Bytex.Adapters.Tardis.csproj" />
     <Project Path="src/Bytex.Backtest/Bytex.Backtest.csproj" />
     <Project Path="src/Bytex.Cli/Bytex.Cli.csproj" />

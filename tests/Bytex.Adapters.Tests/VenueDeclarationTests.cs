@@ -3,6 +3,7 @@ using System.Text.Json;
 using Bytex.Adapters.Binance;
 using Bytex.Adapters.Bybit;
 using Bytex.Adapters.Kucoin;
+using Bytex.Adapters.Okx;
 using Bytex.Adapters.Tests.Fixtures;
 using Bytex.Adapters.Tests.Support;
 using Bytex.Core.Adapters;
@@ -129,6 +130,12 @@ public sealed class VenueDeclarationTests
 
         // KuCoin has no socket base to resolve: the venue answers a REST call with the address, per connection.
         "Kucoin" => (KucoinVenue.HttpBase((IKucoinSettings)config), null),
+
+        // OKX has one host and one socket root for all three markets, which is why the answer here is the same for
+        // every family it declares. What selects a family is an instType parameter on the request, so the test
+        // below that asks "do the declared settings really pick this family" cannot be answered by an address on
+        // this venue - it is answered by the catalog instead.
+        "Okx" => (OkxVenue.HttpBase((IOkxSettings)config), OkxVenue.WsBase((IOkxSettings)config)),
         _ => throw new InvalidOperationException(
             $"{venue} declares itself and this test does not know how to ask it where it talks. Add it here - the "
             + "declaration is only worth having if something checks it against the adapter."),
@@ -146,6 +153,21 @@ public sealed class VenueDeclarationTests
             r => StubResponse.Json(r.Query("cursor") is null ? BybitPayloads.LinearInstrumentsPage1 : BybitPayloads.LinearInstrumentsPage2)),
         ("Kucoin", "spot") => new Routes().On("GET", "/api/v2/symbols", KucoinPayloads.Symbols),
         ("Kucoin", "futures") => new Routes().On("GET", "/api/v1/contracts/active", KucoinPayloads.FuturesContracts),
+
+        // One route for all three OKX families, answering by the instType the request carries. That is deliberate:
+        // on this venue the instType IS what selects the family, so a route that ignored it would let a
+        // misconfigured provider pass the class comparison below by reading somebody else's catalog.
+        ("Okx", "spot") or ("Okx", "swap") or ("Okx", "futures") => new Routes()
+            .On("GET", "/api/v5/public/instruments", r => StubResponse.Json(r.Query("instType") switch
+            {
+                "SPOT" => OkxPayloads.SpotInstruments,
+                "SWAP" => OkxPayloads.SwapInstruments,
+                "FUTURES" => OkxPayloads.FuturesInstruments,
+                _ => OkxPayloads.Error("51000", "Parameter instType error"),
+            }))
+            .On("GET", "/api/v5/public/position-tiers", r => StubResponse.Json(
+                r.Query("instType") == "FUTURES" ? OkxPayloads.FuturesTiers : OkxPayloads.SwapTiers)),
+
         _ => throw new InvalidOperationException(
             $"{venue}'s {family} family declares the instrument classes it returns and there is no catalog fixture "
             + "here to check the claim against. Add one: a class list nothing verifies is a guess in a table."),
@@ -187,6 +209,21 @@ public sealed class VenueDeclarationTests
                 InstrumentProviderBase provider = c.ProductType == KucoinProductType.Futures
                     ? new KucoinFuturesInstrumentProvider(http)
                     : new KucoinInstrumentProvider(http);
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Okx":
+            {
+                OkxDataClientConfig c = (OkxDataClientConfig)config;
+                using OkxHttp http = new(c);
+
+                // The instrument type comes off the CONFIGURATION rather than from the family name, which is the
+                // whole point on this venue: it is the declared setting that has to select the market, and if it
+                // did not, the catalog route above would answer for a different one and the classes would not
+                // match.
+                OkxInstrumentProvider provider = new(http, c.InstrumentType);
                 await provider.LoadAllAsync(CancellationToken.None);
                 instruments = provider.GetAll();
                 break;
@@ -295,11 +332,22 @@ public sealed class VenueDeclarationTests
 
     [Theory]
     [MemberData(nameof(Families))]
-    public void The_config_a_family_declares_is_what_selects_that_family(string venue, string name)
+    public async Task The_config_a_family_declares_is_what_selects_that_family(string venue, string name)
     {
         // Naming the field without the value leaves a host guessing the spelling of a venue's own enum. Applying the
-        // declared settings has to land on this family and no other, which is checked by where the client then
-        // talks: Binance's two families differ by host, Bybit's by the path its socket is opened on.
+        // declared settings has to land on this family and no other.
+        //
+        // On the venues that shipped first, where that lands is visible in the ADDRESS: Binance's two families
+        // differ by host and Bybit's by the path its socket is opened on. OKX is the first venue here where it is
+        // not - one host and one socket root serve its spot, swap and futures markets, and what selects a market is
+        // an instType parameter on each request. So "they talk to the same place" is a fact about that venue rather
+        // than a declaration nobody checked, and demanding different addresses would be demanding this venue be
+        // built like the others.
+        //
+        // Where the addresses are the same, the proof moves to the catalog: the declared settings are applied, the
+        // provider is built from them, and the instrument CLASSES that come back have to be this family's. That is
+        // a stronger check than the address for such a venue - a family whose settings selected the wrong market
+        // would read the wrong catalog and fail it - and it is why the fixture behind it answers by instType.
         VenueFamily family = Family(venue, name);
         VenueDescriptor descriptor = Declarations().Single(d => d.Venue == venue).Descriptor;
         (string http, string? ws) = Talks(venue, Configure(venue, family));
@@ -307,10 +355,19 @@ public sealed class VenueDeclarationTests
         foreach (VenueFamily other in descriptor.Families.Where(f => f.Name != name))
         {
             (string otherHttp, string? otherWs) = Talks(venue, Configure(venue, other));
-            Assert.True(
-                http != otherHttp || ws != otherWs,
-                $"{venue}'s {name} and {other.Name} are configured differently and talk to exactly the same place, "
-                + "so nothing here can tell whether the declared settings really select the family they claim to.");
+            if (http != otherHttp || ws != otherWs)
+            {
+                continue;
+            }
+
+            Assert.False(
+                family.Config.Count == 0 || family.Config.SequenceEqual(other.Config),
+                $"{venue}'s {name} and {other.Name} talk to exactly the same place AND declare the same settings, "
+                + "so nothing anywhere could tell which family a host had configured.");
+
+            IReadOnlyList<InstrumentClass> produced = await ProducedAsync(venue, family);
+            Assert.NotEqual(other.InstrumentClasses.Distinct().Order().ToArray(), produced.ToArray());
+            Assert.Equal(family.InstrumentClasses.Distinct().Order().ToArray(), produced.ToArray());
         }
     }
 
