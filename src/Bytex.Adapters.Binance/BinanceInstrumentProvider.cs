@@ -27,11 +27,13 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
 
     public override async Task LoadAllAsync(CancellationToken ct, IReadOnlyDictionary<string, string>? filters = null)
     {
+        // What the venue really requires, once for the whole catalog and only where a key is held.
+        Dictionary<string, (decimal Initial, decimal Maintenance, decimal MaxLeverage)> brackets = await BracketsAsync(null, ct).ConfigureAwait(false);
         using JsonDocument doc = await _http.GetPublicAsync(_http.Prefix + "/exchangeInfo", null, BinanceVenue.Weights.ExchangeInfo, ct).ConfigureAwait(false);
         int loaded = 0;
         foreach (JsonElement symbol in doc.RootElement.GetProperty("symbols").EnumerateArray())
         {
-            Instrument? instrument = Parse(symbol);
+            Instrument? instrument = Parse(symbol, brackets);
             if (instrument is null)
             {
                 continue;
@@ -65,6 +67,9 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
             return;
         }
 
+        Dictionary<string, (decimal Initial, decimal Maintenance, decimal MaxLeverage)> brackets =
+            await BracketsAsync(BinanceVenue.ToRawSymbol(id), ct).ConfigureAwait(false);
+
         using (doc)
         {
             // Only the instrument that was asked for. USD-margined futures IGNORES the symbol filter and answers
@@ -75,7 +80,7 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
             // unnoticed: the two families of one venue disagree.
             foreach (JsonElement symbol in doc.RootElement.GetProperty("symbols").EnumerateArray())
             {
-                if (Parse(symbol) is { } instrument && instrument.Id == id)
+                if (Parse(symbol, brackets) is { } instrument && instrument.Id == id)
                 {
                     Add(instrument);
                 }
@@ -99,7 +104,81 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
                 ? percent / BinanceVenue.MarginPercentToFraction
                 : whenAbsent;
 
-    private Instrument? Parse(JsonElement symbol)
+    /// <summary>
+    /// What this venue really requires per symbol, at the bracket a position starts in, or an empty map where no
+    /// credential is held (R4.12).
+    /// <para>
+    /// The venue-wide default this venue publishes publicly cannot be its minimum: 5 percent supports at most 20x
+    /// and the venue grants 125x. Since <see cref="Instrument.InitialMarginRate"/> takes the LARGER of 1/leverage
+    /// and the instrument's margin, publishing that default is a floor that sizes and liquidates a 50x strategy as
+    /// though it were 20x - a result for a strategy nobody wrote, with nothing to indicate it.
+    /// </para>
+    /// <para>
+    /// So it is read where a key exists. An unauthenticated caller gets an empty map and keeps the venue-wide
+    /// default with a null ceiling, which says "not published" rather than "unlimited" - and because instruments are
+    /// persisted, fetching this once with a key leaves every later run reading the corrected figures.
+    /// </para>
+    /// </summary>
+    private async Task<Dictionary<string, (decimal Initial, decimal Maintenance, decimal MaxLeverage)>> BracketsAsync(string? symbol, CancellationToken ct)
+    {
+        Dictionary<string, (decimal, decimal, decimal)> brackets = new(StringComparer.Ordinal);
+        if (_accountType != BinanceAccountType.UsdMFutures || !_http.HasCredentials)
+        {
+            return brackets;
+        }
+
+        Dictionary<string, string>? query = symbol is null ? null : new(StringComparer.Ordinal) { ["symbol"] = symbol };
+        JsonDocument doc;
+        try
+        {
+            doc = await _http.GetSignedAsync(BinanceVenue.LeverageBracketPath, query, BinanceVenue.LeverageBracketWeight, ct).ConfigureAwait(false);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            // A key that cannot read brackets is not a reason to refuse an instrument list. Logged loudly, because
+            // what is lost is the difference between the venue's real margin and a default six times larger.
+            Log.LogWarning(e, "Binance would not say what margin it requires, so its instruments keep the venue-wide default, which is a floor at 20x");
+            return brackets;
+        }
+
+        using (doc)
+        {
+            // The answer is an array per symbol, each holding the notional brackets newest-widest first. The
+            // instrument's own figure is the tier a position STARTS in - the highest leverage the venue grants and
+            // the lowest maintenance it takes - and everything above it is the venue charging more as a position
+            // grows, which is the venue's business rather than a property of the instrument.
+            foreach (JsonElement row in doc.RootElement.EnumerateArray())
+            {
+                if (!row.TryGetProperty("brackets", out JsonElement tiers))
+                {
+                    continue;
+                }
+
+                decimal leverage = 0m;
+                decimal maintenance = 0m;
+                foreach (JsonElement tier in tiers.EnumerateArray())
+                {
+                    decimal candidate = tier.TryGetProperty("initialLeverage", out JsonElement l) ? l.GetDecimal() : 0m;
+                    if (candidate <= leverage)
+                    {
+                        continue;
+                    }
+
+                    leverage = candidate;
+                    maintenance = tier.TryGetProperty("maintMarginRatio", out JsonElement m) ? m.GetDecimal() : 0m;
+                }
+
+                if (leverage > 0m)
+                {
+                    brackets[row.GetProperty("symbol").GetString() ?? string.Empty] = (1m / leverage, maintenance, leverage);
+                }
+            }
+        }
+
+        return brackets;
+    }
+
+    private Instrument? Parse(JsonElement symbol, IReadOnlyDictionary<string, (decimal Initial, decimal Maintenance, decimal MaxLeverage)> brackets)
     {
         string status = symbol.StrOpt("status") ?? "TRADING";
         if (status != "TRADING")
@@ -107,7 +186,11 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
             return null;
         }
 
-        string raw = symbol.Str("symbol");
+        string raw = symbol.Str("symbol");
+
+        // What this venue requires here, if a key was held when the catalog was read.
+        (decimal Initial, decimal Maintenance, decimal MaxLeverage)? bracket =
+            brackets.TryGetValue(raw, out (decimal Initial, decimal Maintenance, decimal MaxLeverage) found) ? found : null;
         string baseAsset = symbol.Str("baseAsset");
         string quoteAsset = symbol.Str("quoteAsset");
         string contractType = symbol.StrOpt("contractType") ?? "PERPETUAL";
@@ -194,13 +277,22 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
             // inventing it; it is not the same as being right.
             //
             // A spot account borrows nothing, so its margin is zero rather than unpublished.
-            MarginInit = _accountType == BinanceAccountType.Spot ? 0m : PublishedMargin(symbol, "requiredMarginPercent", BinanceVenue.DefaultMarginInit),
-            MarginMaint = _accountType == BinanceAccountType.Spot ? 0m : PublishedMargin(symbol, "maintMarginPercent", BinanceVenue.DefaultMarginMaint),
+            // The venue's real requirement where a key could read it, and its public venue-wide default otherwise.
+            // The difference is not small: the default is 5 percent, a floor supporting 20x, where the brackets give
+            // 0.8 percent and 125x on the same contract.
+            MarginInit = _accountType == BinanceAccountType.Spot
+                ? 0m
+                : bracket?.Initial ?? PublishedMargin(symbol, "requiredMarginPercent", BinanceVenue.DefaultMarginInit),
+            MarginMaint = _accountType == BinanceAccountType.Spot
+                ? 0m
+                : bracket?.Maintenance ?? PublishedMargin(symbol, "maintMarginPercent", BinanceVenue.DefaultMarginMaint),
 
             // Null, and deliberately: this venue keeps its notional brackets behind a signed endpoint, so the most
             // leverage it will grant cannot be read from public data. Null says "not published", which is a
             // different thing from unlimited to anybody deciding whether a configured leverage is reachable.
-            MaxLeverage = null,
+            // Null where no key could read the brackets, which says "this venue did not say" rather than
+            // "unlimited" - opposite answers to anything deciding whether a configured leverage is reachable.
+            MaxLeverage = bracket?.MaxLeverage,
             TsEvent = now,
             TsInit = now,
             Info = new Dictionary<string, string>(StringComparer.Ordinal) { ["raw"] = symbol.GetRawText() },

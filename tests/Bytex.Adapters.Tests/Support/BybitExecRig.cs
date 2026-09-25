@@ -98,6 +98,10 @@ internal sealed class BybitExecRig : IAsyncDisposable
         SizePrecision = 3,
         PriceIncrement = new Price(0.1m, 1),
         SizeIncrement = new Quantity(0.001m, 3),
+
+        // What the venue grants here, matching the leverageFilter in the instruments fixture this rig serves.
+        // Without it the leverage guard has no ceiling to check and a test of the guard proves nothing.
+        MaxLeverage = 100m,
     });
 
     public Task SubmitAsync(Order order)
