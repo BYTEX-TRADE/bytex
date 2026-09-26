@@ -167,22 +167,40 @@ public static class BybitVenue
     public const decimal InverseTakerFee = 0.0006m;
 
     /// <summary>
-    /// What the venue charges on an option, maker and taker, from its published standard schedule - and the figure
-    /// in this adapter that is least like the thing it describes, which is worth stating rather than hiding.
-    /// <para>
-    /// The venue charges this fraction of the INDEX price of the underlying, capped at a share of the premium. The
-    /// engine prices a commission as a fraction of the traded notional, and an option's traded notional is its
-    /// PREMIUM - a few hundred USDT where the index is tens of thousands. So this rate applied the engine's way
-    /// produces a far smaller number than the venue will charge, and it is a lower bound rather than the cost.
-    /// Declaring zero instead would make an option backtest free, which is further from the truth in the direction
-    /// that flatters a result; pricing it correctly needs a fee model that can charge against a price other than
-    /// the one traded, which this engine does not have and which is recorded rather than worked around here.
-    /// </para>
+    /// What the venue charges on an option, maker and taker, from its published standard schedule. These are the
+    /// venue's own rates and the declaration states them; they are NOT what an instrument is charged at - see
+    /// <see cref="OptionFeeCapOfPremium"/> for why, which is the most important comment in this file.
     /// </summary>
     public const decimal OptionMakerFee = 0.0002m;
 
     /// <inheritdoc cref="OptionMakerFee"/>
-    public const decimal OptionTakerFee = 0.0002m;
+    public const decimal OptionTakerFee = 0.0003m;
+
+    /// <summary>
+    /// The venue's own ceiling on an option's fee, as a share of the premium, and what this engine charges an option
+    /// instrument at.
+    /// <para>
+    /// The venue charges <c>min(feeRate x INDEX price of the underlying, 7% x premium) x size</c>. This engine
+    /// prices a commission as a fraction of the TRADED notional, and an option's traded notional is its premium -
+    /// so the rate applied the engine's way charges against the wrong number entirely and comes out far too small.
+    /// The cap is the only term of that formula the engine can express exactly, because it IS a fraction of the
+    /// premium.
+    /// </para>
+    /// <para>
+    /// **It is an upper bound and a loose one.** Against the venue's own worked example - index 42,000, premium
+    /// 3,000, size 0.3 - the venue charges 2.52 and this charges 63, about twenty-five times more, because the index
+    /// term binds almost always and the cap is a remote ceiling. That is the deliberate direction: an option
+    /// backtest reads worse than reality rather than better, and a strategy discarded for being unprofitable is a
+    /// cheaper mistake than one traded because its costs were understated.
+    /// </para>
+    /// <para>
+    /// Charging what the venue really charges needs an index price series, and the engine has nowhere to keep one:
+    /// nothing persists an index, the simulator never receives one, and this venue does not serve historical index
+    /// prices for the option category at all - only for linear, under a symbol this adapter would have to assume is
+    /// the same index. That assumption is the reason this is a bound rather than a number.
+    /// </para>
+    /// </summary>
+    public const decimal OptionFeeCapOfPremium = 0.07m;
 
     /// <summary>
     /// The coin every inverse contract on this venue is quoted in. Measured on 2026-09-26: all 26 contracts of the
@@ -805,7 +823,7 @@ public sealed class BybitInstrumentProvider : InstrumentProviderBase
         // Spot reports the minimum order value as minOrderAmt; the derivative categories call it minNotionalValue.
         decimal minNotional = _productType == BybitProductType.Spot ? lotFilter.Dec("minOrderAmt") : lotFilter.Dec("minNotionalValue");
         UnixNanos now = UnixNanos.FromDateTimeOffset(DateTimeOffset.UtcNow);
-        (decimal Maker, decimal Taker) fees = Fees(_productType);
+        (decimal Maker, decimal Taker) fees = InstrumentFees(_productType);
 
         InstrumentSpec spec = new()
         {
@@ -950,6 +968,19 @@ public sealed class BybitInstrumentProvider : InstrumentProviderBase
     /// <see cref="BybitVenue.InverseMakerFee"/> and <see cref="BybitVenue.OptionMakerFee"/>, which say where they
     /// came from and, for options, why the engine's arithmetic makes one of them a lower bound.
     /// </summary>
+    /// <summary>
+    /// What an INSTRUMENT of this family is charged at, which is the venue's rate everywhere except options.
+    /// <para>
+    /// An option is charged at <see cref="BybitVenue.OptionFeeCapOfPremium"/>, the venue's own ceiling, because the
+    /// venue's rate applies to the index price and this engine multiplies the traded premium. The declaration still
+    /// states the venue's published rates through <see cref="Fees"/>: what the venue charges and what this engine
+    /// can charge are different facts, and a host asking the first must not be told the second.
+    /// </para>
+    /// </summary>
+    internal static (decimal Maker, decimal Taker) InstrumentFees(BybitProductType type) => type == BybitProductType.Option
+        ? (BybitVenue.OptionFeeCapOfPremium, BybitVenue.OptionFeeCapOfPremium)
+        : Fees(type);
+
     internal static (decimal Maker, decimal Taker) Fees(BybitProductType type) => type switch
     {
         BybitProductType.Spot => (SpotMakerFee, SpotTakerFee),

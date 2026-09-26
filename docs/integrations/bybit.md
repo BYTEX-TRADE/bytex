@@ -38,11 +38,35 @@ below is the venue's answer rather than a limit of this adapter:
 | Trades | published per UNDERLYING (`publicTrade.BTC`), each row naming its contract |
 | Quotes | from the `tickers` topic, under that market's own `bidPrice`/`askPrice` field names; `orderbook.1` delivers nothing |
 
-An option's fee is charged by the venue as a fraction of the underlying's INDEX
-price, capped at a share of the premium. This engine prices a commission as a
-fraction of the traded notional, which for an option is the premium - so the
-declared rate applied that way is a lower bound on what the venue charges
-rather than the charge itself.
+### What an option costs to trade, and why it is a bound
+
+The venue charges `min(feeRate × INDEX price of the underlying, 7% × premium) ×
+size`, with 0.02% maker and 0.03% taker. This engine prices a commission as a
+fraction of the **traded** notional, and an option's traded notional is its
+premium — a few hundred USDT where the index is tens of thousands. So the
+venue's rate applied the engine's way charges against the wrong number
+entirely.
+
+**The cap is the only term of that formula this engine can express exactly**,
+because it is itself a fraction of the premium. So an option instrument is
+charged at 7% of the premium, and the declaration still states the venue's real
+rates: what the venue charges and what this engine can charge are different
+facts, and a host asking the first is not told the second.
+
+**It is an upper bound, and a loose one.** On the venue's own worked example —
+index 42,000, premium 3,000, size 0.3 — the venue charges **2.52** and this
+charges **63**, about twenty-five times more, because the index term binds
+almost always and the cap is a remote ceiling. That direction is deliberate: an
+option backtest reads worse than reality rather than better, and a strategy
+discarded for looking unprofitable is a cheaper mistake than one traded because
+its costs were understated.
+
+Charging what the venue really charges needs an index price series, and there is
+nowhere to keep one: nothing persists an index, the simulator never receives
+one, and this venue does not serve historical index prices for the option
+category at all — only for `linear`, under a symbol this adapter would have to
+assume is the same index. That assumption is why this is a bound and not a
+number.
 
 ## Configuration
 
