@@ -33,6 +33,20 @@ internal static class Repo
             .Order(StringComparer.Ordinal)
             .ToArray();
 
+    /// <summary>
+    /// What one shipped adapter declares, or null where it brings no venue. Found the same way the shipped list is -
+    /// off disk and by reflection - so a venue added tomorrow is described here without anybody adding a line.
+    /// </summary>
+    public static Core.Adapters.VenueDescriptor? Describe(string venue)
+    {
+        Type? plugin = System.Reflection.Assembly.Load("Bytex.Adapters." + venue).GetTypes()
+            .FirstOrDefault(t => !t.IsAbstract && typeof(Core.Adapters.IVenuePlugin).IsAssignableFrom(t));
+
+        return plugin is null
+            ? null
+            : ((Core.Adapters.IVenuePlugin)Activator.CreateInstance(plugin)!).Describe();
+    }
+
     /// <summary>Every C# file of one adapter, excluding build output.</summary>
     public static IEnumerable<string> SourceFiles(string venue) =>
         Directory.EnumerateFiles(Path.Combine(Root, "src", "Bytex.Adapters." + venue), "*.cs", SearchOption.AllDirectories)
