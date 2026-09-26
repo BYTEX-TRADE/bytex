@@ -49,9 +49,9 @@ and saying whether a fill came from a book, a quote or a bar · a margin account
 holding the margin its working orders need · leverage that a strategy states
 for itself and that changes the size it can take
 
-## 0.7 · Venues
+## 0.7 · Venues ✅
 
-OKX · Kraken · Bitget · Gate · Hyperliquid · KuCoin Futures · Bybit inverse
+Released. OKX · Kraken · Bitget · Gate · Hyperliquid · KuCoin Futures · Bybit inverse
 contracts and options and Binance coin-margined futures, so that the venues
 already here arrive with their full capabilities too · a venue declaring its own
 facts per product family, readable without a client or a key · each venue's own

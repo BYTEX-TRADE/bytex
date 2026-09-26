@@ -169,7 +169,17 @@ internal sealed class LoopbackServer : IAsyncDisposable
             {
                 client = await _listener.AcceptTcpClientAsync(_cts.Token);
             }
-            catch (Exception e) when (e is OperationCanceledException or SocketException or ObjectDisposedException)
+            // The last of these is a teardown race and cost a red suite to find: DisposeAsync cancels and then
+            // STOPS the listener, and the loop can have passed its cancellation check already - so the accept below
+            // runs against a stopped listener and TcpListener answers "Not listening. You must call the Start()
+            // method", an InvalidOperationException neither this filter nor DisposeAsync's named. It surfaced through
+            // the awaited loop and failed whichever test happened to be disposing, which is the worst shape of
+            // failure: real-looking, unrelated to its test, and gone on the next run.
+            //
+            // Only while cancellation is requested. A listener that was never started throws exactly the same
+            // exception, and that is a fault in this harness which must still fail loudly.
+            catch (Exception e) when (e is OperationCanceledException or SocketException or ObjectDisposedException
+                || (e is InvalidOperationException && _cts.IsCancellationRequested))
             {
                 return;
             }
