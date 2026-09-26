@@ -567,7 +567,14 @@ public sealed class TradingNodeTests
         await using TradingNode node = rig.Node(Rig.Config() with { ReconciliationInterval = TimeSpan.FromMilliseconds(100) });
 
         await node.StartAsync().WaitAsync(_timeout);
-        await WaitUntilAsync(() => rig.Exec.MassStatusSince.Count >= 3);
+
+        // Wait for what is asserted, not for its cause. The venue being ASKED three times and the engine having
+        // RECONCILED three times are two clocks: the mass-status reply is handled asynchronously, so waiting on the
+        // request count and then asserting the reconciliation count is a bet on the gap between them being short.
+        // Under the whole suite at once it was not, and this test failed saying the engine did not reconcile when it
+        // simply had not finished yet.
+        await WaitUntilAsync(() => rig.Exec.MassStatusSince.Count >= 3
+            && node.Kernel.ExecutionEngine.ReconciliationCount >= 3);
 
         // The first is the one at start-up; the others are the periodic check.
         Assert.True(rig.Exec.MassStatusSince.Count >= 3, $"only {rig.Exec.MassStatusSince.Count} checks");

@@ -47,6 +47,24 @@ public sealed class ClassCollisionTests
         Assert.NotEmpty(Collisions());
     }
 
+    /// <summary>
+    /// A HOST DEPENDS ON THIS ONE, so read the consequence before relaxing it.
+    ///
+    /// <para>
+    /// Told to us on 2026-09-26 by the host that ships these venues: it asks the FIRST family holding a class for
+    /// every capability it reads - whether the venue can be papered, traded live, whether it amends orders, whether it
+    /// serves bar history - and it does so deliberately, because this assertion makes the first answer the right
+    /// answer. Splitting those reads per family would invent a distinction this test forbids.
+    /// </para>
+    ///
+    /// <para>
+    /// So weakening this does not produce a failing test somewhere else. It produces a product that quietly reports
+    /// one family's capabilities for another market: an amend offered where the venue refuses it, or Live gated shut
+    /// on a family that supports it. If a venue ever genuinely needs its colliding families to differ, the host has to
+    /// be told before the change lands, not after - it can key those reads on the family it selected, but only once it
+    /// knows it must.
+    /// </para>
+    /// </summary>
     [Fact]
     public void Two_families_holding_one_class_agree_about_what_they_can_do()
     {

@@ -5,7 +5,7 @@ Notable changes to BYTEX, newest first. The format follows
 [Semantic Versioning](https://semver.org/). Until 1.0, a minor version may
 change public APIs; a patch version only fixes.
 
-## [0.7.0] - unreleased
+## [0.7.0] - 2026-09-26
 
 ### Added
 
@@ -354,9 +354,52 @@ change public APIs; a patch version only fixes.
 
 ### Added
 
-- Nothing yet. 0.7 is Venues: OKX, Kraken, Bitget, Gate, Hyperliquid and KuCoin
-  Futures, each arriving with its full capabilities rather than spot first, and
-  a broker id an adapter can carry on the orders it sends.
+- **Each venue's own margin requirement and maximum leverage, read from that
+  venue per instrument** (R4.16). Two of the three venues shipped before this
+  release supplied both from a constant in the adapter - 0.05 initial and 0.025
+  maintenance for every contract - where Bybit's own risk limits give 0.0066 on
+  BTCUSDT. The error was not cosmetic: `Instrument.InitialMarginRate` takes the
+  larger of 1/leverage and the instrument's margin, so the figure is a FLOOR
+  under every leverage a strategy asks for, and a wrong 0.05 silently charged
+  the margin of 20x on a venue granting 150x. `Instrument.MaxLeverage` is new
+  and null means the venue does not publish it, which is a different answer from
+  unlimited to anything deciding whether a configured leverage is reachable.
+
+- **Where a margin figure came from, recorded on the instrument and in a run's
+  result.** Reading the venues fixed every run made from now on and could not
+  touch a saved one, because a wrong figure and a right one are the same
+  decimal. `Instrument.MarginSource` says which of six things produced it - the
+  venue for this contract, the venue for all of them, the venue publishing none
+  for a product it does margin, the engine substituting, nothing borrowed, or
+  nobody recording it - and `BacktestResult.MarginSources` carries the set a
+  run's positions used, in the result and in `result.json`. An instrument stored
+  before this existed reports `unrecorded`, which is the honest answer and the
+  one that explains why a saved result and a fresh one disagree.
+
+- **A product family declares what collateralises it.** Three venues declare two
+  families holding the same instrument class - Binance usdm and coinm, Bybit
+  linear and inverse, Bitget usdt and usdc - and until now the only thing
+  separating them was a name the venue invented for its own enum, so a host
+  asking which family holds a perpetual got the first one declared and could not
+  ask for the second. `VenueFamily.Collateral` is a kind and, for one kind only,
+  the currencies: nothing borrowed, the instrument's quote currency, the
+  instrument's base currency, or a set the venue fixes for the whole family. It
+  reaches a host through `bytex venues --json` and is printed per family by
+  `bytex venues`. It also states an omission nothing could express before: OKX
+  and KuCoin both list coin-settled markets these adapters deliberately leave
+  out, and a family declaring the quote currency says so.
+
+- **A backtest reports the leverage it actually applied.** A live run that asks
+  for more than the venue grants is refused by name; a backtest was clamped
+  instead, by the margin floor above, and said nothing. On keyless Binance a
+  strategy written for 50x was measured at 20x - smaller positions, a different
+  drawdown, orders denied for margin that would have passed.
+  `BacktestResult.Leverages` carries a row per instrument the run worked an
+  order in: what was asked for, what the arithmetic used, whether that is a cap,
+  and the margin figure and provenance that caused it. Reported rather than
+  refused, because a backtest is cheap to run again and a stop at the moment
+  somebody presses go, over a figure buried in a venue's margin schedule, buys
+  less than telling them what the run did.
 
 ## [0.6.0] - 2026-09-23
 
