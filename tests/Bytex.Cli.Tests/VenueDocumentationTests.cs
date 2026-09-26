@@ -102,6 +102,56 @@ public sealed class VenueDocumentationTests
     }
 
     [Fact]
+    public void Every_venue_that_ships_is_a_released_row_of_the_requirement_catalog()
+    {
+        // The gap this closes, found by hand on 2026-09-26: OKX, Kraken, KuCoin Futures and the broker id were all
+        // merged, tested and documented, and the catalog still called them Roadmap - while Bitget, Gate and
+        // Hyperliquid had no row at all. The catalog is the document that says what this engine claims to do, so a
+        // shipped venue described there as planned is the one kind of documentation error that reads as honest.
+        //
+        // Nothing caught it because nothing reads the catalog. Presence and tier are facts; whether a row says the
+        // right things stays a matter of judgement, and this asserts only the facts.
+        string[] rows = [.. RepoRoot.Read("docs", "requirements", "catalog.md")
+            .Split('\n')
+            .Select(line => line.Trim())
+            .Where(line => line.StartsWith("| R", StringComparison.Ordinal))];
+
+        Assert.NotEmpty(rows);
+
+        foreach (string adapter in Shipped())
+        {
+            string[] naming = [.. rows.Where(r => r.Contains(adapter, StringComparison.OrdinalIgnoreCase))];
+
+            Assert.True(
+                naming.Length > 0,
+                $"{adapter} ships and no row of the requirement catalog names it. The catalog is what says this "
+                + "engine trades that venue; an adapter missing from it is a feature the project does not claim.");
+
+            Assert.True(
+                naming.Any(r => r.EndsWith("| Release |", StringComparison.Ordinal)),
+                $"{adapter} ships and every catalog row naming it is still marked Roadmap: "
+                + string.Join(" / ", naming.Select(r => r[..Math.Min(r.Length, 40)]))
+                + ". A merged venue described as planned is worse than one left out, because it reads as honest.");
+        }
+    }
+
+    [Fact]
+    public void No_requirement_id_is_used_twice()
+    {
+        // Ids are minted once and never reused, and two rows sharing one is how a requirement silently stops having
+        // a home. Cheap to check and impossible to see by eye in a table this long.
+        string[] ids = [.. RepoRoot.Read("docs", "requirements", "catalog.md")
+            .Split('\n')
+            .Select(line => line.Trim())
+            .Where(line => line.StartsWith("| R", StringComparison.Ordinal))
+            .Select(line => line.Split('|')[1].Trim())
+            .Where(id => !id.Contains(',', StringComparison.Ordinal))];
+
+        Assert.NotEmpty(ids);
+        Assert.Equal(ids.Length, ids.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
     public void The_reading_above_really_finds_the_documents()
     {
         // The whole of this file is reading files off disk, so a moved page or a renamed folder would leave every
@@ -111,5 +161,6 @@ public sealed class VenueDocumentationTests
         Assert.True(File.Exists(RepoRoot.Combine("docs", "integrations", "README.md")));
         Assert.True(File.Exists(RepoRoot.Combine("docs", "getting-started", "installation.md")));
         Assert.True(File.Exists(RepoRoot.Combine("README.md")));
+        Assert.True(File.Exists(RepoRoot.Combine("docs", "requirements", "catalog.md")));
     }
 }

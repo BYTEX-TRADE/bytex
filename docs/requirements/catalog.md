@@ -74,6 +74,7 @@ Identifiers are stable and used in design notes, issues, and tests.
 | R4.10 | Caps on how many positions may be open and how many orders may be working, per instrument and across the account | Release |
 | R4.11 | One switch that halts a node's trading and leaves it running, releasable, reported in status, heartbeat and view; the limits and caps settable from node configuration, the control channel and the command line | Release |
 | R4.12, R4.13 | Taken: pluggable margin models, still to come, and the increment checks R4.1 absorbed. The two rows below were designed as R4.14 and R4.15 and keep those ids | - |
+| R4.16 | Each venue's own margin requirement and maximum leverage, read from that venue per instrument rather than assumed, with where the figure came from recorded on the instrument and in the result of a run that traded it - the venue for this contract, the venue for all of them, or the engine | Release |
 | R4.14 | The loss limit counts what open positions are down as well as what has been realised, and is watched as prices arrive rather than only when an order is submitted | Release |
 | R4.15 | Reaching a loss limit stops the engine trading by itself - orders that add denied, orders that get out allowed - once per period and until a host resumes it, and, where a host asks for it, closes what is open with reduce-only orders | Release |
 
@@ -134,6 +135,7 @@ Identifiers are stable and used in design notes, issues, and tests.
 | R8.15 | Funding payments on perpetuals: a published rate applied to an open position at the price the venue last saw, in the currency the instrument settles in, reported per payment; funding history fetched from the venue and stored in the catalog | Release |
 | R8.16 | Liquidation of margin accounts: positions closed by the venue when equity falls below the maintenance margin they require, orders cancelled first, each one reported | Release |
 | R8.17 | Per-contract fee model: a fee for every contract traded, the way futures and options venues charge, with its own maker rate where a venue has one | Release |
+| R8.19 | Simulation modules: pluggable venue behaviours (for example rollover interest), charging through the venue and reported in the result as what they took and why | Release |
 | R8.20 | Parameter sweeps: runs over a grid of values set in a strategy's own payload by path, comparable in one table | Release |
 | R8.23 | Guided parameter search: genetic / evolutionary search on top of parameter sweeps | Release |
 | R8.24 | Partial fills in the simulator: a fill bounded by the size on offer where it happens - the touch for quote, book and trade data, a share of the volume for a bar - with IOC remainders, iceberg slicing and market-to-limit remainders, and what was bounded reported | Release |
@@ -180,12 +182,14 @@ Identifiers are stable and used in design notes, issues, and tests.
 | R11.3 | Binance USDⓈ-M futures: as above plus mark price, funding | Release |
 | R11.4 | Bybit spot and linear perpetuals: instruments, data, orders, reconciliation | Release |
 | R11.10 | Bybit inverse and options: coin-margined perpetuals and dated futures sized in the venue's own contracts and settled in the base coin, and USDT-settled option contracts with strike, kind and expiry | Release |
-| R11.13 | A broker id on every order an adapter sends, settable per venue, delivered with each adapter rather than retrofitted | Roadmap |
+| R11.13 | A broker id on every order an adapter sends, settable per venue, delivered with each adapter rather than retrofitted | Release |
+| R11.12 | Bitget, Gate and Hyperliquid: spot and the venues' own contract families - USDT- and USDC-margined perpetuals, dated delivery contracts, and a venue whose only market is perpetuals | Release |
 | R11.14 | KuCoin spot: instruments, data, orders, reconciliation | Release |
-| R11.15 | KuCoin Futures: perpetual and delivery contracts on the venue's own API - contracts sized by multiplier, linear and inverse, funding, leverage and positions | Roadmap |
+| R11.15 | KuCoin Futures: perpetual and delivery contracts on the venue's own API - contracts sized by multiplier, linear and inverse, funding, leverage and positions | Release |
+| R11.16 | A venue declares its own facts - per venue the name and the broker-tag mechanism, per product family the instrument classes, funding, hosts, key shape, required and ignored configuration, default fees and the datasets it publishes free - readable in-process and over `bytex venues --json` without a client or a key; and an instrument id resolves to the family that holds it, or to a clear answer that none does | Release |
 | R11.5 | Tardis historical data: trades, quotes, book snapshots to catalog | Release |
-| R11.6 | OKX | Roadmap |
-| R11.7 | Kraken | Roadmap |
+| R11.6 | OKX spot, perpetual swaps and dated futures: one venue with three product families on one host, instruments, data, orders, reconciliation | Release |
+| R11.7 | Kraken spot and futures, the futures on their own platform with their own hosts and credentials: instruments, data, orders, reconciliation | Release |
 | R11.8 | Databento | Roadmap |
 | R11.9 | Interactive Brokers | Roadmap |
 
