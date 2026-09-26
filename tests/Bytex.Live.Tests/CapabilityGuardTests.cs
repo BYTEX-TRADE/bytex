@@ -31,6 +31,7 @@ public sealed class CapabilityGuardTests
                 Name = "spot",
                 InstrumentClasses = [InstrumentClass.Spot],
                 PaysFunding = false,
+                Collateral = VenueCollateral.None,
                 HttpBase = "https://example.invalid",
                 WsBase = "wss://example.invalid",
                 Key = new VenueKey { Parts = [] },
@@ -70,6 +71,7 @@ public sealed class CapabilityGuardTests
     {
         Name = name,
         InstrumentClasses = name == "spot" ? [InstrumentClass.Spot] : [InstrumentClass.Swap],
+        Collateral = name == "spot" ? VenueCollateral.None : VenueCollateral.Quote,
         PaysFunding = name != "spot",
         HttpBase = "https://example.invalid",
         WsBase = "wss://example.invalid",

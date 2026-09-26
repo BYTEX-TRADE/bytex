@@ -867,6 +867,7 @@ public sealed class BybitPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlug
                 Name = "spot",
                 InstrumentClasses = [InstrumentClass.Spot],
                 PaysFunding = false,
+                Collateral = VenueCollateral.None,
                 HttpBase = BybitVenue.DefaultHttpBase,
                 WsBase = BybitVenue.DefaultWsBase,
                 Key = BybitKey,
@@ -890,6 +891,7 @@ public sealed class BybitPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlug
                 Name = "linear",
                 InstrumentClasses = [InstrumentClass.Swap, InstrumentClass.Future],
                 PaysFunding = true,
+                Collateral = VenueCollateral.Quote,
                 HttpBase = BybitVenue.DefaultHttpBase,
                 WsBase = BybitVenue.DefaultWsBase,
                 Key = BybitKey,
@@ -916,6 +918,7 @@ public sealed class BybitPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlug
                 // money arithmetic inverts on its own from the instrument's IsInverse flag.
                 InstrumentClasses = [InstrumentClass.Swap, InstrumentClass.Future],
                 PaysFunding = true,
+                Collateral = VenueCollateral.Base,
                 HttpBase = BybitVenue.DefaultHttpBase,
                 WsBase = BybitVenue.DefaultWsBase,
                 Key = BybitKey,
@@ -940,6 +943,7 @@ public sealed class BybitPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlug
                 // Not funded, and that is what an option is rather than something this adapter cannot fetch: the
                 // venue's funding endpoint refuses the category outright.
                 PaysFunding = false,
+                Collateral = VenueCollateral.Quote,
                 HttpBase = BybitVenue.DefaultHttpBase,
                 WsBase = BybitVenue.DefaultWsBase,
                 Key = BybitKey,

@@ -73,6 +73,19 @@ public sealed record VenueFamily
     public required bool PaysFunding { get; init; }
 
     /// <summary>
+    /// What a position here is collateralised in, and the only fact that tells two families of one venue apart when
+    /// they hold the same instrument class.
+    /// <para>
+    /// Three venues have such a pair - Binance usdm/coinm, Bybit linear/inverse, Bitget usdt/usdc - and until this
+    /// was declared a host asking which family holds a perpetual got the first one and could not ask for the second,
+    /// so three of the twenty-one families were unreachable however the question was phrased. Naming a family is not
+    /// a substitute: "inverse" and "usdc-futures" are this venue's own words for its own enum, and a host repeating
+    /// them to a person is guessing what they mean, which is the guessing the whole declaration exists to remove.
+    /// </para>
+    /// </summary>
+    public required VenueCollateral Collateral { get; init; }
+
+    /// <summary>
     /// Where this family's REST API answers, which is the default of the <c>baseUrlHttp</c> setting: written back
     /// into a client's configuration it changes nothing, and a host pointing the adapter at a proxy or a recording
     /// knows which field to set and what it is replacing. It is the root the adapter appends its own paths to, never

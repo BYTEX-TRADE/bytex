@@ -842,6 +842,7 @@ public sealed class GatePlugin : Core.Plugins.IPlugin, IVenuePlugin
                 Name = "spot",
                 InstrumentClasses = [InstrumentClass.Spot],
                 PaysFunding = false,
+                Collateral = VenueCollateral.None,
                 HttpBase = GateVenue.DefaultHttpBase,
                 WsBase = GateVenue.DefaultWsBase,
                 Key = GateKey,
@@ -868,6 +869,7 @@ public sealed class GatePlugin : Core.Plugins.IPlugin, IVenuePlugin
                 Name = "futures",
                 InstrumentClasses = [InstrumentClass.Swap],
                 PaysFunding = true,
+                Collateral = VenueCollateral.Quote,
                 HttpBase = GateFuturesVenue.DefaultHttpBase,
                 WsBase = GateFuturesVenue.DefaultWsBase,
                 Key = GateKey,
@@ -899,6 +901,7 @@ public sealed class GatePlugin : Core.Plugins.IPlugin, IVenuePlugin
                 // publishes no funding fields on it at all - the ticker channel that carries a rate on the
                 // perpetual market sends an empty string here.
                 PaysFunding = false,
+                Collateral = VenueCollateral.Quote,
                 HttpBase = GateFuturesVenue.DefaultHttpBase,
                 WsBase = GateFuturesVenue.DefaultDeliveryWsBase,
                 Key = GateKey,

@@ -628,7 +628,7 @@ internal static class Program
                 Console.WriteLine($"{venue.Venue} ({venue.DisplayName}) · broker tag: {venue.BrokerTag} · rebate: {venue.BrokerProgramme}");
                 foreach (VenueFamily family in venue.Families)
                 {
-                    Console.WriteLine($"  {family.Name}: {string.Join(", ", family.InstrumentClasses)}{(family.PaysFunding ? " · pays funding" : string.Empty)}");
+                    Console.WriteLine($"  {family.Name}: {string.Join(", ", family.InstrumentClasses)}{(family.PaysFunding ? " · pays funding" : string.Empty)} · {Collateral(family.Collateral)}");
                     Console.WriteLine($"    http {family.HttpBase}");
                     Console.WriteLine($"    ws   {family.WsBase ?? "handed out by the venue at connect time"}");
                     Console.WriteLine($"    key  {string.Join(", ", family.Key.Parts.Select(k => k.Required ? k.Variable : k.Variable + " (optional)"))}");
@@ -654,6 +654,18 @@ internal static class Program
         });
 
         return command;
+
+        // Printed for every family because it is the only thing that tells two families of one venue apart: this
+        // venue's own word for them - "inverse", "usdc-futures" - says nothing to a reader who does not already know
+        // the venue, which is the whole reason the declaration carries the fact rather than the name.
+        static string Collateral(VenueCollateral collateral) => collateral.Kind switch
+        {
+            CollateralKind.None => "nothing is borrowed",
+            CollateralKind.QuoteCurrency => "collateral: what the instrument is priced in",
+            CollateralKind.BaseCurrency => "collateral: the instrument's own base currency (inverse)",
+            CollateralKind.Currencies => "collateral: " + string.Join(", ", collateral.Currencies.Select(c => c.Code)),
+            _ => "collateral: not stated",
+        };
     }
 
     private static PluginRegistry CreateRegistry(string? pluginDirectory)

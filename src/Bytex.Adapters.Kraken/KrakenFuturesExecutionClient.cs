@@ -979,6 +979,7 @@ public sealed class KrakenPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlu
                 Name = "spot",
                 InstrumentClasses = [InstrumentClass.Spot],
                 PaysFunding = false,
+                Collateral = VenueCollateral.None,
                 HttpBase = KrakenVenue.DefaultHttpBase,
 
                 // The PUBLIC socket. This platform serves public market data and private data on two different
@@ -1018,6 +1019,7 @@ public sealed class KrakenPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlu
                 // one cannot be expressed in base currency without a price.
                 InstrumentClasses = [InstrumentClass.Swap, InstrumentClass.Future],
                 PaysFunding = true,
+                Collateral = VenueCollateral.Quote,
                 HttpBase = KrakenFuturesVenue.DefaultHttpBase,
 
                 // One host for both the public feeds and the private ones here, unlike spot: the private feeds are

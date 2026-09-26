@@ -1095,6 +1095,7 @@ public sealed class OkxPlugin : Core.Plugins.IPlugin, IVenuePlugin
                 Name = "spot",
                 InstrumentClasses = [InstrumentClass.Spot],
                 PaysFunding = false,
+                Collateral = VenueCollateral.None,
                 HttpBase = OkxVenue.DefaultHttpBase,
                 WsBase = OkxVenue.DefaultWsBase,
                 Key = OkxKey,
@@ -1125,6 +1126,7 @@ public sealed class OkxPlugin : Core.Plugins.IPlugin, IVenuePlugin
                 Name = "swap",
                 InstrumentClasses = [InstrumentClass.Swap],
                 PaysFunding = true,
+                Collateral = VenueCollateral.Quote,
                 HttpBase = OkxVenue.DefaultHttpBase,
                 WsBase = OkxVenue.DefaultWsBase,
                 Key = OkxKey,
@@ -1156,6 +1158,7 @@ public sealed class OkxPlugin : Core.Plugins.IPlugin, IVenuePlugin
                 // none - which is why this cannot be a venue-wide fact even though two of the three markets share
                 // an endpoint.
                 PaysFunding = false,
+                Collateral = VenueCollateral.Quote,
                 HttpBase = OkxVenue.DefaultHttpBase,
                 WsBase = OkxVenue.DefaultWsBase,
                 Key = OkxKey,
