@@ -311,6 +311,7 @@ public sealed class OkxInstrumentProvider : InstrumentProviderBase
             // tiers for this same pair are not what this field means.
             MarginInit = 0m,
             MarginMaint = 0m,
+            MarginSource = MarginSource.NotMargined,
             TsEvent = now,
             TsInit = now,
         });
@@ -378,6 +379,10 @@ public sealed class OkxInstrumentProvider : InstrumentProviderBase
             // The venue's own tier-one requirement, or zero when it published none for this family and said so.
             MarginInit = margin?.Initial ?? 0m,
             MarginMaint = margin?.Maintenance ?? 0m,
+
+            // Which of those two happened, since the figure cannot say: no position tiers for this instrument means
+            // a margined contract the engine holds no requirement for.
+            MarginSource = margin is not null ? MarginSource.VenuePerContract : MarginSource.VenueSilent,
             Info = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 [OkxVenue.ContractValueInfo] = (contractValue * multiplier).ToString(CultureInfo.InvariantCulture),

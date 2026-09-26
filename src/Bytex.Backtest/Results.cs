@@ -5,6 +5,7 @@ using Bytex.Core.Model;
 using Bytex.Core.Model.Accounts;
 using Bytex.Core.Model.Events;
 using Bytex.Core.Model.Identifiers;
+using Bytex.Core.Model.Instruments;
 using Bytex.Core.Model.Orders;
 using Bytex.Core.Model.Positions;
 using Bytex.Core.Model.Primitives;
@@ -141,6 +142,34 @@ public sealed class BacktestResult
     /// accounts for.
     /// </summary>
     public required IReadOnlyList<string> Applied { get; init; }
+
+    /// <summary>
+    /// Where the margin requirement came from for the instruments this run actually held a position in, by the names
+    /// of <see cref="MarginSource"/>, and empty for a run that held none.
+    ///
+    /// <para>
+    /// <b>Why a result says this at all.</b> Margin decides how much of the account a leveraged position ties up and
+    /// the price at which it is liquidated, and until 0.7.0 two of the three venues supplied that figure from a
+    /// constant in the adapter - 0.05 for every contract, where Bybit's own risk limits give 0.0066 on BTCUSDT. Every
+    /// result produced in that time is a real result computed against an invented requirement, and nothing in it says
+    /// so. A person opening a saved report beside a fresh one on the same strategy, the same period and the same
+    /// venue, and finding they disagree, has no way to tell a corrected input from a broken engine.
+    /// </para>
+    ///
+    /// <para>
+    /// So the provenance travels with the result, not just the figure. A run whose catalog entries predate the marker
+    /// reports <see cref="MarginSource.Unrecorded"/> - which is the honest answer and the one that explains the
+    /// disagreement. Deliberately not a date: a workspace restored from a backup would carry the date it was written
+    /// rather than the state of what it holds, and the first person to restore one would be told something false.
+    /// </para>
+    ///
+    /// <para>
+    /// Positions rather than every instrument loaded, because margin is a property of holding something. A run given
+    /// twelve instruments and trading one would otherwise report eleven provenances that changed nothing about its
+    /// numbers.
+    /// </para>
+    /// </summary>
+    public required IReadOnlyList<MarginSource> MarginSources { get; init; }
 
     /// <summary>
     /// What the bounding of fills came to: the share of a bar's volume one participant was allowed, how many fills
@@ -285,6 +314,13 @@ public sealed class BacktestResult
                 .SelectMany(x => x.Applied)
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(c => c, StringComparer.Ordinal)
+                .ToList(),
+            MarginSources = positions
+                .Select(p => cache.Instrument(p.InstrumentId))
+                .OfType<Instrument>()
+                .Select(i => i.MarginSource)
+                .Distinct()
+                .OrderBy(source => source)
                 .ToList(),
             Participation = new ParticipationSummary(
                 engine.Exchanges.Values.Select(x => x.Config.BarVolumeShare).FirstOrDefault(s => s is not null),
@@ -665,6 +701,7 @@ public static class ReportWriter
             result.ModuleCharges,
             result.Simulation,
             result.Applied,
+            result.MarginSources,
             result.Participation,
         }, options);
     }

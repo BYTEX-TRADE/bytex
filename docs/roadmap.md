@@ -51,9 +51,13 @@ for itself and that changes the size it can take
 
 ## 0.7 · Venues
 
-OKX · Kraken · Bitget · Gate · Hyperliquid · KuCoin Futures · a broker id on
-every order each adapter sends, delivered with the adapters rather than
-retrofitted into them
+OKX · Kraken · Bitget · Gate · Hyperliquid · KuCoin Futures · Bybit inverse
+contracts and options and Binance coin-margined futures, so that the venues
+already here arrive with their full capabilities too · a venue declaring its own
+facts per product family, readable without a client or a key · each venue's own
+margin requirement and maximum leverage read from that venue instead of assumed,
+and a result that says which of those it used · a broker id on every order each
+adapter sends, delivered with the adapters rather than retrofitted into them
 
 ## 0.8 · Persistence
 

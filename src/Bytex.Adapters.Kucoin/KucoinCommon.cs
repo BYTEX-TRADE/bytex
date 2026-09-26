@@ -369,7 +369,7 @@ public sealed class KucoinHttp : IDisposable
         string code = root.Str("code");
         if (code.Length > 0 && code != KucoinVenue.Ok)
         {
-            // The venue answers a refused request with HTTP 200 and its own code in the body.
+            // The venue answers a refused request with HTTP 200 and its own code in the body.
             throw new KucoinApiException(code, root.Str("msg"), (int)HttpStatusCode.OK);
         }
 
@@ -565,6 +565,9 @@ public sealed class KucoinInstrumentProvider : InstrumentProviderBase
             MinNotional = minFunds > 0m ? new Money(minFunds, quote) : null,
             MakerFee = BaseFee * makerCoefficient,
             TakerFee = BaseFee * takerCoefficient,
+            // Nothing is borrowed on a cash pair, so the absent margin above is a fact about spot and not a figure
+            // nobody read. Said here because the default is "unrecorded", which would be a different claim.
+            MarginSource = MarginSource.NotMargined,
             TsEvent = now,
             TsInit = now,
         });

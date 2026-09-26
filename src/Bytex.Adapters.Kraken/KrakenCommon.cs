@@ -853,6 +853,9 @@ public sealed class KrakenInstrumentProvider : InstrumentProviderBase
             // the published schedule stands in. See KrakenVenue.DefaultMakerFee.
             MakerFee = KrakenVenue.DefaultMakerFee,
             TakerFee = KrakenVenue.DefaultTakerFee,
+            // Nothing is borrowed on a cash pair, so the absent margin above is a fact about spot and not a figure
+            // nobody read. Said here because the default is "unrecorded", which would be a different claim.
+            MarginSource = MarginSource.NotMargined,
             TsEvent = now,
             TsInit = now,
         });

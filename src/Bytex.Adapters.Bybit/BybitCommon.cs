@@ -874,6 +874,19 @@ public sealed class BybitInstrumentProvider : InstrumentProviderBase
             MarginInit = BybitVenue.PublishesRiskLimits(_productType) ? margin.Initial : 0m,
             MarginMaint = BybitVenue.PublishesRiskLimits(_productType) ? margin.Maintenance : 0m,
 
+            // The two zeroes above are not one answer, and this is where they stop looking like one. Spot's zero is
+            // correct - nothing is borrowed. An option's zero is a gap: the product is margined here and the engine
+            // holds no figure for it, so a position in one posts nothing and no liquidation can fire on the
+            // requirement. A contract family reports what the venue said for that symbol, whether from the
+            // risk-limit walk or from the ceiling it publishes beside the contract; a zero there means the venue
+            // answered neither way.
+            MarginSource = _productType switch
+            {
+                BybitProductType.Spot => MarginSource.NotMargined,
+                BybitProductType.Option => MarginSource.VenueSilent,
+                _ => margin.Initial > 0m ? MarginSource.VenuePerContract : MarginSource.VenueSilent,
+            },
+
             // Free: the two contract families state their own ceiling per symbol in the response the instrument
             // came from. Spot and option carry no leverageFilter, so maxLeverage is zero and this stays null.
             MaxLeverage = maxLeverage <= 0m ? null : maxLeverage,

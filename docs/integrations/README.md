@@ -2,7 +2,7 @@
 
 | Integration | Factory name | Data | Execution | Guide |
 |---|---|---|---|---|
-| Binance spot and USDⓈ-M futures | `BINANCE` | yes | yes | [binance.md](binance.md) |
+| Binance spot, USDⓈ-M and coin-margined futures | `BINANCE` | yes | yes | [binance.md](binance.md) |
 | Bitget spot, USDT- and USDC-margined perpetuals | `BITGET` | yes | yes | [bitget.md](bitget.md) |
 | Bybit spot, linear, inverse and options | `BYBIT` | yes | yes | [bybit.md](bybit.md) |
 | Gate spot, perpetual and delivery futures | `GATE` | yes | yes | [gate.md](gate.md) |

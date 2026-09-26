@@ -61,6 +61,13 @@ public static class InstrumentJson
 
         public decimal MarginMaint { get; set; }
 
+        /// <summary>
+        /// Absent from every instrument written before the marker existed, which reads back as
+        /// <see cref="Bytex.Core.Model.Instruments.MarginSource.Unrecorded"/> - the honest answer for a catalog entry
+        /// whose provenance was never recorded, and what lets a stored run explain a disagreement with a fresh one.
+        /// </summary>
+        public MarginSource MarginSource { get; set; }
+
         /// <summary>Absent for a venue that publishes its maximum leverage only to a key holder.</summary>
         public decimal? MaxLeverage { get; set; }
 
@@ -120,6 +127,7 @@ public static class InstrumentJson
             MinPrice = instrument.MinPrice?.ToString(),
             MarginInit = instrument.MarginInit,
             MarginMaint = instrument.MarginMaint,
+            MarginSource = instrument.MarginSource,
             MaxLeverage = instrument.MaxLeverage,
             MakerFee = instrument.MakerFee,
             TakerFee = instrument.TakerFee,
@@ -184,6 +192,7 @@ public static class InstrumentJson
             MinPrice = dto.MinPrice is null ? null : Price.Parse(dto.MinPrice),
             MarginInit = dto.MarginInit,
             MarginMaint = dto.MarginMaint,
+            MarginSource = dto.MarginSource,
             MaxLeverage = dto.MaxLeverage,
             MakerFee = dto.MakerFee,
             TakerFee = dto.TakerFee,
