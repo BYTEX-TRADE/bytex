@@ -91,14 +91,30 @@ public sealed class BybitExecutionClient : ExecutionClientBase
     /// going live at something else, with nothing saying so.
     /// </para>
     /// <para>
-    /// Spot has no leverage to set. A refusal is logged and does not stop the node: it is usually the venue saying
-    /// the account is not entitled to the figure asked for, which a node cannot fix and a person needs to read.
+    /// Two of this venue's four families have no leverage to set, for different reasons: spot borrows nothing, and
+    /// the venue margins an option by a portfolio calculation with no per-symbol leverage endpoint and no ceiling
+    /// published to check one against. A leverage configured on either is said out loud rather than dropped -
+    /// a configuration field nothing reads is the failure this whole guard exists for.
+    /// </para>
+    /// <para>
+    /// A refusal is logged and does not stop the node: it is usually the venue saying the account is not entitled
+    /// to the figure asked for, which a node cannot fix and a person needs to read.
     /// </para>
     /// </summary>
     private async Task ApplyLeverageAsync(CancellationToken ct)
     {
-        if (_config.Leverage is not { } leverage || _config.ProductType == BybitProductType.Spot)
+        if (_config.Leverage is not { } leverage)
         {
+            return;
+        }
+
+        if (!BybitVenue.AppliesLeverage(_config.ProductType))
+        {
+            Log.LogWarning(
+                "A leverage of {Leverage} is configured and Bybit applies none to its {Category} market, so nothing "
+                + "was sent and positions will be margined the way this venue margins that market",
+                leverage,
+                Category);
             return;
         }
 
@@ -108,6 +124,10 @@ public sealed class BybitExecutionClient : ExecutionClientBase
         // loaded. Either can be empty on its own.
         IReadOnlyList<Instrument> tradable =
             [.. Services.Cache.Instruments(Venue).Concat(_instruments.GetAll()).DistinctBy(i => i.Id)];
+
+        // Before anything is sent. This venue publishes its ceiling per symbol in the same response the instruments
+        // came from, so there is never a reason to find out by having a lower one silently granted instead.
+        LeverageGuard.EnsureGranted(leverage, tradable, BybitVenue.Venue.Value);
 
         foreach (Instrument instrument in tradable)
         {
@@ -405,7 +425,10 @@ public sealed class BybitExecutionClient : ExecutionClientBase
                 return;
         }
 
-        if (_config.ProductType == BybitProductType.Linear && order.IsReduceOnly)
+        // The two contract families take it; spot has no position to reduce. It is left off an option order
+        // deliberately: this venue documents the field for its option market and that could not be confirmed
+        // without a key, and a flag the venue might reject would fail the whole order rather than the flag.
+        if (_config.ProductType is BybitProductType.Linear or BybitProductType.Inverse && order.IsReduceOnly)
         {
             body["reduceOnly"] = true;
         }
@@ -556,51 +579,113 @@ public sealed class BybitExecutionClient : ExecutionClientBase
 
     public override async Task<IReadOnlyList<OrderStatusReport>> GenerateOrderStatusReportsAsync(InstrumentId? instrumentId, UnixNanos? start, UnixNanos? end, bool openOnly, CancellationToken ct)
     {
-        Dictionary<string, string> q = new() { ["category"] = Category, ["limit"] = "50" };
-        if (instrumentId is { } id)
-        {
-            q["symbol"] = BybitVenue.ToRawSymbol(id);
-        }
-        else if (_config.ProductType == BybitProductType.Linear)
-        {
-            q["settleCoin"] = "USDT";
-        }
-
-        if (openOnly)
-        {
-            q["openOnly"] = "0";
-        }
-
-        if (start is { } s)
-        {
-            q["startTime"] = s.ToMilliseconds().ToString(CultureInfo.InvariantCulture);
-        }
-
         List<OrderStatusReport> reports = new();
         string path = openOnly ? "/v5/order/realtime" : "/v5/order/history";
-        string? cursor = null;
-        do
+        foreach (IReadOnlyDictionary<string, string> market in Markets(instrumentId))
         {
-            if (cursor is not null)
+            Dictionary<string, string> q = new(market, StringComparer.Ordinal)
             {
-                q["cursor"] = cursor;
+                ["category"] = Category,
+                ["limit"] = BybitVenue.OrderReportPage.ToString(CultureInfo.InvariantCulture),
+            };
+
+            if (openOnly)
+            {
+                q["openOnly"] = "0";
             }
 
-            JsonElement result = await _http.GetSignedAsync(path, q, ct).ConfigureAwait(false);
-            foreach (JsonElement o in result.GetProperty("list").EnumerateArray())
+            if (start is { } s)
             {
-                OrderStatusReport? report = ParseOrder(o);
-                if (report is not null)
+                q["startTime"] = s.ToMilliseconds().ToString(CultureInfo.InvariantCulture);
+            }
+
+            string? cursor = null;
+            do
+            {
+                if (cursor is not null)
                 {
-                    reports.Add(report);
+                    q["cursor"] = cursor;
                 }
-            }
 
-            cursor = result.Str("nextPageCursor");
+                JsonElement result = await _http.GetSignedAsync(path, q, ct).ConfigureAwait(false);
+                foreach (JsonElement o in result.GetProperty("list").EnumerateArray())
+                {
+                    OrderStatusReport? report = ParseOrder(o);
+                    if (report is not null)
+                    {
+                        reports.Add(report);
+                    }
+                }
+
+                cursor = result.Str("nextPageCursor");
+            }
+            while (!string.IsNullOrEmpty(cursor));
         }
-        while (!string.IsNullOrEmpty(cursor));
 
         return reports;
+    }
+
+    /// <summary>
+    /// How this venue is asked about a market rather than about one instrument, as one query per request to make.
+    /// <para>
+    /// Naming an instrument is one request whatever the family. Asking about everything is not: this venue takes a
+    /// symbol, a settle coin or a base coin, and which of those exists differs per family. Spot answers with no
+    /// filter at all. The linear family settles in one coin per request, which is the pre-existing shape - a
+    /// client holding USDC contracts as well as USDT ones is asked once per coin now rather than for USDT alone.
+    /// An INVERSE contract settles in its own base coin, so there is no single settle coin for that market and the
+    /// coins come from the contracts this client holds. An option is asked for by underlying.
+    /// </para>
+    /// <para>
+    /// An empty list means this client holds nothing that could tell it what to ask for, which is not the same as
+    /// the account holding nothing - so it says so rather than sending a request the venue would refuse for a
+    /// missing parameter and having that read as an empty account.
+    /// </para>
+    /// <para>
+    /// Which filter each family really requires could not be confirmed without a key: every read below is signed.
+    /// What is certain is that one of them is required, because the venue refuses an unfiltered whole-market read.
+    /// </para>
+    /// </summary>
+    private IReadOnlyList<IReadOnlyDictionary<string, string>> Markets(InstrumentId? instrumentId)
+    {
+        if (instrumentId is { } id)
+        {
+            return [new Dictionary<string, string>(StringComparer.Ordinal) { ["symbol"] = BybitVenue.ToRawSymbol(id) }];
+        }
+
+        if (_config.ProductType == BybitProductType.Spot)
+        {
+            return [new Dictionary<string, string>(StringComparer.Ordinal)];
+        }
+
+        bool byUnderlying = _config.ProductType == BybitProductType.Option;
+        string parameter = byUnderlying ? "baseCoin" : "settleCoin";
+        IReadOnlyList<Instrument> held = [.. Services.Cache.Instruments(Venue).Concat(_instruments.GetAll()).DistinctBy(i => i.Id)];
+        string[] coins =
+        [
+            .. held
+                .Select(i => byUnderlying ? i.BaseCurrency?.Code : i.SettlementCurrency.Code)
+                .OfType<string>()
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+        ];
+
+        if (coins.Length > 0)
+        {
+            return [.. coins.Select(coin => new Dictionary<string, string>(StringComparer.Ordinal) { [parameter] = coin })];
+        }
+
+        if (_config.ProductType == BybitProductType.Linear)
+        {
+            return [new Dictionary<string, string>(StringComparer.Ordinal) { [parameter] = BybitVenue.LinearSettleCoin }];
+        }
+
+        Log.LogWarning(
+            "This client holds no Bybit {Category} instruments, so there is no {Parameter} to ask the venue for and "
+            + "a whole-market read is skipped rather than sent without one",
+            Category,
+            parameter);
+
+        return [];
     }
 
     private OrderStatusReport? ParseOrder(JsonElement o)
@@ -625,7 +710,7 @@ public sealed class BybitExecutionClient : ExecutionClientBase
 
     public override async Task<IReadOnlyList<FillReport>> GenerateFillReportsAsync(InstrumentId? instrumentId, VenueOrderId? venueOrderId, UnixNanos? start, UnixNanos? end, CancellationToken ct)
     {
-        Dictionary<string, string> q = new() { ["category"] = Category, ["limit"] = "100" };
+        Dictionary<string, string> q = new() { ["category"] = Category, ["limit"] = BybitVenue.FillReportPage.ToString(CultureInfo.InvariantCulture) };
         if (instrumentId is { } id)
         {
             q["symbol"] = BybitVenue.ToRawSymbol(id);
@@ -676,40 +761,36 @@ public sealed class BybitExecutionClient : ExecutionClientBase
 
     public override async Task<IReadOnlyList<PositionStatusReport>> GeneratePositionStatusReportsAsync(InstrumentId? instrumentId, UnixNanos? start, UnixNanos? end, CancellationToken ct)
     {
-        if (_config.ProductType != BybitProductType.Linear)
+        if (_config.ProductType == BybitProductType.Spot)
         {
+            // A cash account holds balances rather than positions, so an empty list is the whole of the right
+            // answer here and asking the venue would be asking about something this market does not have.
             return [];
         }
 
-        Dictionary<string, string> q = new() { ["category"] = Category };
-        if (instrumentId is { } id)
-        {
-            q["symbol"] = BybitVenue.ToRawSymbol(id);
-        }
-        else
-        {
-            q["settleCoin"] = "USDT";
-        }
-
         List<PositionStatusReport> reports = new();
-        JsonElement result = await _http.GetSignedAsync("/v5/position/list", q, ct).ConfigureAwait(false);
-        foreach (JsonElement p in result.GetProperty("list").EnumerateArray())
+        foreach (IReadOnlyDictionary<string, string> market in Markets(instrumentId))
         {
-            decimal size = p.Dec("size");
-            if (size == 0m)
+            Dictionary<string, string> q = new(market, StringComparer.Ordinal) { ["category"] = Category };
+            JsonElement result = await _http.GetSignedAsync("/v5/position/list", q, ct).ConfigureAwait(false);
+            foreach (JsonElement p in result.GetProperty("list").EnumerateArray())
             {
-                continue;
-            }
+                decimal size = p.Dec("size");
+                if (size == 0m)
+                {
+                    continue;
+                }
 
-            InstrumentId posId = BybitVenue.ToInstrumentId(p.Str("symbol"), _config.ProductType);
-            Instrument? instrument = _instruments.Find(posId) ?? Services.Cache.Instrument(posId);
-            if (instrument is null)
-            {
-                continue;
-            }
+                InstrumentId posId = BybitVenue.ToInstrumentId(p.Str("symbol"), _config.ProductType);
+                Instrument? instrument = _instruments.Find(posId) ?? Services.Cache.Instrument(posId);
+                if (instrument is null)
+                {
+                    continue;
+                }
 
-            reports.Add(new PositionStatusReport(AccountId, posId, p.Str("side") == "Buy" ? PositionSide.Long : PositionSide.Short, instrument.MakeQuantity(size),
-                p.Ms("updatedTime"), Clock.Timestamp, Guid.NewGuid(), null, p.Dec("avgPrice") > 0m ? p.Dec("avgPrice") : null));
+                reports.Add(new PositionStatusReport(AccountId, posId, p.Str("side") == "Buy" ? PositionSide.Long : PositionSide.Short, instrument.MakeQuantity(size),
+                    p.Ms("updatedTime"), Clock.Timestamp, Guid.NewGuid(), null, p.Dec("avgPrice") > 0m ? p.Dec("avgPrice") : null));
+            }
         }
 
         return reports;
@@ -762,8 +843,14 @@ public sealed class BybitPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlug
     public string Id => "bytex.bybit";
 
     /// <summary>
-    /// Bybit as two families behind one host. Unlike Binance the address does not change with the product - the
+    /// Bybit as four families behind one host. Unlike Binance the address does not change with the product - the
     /// category does - so what differs here is the fees, the funding and the configuration, not where to ask.
+    /// <para>
+    /// The option family is the one that does not fit the shape the other three share, and every difference below
+    /// was measured rather than assumed: it is charged no funding, the venue has no candle endpoint for it and no
+    /// candle socket topic that delivers, and it publishes neither a margin nor a leverage ceiling. Those are
+    /// declared false and null rather than copied from the family beside it.
+    /// </para>
     /// </summary>
     public Core.Adapters.VenueDescriptor Describe() => new()
     {
@@ -784,7 +871,7 @@ public sealed class BybitPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlug
                 WsBase = BybitVenue.DefaultWsBase,
                 Key = BybitKey,
                 Config = new Dictionary<string, string> { ["productType"] = nameof(BybitProductType.Spot) },
-                DefaultFees = new Core.Adapters.VenueFees(0.001m, 0.001m),
+                DefaultFees = FeesOf(BybitProductType.Spot),
                 Capabilities = new Core.Adapters.VenueCapabilities
                 {
                     LoadOneInstrument = true,
@@ -807,7 +894,7 @@ public sealed class BybitPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlug
                 WsBase = BybitVenue.DefaultWsBase,
                 Key = BybitKey,
                 Config = new Dictionary<string, string> { ["productType"] = nameof(BybitProductType.Linear) },
-                DefaultFees = new Core.Adapters.VenueFees(0.0002m, 0.00055m),
+                DefaultFees = FeesOf(BybitProductType.Linear),
                 Capabilities = new Core.Adapters.VenueCapabilities
                 {
                     LoadOneInstrument = true,
@@ -819,8 +906,78 @@ public sealed class BybitPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlug
                     AmendOrders = true,
                 },
             },
+            new Core.Adapters.VenueFamily
+            {
+                Name = "inverse",
+
+                // The family every adapter in this repository used to exclude, and the stated reason for excluding
+                // it was that a USD-quoted, base-settled contract cannot be sized in base units without a price.
+                // It can be sized in the venue's own contracts, which is how the venue sizes it, and the engine's
+                // money arithmetic inverts on its own from the instrument's IsInverse flag.
+                InstrumentClasses = [InstrumentClass.Swap, InstrumentClass.Future],
+                PaysFunding = true,
+                HttpBase = BybitVenue.DefaultHttpBase,
+                WsBase = BybitVenue.DefaultWsBase,
+                Key = BybitKey,
+                Config = new Dictionary<string, string> { ["productType"] = nameof(BybitProductType.Inverse) },
+                DefaultFees = FeesOf(BybitProductType.Inverse),
+                Capabilities = new Core.Adapters.VenueCapabilities
+                {
+                    LoadOneInstrument = true,
+                    ListInstruments = true,
+                    BarHistory = true,
+                    FundingHistory = true,
+                    MarketData = true,
+                    Execution = true,
+                    AmendOrders = true,
+                },
+            },
+            new Core.Adapters.VenueFamily
+            {
+                Name = "option",
+                InstrumentClasses = [InstrumentClass.Option],
+
+                // Not funded, and that is what an option is rather than something this adapter cannot fetch: the
+                // venue's funding endpoint refuses the category outright.
+                PaysFunding = false,
+                HttpBase = BybitVenue.DefaultHttpBase,
+                WsBase = BybitVenue.DefaultWsBase,
+                Key = BybitKey,
+                Config = new Dictionary<string, string> { ["productType"] = nameof(BybitProductType.Option) },
+                DefaultFees = FeesOf(BybitProductType.Option),
+                Capabilities = new Core.Adapters.VenueCapabilities
+                {
+                    LoadOneInstrument = true,
+                    ListInstruments = true,
+
+                    // The one capability of the four families that is false, and it is the venue's answer rather
+                    // than this adapter's limit: /v5/market/kline refuses category=option, and the option socket
+                    // accepts a kline subscription, reports it as a success and never sends a candle. So an option
+                    // cannot be backtested from this venue's own history at all.
+                    BarHistory = false,
+                    FundingHistory = false,
+                    MarketData = true,
+                    Execution = true,
+
+                    // The venue's amend endpoint takes the category this adapter already sends and the execution
+                    // client is written per category rather than per family, so an option amend is attempted the
+                    // same way a contract amend is. Whether the venue honours it could not be verified: the amend
+                    // path is signed, and no option order could be placed to amend without a key.
+                    AmendOrders = true,
+                },
+            },
         ],
     };
+
+    /// <summary>
+    /// What a family charges before an instrument is loaded, taken from the one place this adapter states it, so a
+    /// declaration cannot drift from the rates the instruments it describes are built with.
+    /// </summary>
+    private static Core.Adapters.VenueFees FeesOf(BybitProductType type)
+    {
+        (decimal maker, decimal taker) = BybitInstrumentProvider.Fees(type);
+        return new Core.Adapters.VenueFees(maker, taker);
+    }
 
     private static Core.Adapters.VenueKey BybitKey => new()
     {

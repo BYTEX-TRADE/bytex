@@ -4,8 +4,13 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Bytex.Adapters.Binance/Bytex.Adapters.Binance.csproj" />
+    <Project Path="src/Bytex.Adapters.Bitget/Bytex.Adapters.Bitget.csproj" />
     <Project Path="src/Bytex.Adapters.Bybit/Bytex.Adapters.Bybit.csproj" />
+    <Project Path="src/Bytex.Adapters.Gate/Bytex.Adapters.Gate.csproj" />
+    <Project Path="src/Bytex.Adapters.Hyperliquid/Bytex.Adapters.Hyperliquid.csproj" />
+    <Project Path="src/Bytex.Adapters.Kraken/Bytex.Adapters.Kraken.csproj" />
     <Project Path="src/Bytex.Adapters.Kucoin/Bytex.Adapters.Kucoin.csproj" />
+    <Project Path="src/Bytex.Adapters.Okx/Bytex.Adapters.Okx.csproj" />
     <Project Path="src/Bytex.Adapters.Tardis/Bytex.Adapters.Tardis.csproj" />
     <Project Path="src/Bytex.Backtest/Bytex.Backtest.csproj" />
     <Project Path="src/Bytex.Cli/Bytex.Cli.csproj" />

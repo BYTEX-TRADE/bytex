@@ -61,6 +61,9 @@ public static class InstrumentJson
 
         public decimal MarginMaint { get; set; }
 
+        /// <summary>Absent for a venue that publishes its maximum leverage only to a key holder.</summary>
+        public decimal? MaxLeverage { get; set; }
+
         public decimal MakerFee { get; set; }
 
         public decimal TakerFee { get; set; }
@@ -117,6 +120,7 @@ public static class InstrumentJson
             MinPrice = instrument.MinPrice?.ToString(),
             MarginInit = instrument.MarginInit,
             MarginMaint = instrument.MarginMaint,
+            MaxLeverage = instrument.MaxLeverage,
             MakerFee = instrument.MakerFee,
             TakerFee = instrument.TakerFee,
             TsEvent = instrument.TsEvent.Value,
@@ -180,6 +184,7 @@ public static class InstrumentJson
             MinPrice = dto.MinPrice is null ? null : Price.Parse(dto.MinPrice),
             MarginInit = dto.MarginInit,
             MarginMaint = dto.MarginMaint,
+            MaxLeverage = dto.MaxLeverage,
             MakerFee = dto.MakerFee,
             TakerFee = dto.TakerFee,
             TsEvent = new UnixNanos(dto.TsEvent),

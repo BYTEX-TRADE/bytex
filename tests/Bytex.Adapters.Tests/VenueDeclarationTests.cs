@@ -1,8 +1,13 @@
 using System.Reflection;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
+using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Gate;
+using Bytex.Adapters.Hyperliquid;
+using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
+using Bytex.Adapters.Okx;
 using Bytex.Adapters.Tests.Fixtures;
 using Bytex.Adapters.Tests.Support;
 using Bytex.Core.Adapters;
@@ -121,14 +126,55 @@ public sealed class VenueDeclarationTests
         return config;
     }
 
-    /// <summary>Where a configured client really talks, asked of the adapter's own resolver.</summary>
-    private static (string Http, string? Ws) Talks(string venue, object config) => venue switch
+    /// <summary>
+    /// Where a configured client really talks, asked of the adapter's own resolver - and, where the address is not
+    /// what distinguishes one family from another, which market it really asks for.
+    /// <para>
+    /// The third element exists for Bitget and would have been wrong to leave out. On the three venues that shipped
+    /// first, a family is selected by somewhere to go: Binance's two families answer on different hosts and Bybit's
+    /// socket is opened on a different path. Bitget's three answer on one host and one socket path, and what selects
+    /// a family is a string the adapter puts in every request - the instrument type a subscription names and the
+    /// product type a REST call carries. Without asking for that, nothing here could tell whether a declared setting
+    /// landed on the family it claimed, which is exactly the failure this file exists to catch: a node that starts,
+    /// connects and never receives anything.
+    /// </para>
+    /// <para>
+    /// It is null where a venue really has nothing of the kind, which is a statement and not a gap: those venues are
+    /// distinguished by their addresses, and a selector invented for them would be this test's idea rather than the
+    /// adapter's.
+    /// </para>
+    /// </summary>
+    private static (string Http, string? Ws, string? Market) Talks(string venue, object config) => venue switch
     {
-        "Binance" => (BinanceVenue.HttpBase((IBinanceSettings)config), BinanceVenue.WsBase((IBinanceSettings)config)),
-        "Bybit" => (BybitVenue.HttpBase((IBybitSettings)config), BybitVenue.WsPublic((IBybitSettings)config)),
+        "Binance" => (BinanceVenue.HttpBase((IBinanceSettings)config), BinanceVenue.WsBase((IBinanceSettings)config), null),
+        "Bitget" => (BitgetVenue.HttpBase((IBitgetSettings)config), BitgetVenue.WsPublic((IBitgetSettings)config), BitgetVenue.Market((IBitgetSettings)config)),
+        "Bybit" => (BybitVenue.HttpBase((IBybitSettings)config), BybitVenue.WsPublic((IBybitSettings)config), null),
 
         // KuCoin has no socket base to resolve: the venue answers a REST call with the address, per connection.
-        "Kucoin" => (KucoinVenue.HttpBase((IKucoinSettings)config), null),
+        "Kucoin" => (KucoinVenue.HttpBase((IKucoinSettings)config), null, null),
+
+        // OKX has one host and one socket root for all three markets, which is why the answer here is the same for
+        // every family it declares. What selects a family is an instType parameter the adapter puts on each request
+        // and does not resolve through a settings reader the way Bitget's product type is, so there is no third
+        // string to ask it for either. The test below that asks "do the declared settings really pick this family"
+        // therefore cannot be answered by an address or a market on this venue - it is answered by the catalog.
+        "Okx" => (OkxVenue.HttpBase((IOkxSettings)config), OkxVenue.WsBase((IOkxSettings)config), null),
+
+        // Kraken's spot family declares its PUBLIC socket base, which is what a data client opens: the venue serves
+        // public and private data on two different hosts and refuses each on the other's, so the private host is
+        // derived from this one rather than declared beside it.
+        "Kraken" => (KrakenVenue.HttpBase((IKrakenSettings)config), KrakenVenue.WsBase((IKrakenSettings)config), null),
+
+        // Gate's three families differ in BOTH: spot answers on the general host and its own socket, and the two
+        // derivative markets on the derivatives host with a socket path per settled market. The address alone tells
+        // them apart, so there is no market selector to ask this venue for.
+        "Gate" => (GateVenue.HttpBase((IGateSettings)config), GateVenue.WsBase((IGateSettings)config), null),
+
+        // One host for everything and a fixed socket, which is why both are strings here where KuCoin's socket is
+        // a null. The declared bases are ROOTS - /info, /exchange and /ws hang off them - so this compares roots.
+        // This venue declares one family, so there is nothing for a market selector to tell apart.
+        "Hyperliquid" => (HyperliquidVenue.HttpBase((IHyperliquidSettings)config), HyperliquidVenue.WsBase((IHyperliquidSettings)config), null),
+
         _ => throw new InvalidOperationException(
             $"{venue} declares itself and this test does not know how to ask it where it talks. Add it here - the "
             + "declaration is only worth having if something checks it against the adapter."),
@@ -139,13 +185,70 @@ public sealed class VenueDeclarationTests
     {
         ("Binance", "spot") => new Routes().On("GET", "/api/v3/exchangeInfo", BinancePayloads.SpotExchangeInfo),
         ("Binance", "usdm-futures") => new Routes().On("GET", "/fapi/v1/exchangeInfo", BinancePayloads.FuturesExchangeInfo),
+
+        // Its own recorded catalog, on its own host's path. The family declares a swap class and a future class and
+        // the fixture holds both, taken from the venue's own contractType field rather than from the symbols -
+        // which on this family are BTCUSD_PERP and BTCUSD_261225, and would both have read as dated.
+        ("Binance", "coinm-futures") => new Routes().On("GET", "/dapi/v1/exchangeInfo", BinancePayloads.CoinMExchangeInfo),
         ("Bybit", "spot") => new Routes().On("GET", "/v5/market/instruments-info", BybitPayloads.SpotInstruments),
         ("Bybit", "linear") => new Routes().On(
             "GET",
             "/v5/market/instruments-info",
             r => StubResponse.Json(r.Query("cursor") is null ? BybitPayloads.LinearInstrumentsPage1 : BybitPayloads.LinearInstrumentsPage2)),
+
+        // Two rows in one page, and both classes come out of the venue's contractType: the dated one is spelled
+        // BTCUSDZ26, with no dash anywhere, so a rule reading the class off the name would report two perpetuals.
+        ("Bybit", "inverse") => new Routes()
+            .On("GET", "/v5/market/instruments-info", BybitPayloads.InverseInstruments)
+            .On("GET", BybitVenue.RiskLimitPath, BybitPayloads.InverseRiskLimits),
+
+        // One class, and no risk-limit route beside it on purpose: this venue refuses that endpoint for the option
+        // category, and the provider is written not to ask.
+        ("Bybit", "option") => new Routes().On("GET", "/v5/market/instruments-info", BybitPayloads.OptionInstruments),
         ("Kucoin", "spot") => new Routes().On("GET", "/api/v2/symbols", KucoinPayloads.Symbols),
         ("Kucoin", "futures") => new Routes().On("GET", "/api/v1/contracts/active", KucoinPayloads.FuturesContracts),
+
+        // One route for all three OKX families, answering by the instType the request carries. That is deliberate:
+        // on this venue the instType IS what selects the family, so a route that ignored it would let a
+        // misconfigured provider pass the class comparison below by reading somebody else's catalog.
+        ("Okx", "spot") or ("Okx", "swap") or ("Okx", "futures") => new Routes()
+            .On("GET", "/api/v5/public/instruments", r => StubResponse.Json(r.Query("instType") switch
+            {
+                "SPOT" => OkxPayloads.SpotInstruments,
+                "SWAP" => OkxPayloads.SwapInstruments,
+                "FUTURES" => OkxPayloads.FuturesInstruments,
+                _ => OkxPayloads.Error("51000", "Parameter instType error"),
+            }))
+            .On("GET", "/api/v5/public/position-tiers", r => StubResponse.Json(
+                r.Query("instType") == "FUTURES" ? OkxPayloads.FuturesTiers : OkxPayloads.SwapTiers)),
+
+        ("Kraken", "spot") => new Routes().On("GET", "/0/public/AssetPairs", KrakenPayloads.AssetPairs),
+
+        // Two routes, because a contract carries the uid of its fee schedule rather than its rates, and the
+        // provider fetches both.
+        ("Kraken", "futures") => new Routes()
+            .On("GET", "/derivatives/api/v3/instruments", KrakenPayloads.Instruments)
+            .On("GET", "/derivatives/api/v3/feeschedules", KrakenPayloads.FeeSchedules),
+
+        ("Bitget", "spot") => new Routes().On("GET", BitgetInstrumentProvider.SpotSymbolsPath, BitgetPayloads.SpotSymbols),
+
+        // Both perpetual families answer on one path and are told apart by the product type, and each contract's
+        // margin rates are a second request away - which is why the tier route is here as well.
+        ("Bitget", "usdt-futures") => new Routes()
+            .On("GET", BitgetInstrumentProvider.ContractsPath, BitgetPayloads.UsdtContracts)
+            .On("GET", BitgetInstrumentProvider.PositionTiersPath, BitgetPayloads.BtcUsdtPositionTiers),
+        ("Bitget", "usdc-futures") => new Routes()
+            .On("GET", BitgetInstrumentProvider.ContractsPath, BitgetPayloads.UsdcContracts)
+            .On("GET", BitgetInstrumentProvider.PositionTiersPath, BitgetPayloads.BtcPerpPositionTiers),
+
+        ("Gate", "spot") => new Routes().On("GET", "/api/v4/spot/currency_pairs", GatePayloads.CurrencyPairs),
+        ("Gate", "futures") => new Routes().On("GET", "/api/v4/futures/usdt/contracts", GatePayloads.FuturesContracts),
+        ("Gate", "delivery") => new Routes().On("GET", "/api/v4/delivery/usdt/contracts", GatePayloads.DeliveryContracts),
+
+        // A POST to one path, with the read named in the BODY. This venue has no path per resource, so there is
+        // nothing narrower to route on - which is the shape the whole adapter is built around.
+        ("Hyperliquid", "perpetuals") => new Routes().On("POST", HyperliquidVenue.InfoPath, HyperliquidPayloads.Meta),
+
         _ => throw new InvalidOperationException(
             $"{venue}'s {family} family declares the instrument classes it returns and there is no catalog fixture "
             + "here to check the claim against. Add one: a class list nothing verifies is a guess in a table."),
@@ -180,6 +283,16 @@ public sealed class VenueDeclarationTests
                 break;
             }
 
+            case "Bitget":
+            {
+                BitgetDataClientConfig c = (BitgetDataClientConfig)config;
+                using BitgetHttp http = new(c);
+                BitgetInstrumentProvider provider = new(http);
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
             case "Kucoin":
             {
                 KucoinDataClientConfig c = (KucoinDataClientConfig)config;
@@ -187,6 +300,59 @@ public sealed class VenueDeclarationTests
                 InstrumentProviderBase provider = c.ProductType == KucoinProductType.Futures
                     ? new KucoinFuturesInstrumentProvider(http)
                     : new KucoinInstrumentProvider(http);
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Okx":
+            {
+                OkxDataClientConfig c = (OkxDataClientConfig)config;
+                using OkxHttp http = new(c);
+
+                // The instrument type comes off the CONFIGURATION rather than from the family name, which is the
+                // whole point on this venue: it is the declared setting that has to select the market, and if it
+                // did not, the catalog route above would answer for a different one and the classes would not
+                // match.
+                OkxInstrumentProvider provider = new(http, c.InstrumentType);
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Kraken":
+            {
+                KrakenDataClientConfig c = (KrakenDataClientConfig)config;
+                using KrakenHttp http = new(c);
+                InstrumentProviderBase provider = c.ProductType == KrakenProductType.Futures
+                    ? new KrakenFuturesInstrumentProvider(http)
+                    : new KrakenInstrumentProvider(http);
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Gate":
+            {
+                GateDataClientConfig c = (GateDataClientConfig)config;
+                using GateHttp http = new(c);
+                InstrumentProviderBase provider = c.ProductType switch
+                {
+                    GateProductType.Futures => new GateFuturesInstrumentProvider(http),
+                    GateProductType.Delivery => new GateDeliveryInstrumentProvider(http),
+                    _ => new GateInstrumentProvider(http),
+                };
+
+                await provider.LoadAllAsync(CancellationToken.None);
+                instruments = provider.GetAll();
+                break;
+            }
+
+            case "Hyperliquid":
+            {
+                HyperliquidDataClientConfig c = (HyperliquidDataClientConfig)config;
+                using HyperliquidHttp http = new(c);
+                HyperliquidInstrumentProvider provider = new(http);
                 await provider.LoadAllAsync(CancellationToken.None);
                 instruments = provider.GetAll();
                 break;
@@ -222,34 +388,44 @@ public sealed class VenueDeclarationTests
     }
 
     [Fact]
-    public void A_venue_declares_each_instrument_class_in_exactly_one_family()
+    public void A_class_two_families_hold_is_answered_by_the_first_of_them_on_purpose()
     {
         // FamilyFor answers "which family handles a swap on this venue" by taking the first that lists the class, so
-        // two families listing one class is a question with two answers and an answer that depends on declaration
-        // order. A venue that really does offer one class two ways - inverse and linear perpetuals, say - has to say
-        // which is the one to use rather than leaving it to whoever wrote the list.
+        // two families listing one class is a question whose answer depends on declaration order. That used to be
+        // forbidden outright, and it was the right rule while every venue that shipped held each class once.
+        //
+        // Bitget does not. It holds perpetual swaps two ways - 805 contracts margined in USDT and 49 in USDC, in two
+        // product types with differently spelled symbols - and both are real markets a host can trade. Forbidding it
+        // would have meant declaring one of them and leaving the other undeclared, which is the worse failure of the
+        // two this file guards against: an undeclared market is one no host can find, while an order-dependent
+        // answer is at least an answer.
+        //
+        // So the rule is now that order-dependence has to be deliberate. A class claimed twice must be answered by
+        // the FIRST family that claims it, and the families claiming it must be distinguishable by the configuration
+        // they declare - otherwise a host reading the declaration could not select between them at all and the
+        // ordering really would be arbitrary.
         foreach ((string venue, VenueDescriptor descriptor) in Declarations())
         {
             foreach (InstrumentClass instrumentClass in Enum.GetValues<InstrumentClass>())
             {
-                string[] claiming = descriptor.Families
-                    .Where(f => f.InstrumentClasses.Contains(instrumentClass))
-                    .Select(f => f.Name)
-                    .ToArray();
+                VenueFamily[] claiming = [.. descriptor.Families.Where(f => f.InstrumentClasses.Contains(instrumentClass))];
+                if (claiming.Length == 0)
+                {
+                    continue;
+                }
 
-                Assert.True(
-                    claiming.Length <= 1,
-                    $"{venue} declares {instrumentClass} in {string.Join(" and ", claiming)}, so which one handles it "
-                    + "depends on the order they are written in. Say which, or split the class.");
+                Assert.Equal(claiming[0], descriptor.FamilyFor(instrumentClass));
+
+                Assert.Equal(
+                    claiming.Length,
+                    claiming.Select(f => string.Join(";", f.Config.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => c.Key + "=" + c.Value)))
+                        .Distinct(StringComparer.Ordinal)
+                        .Count());
             }
 
             foreach (VenueFamily family in descriptor.Families)
             {
                 Assert.NotEmpty(family.InstrumentClasses);
-                foreach (InstrumentClass instrumentClass in family.InstrumentClasses)
-                {
-                    Assert.Equal(family, descriptor.FamilyFor(instrumentClass));
-                }
             }
         }
     }
@@ -262,7 +438,7 @@ public sealed class VenueDeclarationTests
         // really goes. A host reading the declaration to show a user what a node talks to, or to decide whether a
         // venue is reachable from where it runs, is reading these two strings.
         VenueFamily family = Family(venue, name);
-        (string http, string? ws) = Talks(venue, Configure(venue, family));
+        (string http, string? ws, _) = Talks(venue, Configure(venue, family));
 
         Assert.Equal(family.HttpBase, http);
 
@@ -286,31 +462,61 @@ public sealed class VenueDeclarationTests
         // socket is a root plus /v5/public/<category>, and declaring the full path produced a URL that, written
         // back, had the category appended to it a second time. It read perfectly and connected nowhere.
         VenueFamily family = Family(venue, name);
-        (string defaultHttp, string? defaultWs) = Talks(venue, Configure(venue, family));
-        (string writtenBack, string? writtenBackWs) = Talks(venue, Configure(venue, family, family.HttpBase, family.WsBase));
+        (string defaultHttp, string? defaultWs, string? defaultMarket) = Talks(venue, Configure(venue, family));
+        (string writtenBack, string? writtenBackWs, string? writtenBackMarket) = Talks(venue, Configure(venue, family, family.HttpBase, family.WsBase));
 
         Assert.Equal(defaultHttp, writtenBack);
         Assert.Equal(defaultWs, writtenBackWs);
+        Assert.Equal(defaultMarket, writtenBackMarket);
     }
 
     [Theory]
     [MemberData(nameof(Families))]
-    public void The_config_a_family_declares_is_what_selects_that_family(string venue, string name)
+    public async Task The_config_a_family_declares_is_what_selects_that_family(string venue, string name)
     {
         // Naming the field without the value leaves a host guessing the spelling of a venue's own enum. Applying the
-        // declared settings has to land on this family and no other, which is checked by where the client then
-        // talks: Binance's two families differ by host, Bybit's by the path its socket is opened on.
+        // declared settings has to land on this family and no other.
+        //
+        // On the venues that shipped first, where that lands is visible in the ADDRESS: Binance's two families
+        // differ by host and Bybit's by the path its socket is opened on. Two venues here are not like that, and
+        // for different reasons, so this asks in three steps and stops at the first that answers.
+        //
+        // Bitget's three families answer on one host and one socket path, and what selects one is a market string -
+        // the instrument type a subscription names and the product type a REST call carries - which its adapter
+        // resolves from the declared settings. That string is the third element Talks returns, and for this venue
+        // it IS the address: two families that ask for different markets are told apart, and nothing further needs
+        // asking.
+        //
+        // OKX has neither. One host and one socket root serve its spot, swap and futures markets, and the instType
+        // that selects one is put on each request rather than resolved from the settings, so there is no third
+        // string to compare. "They talk to the same place and ask for the same market" is a fact about that venue
+        // rather than a declaration nobody checked, and demanding different addresses would be demanding this venue
+        // be built like the others.
+        //
+        // So where all three are the same, the proof moves to the catalog: the declared settings are applied, the
+        // provider is built from them, and the instrument CLASSES that come back have to be this family's. That is
+        // a stronger check than the address for such a venue - a family whose settings selected the wrong market
+        // would read the wrong catalog and fail it - and it is why the fixture behind it answers by instType.
         VenueFamily family = Family(venue, name);
         VenueDescriptor descriptor = Declarations().Single(d => d.Venue == venue).Descriptor;
-        (string http, string? ws) = Talks(venue, Configure(venue, family));
+        (string http, string? ws, string? market) = Talks(venue, Configure(venue, family));
 
         foreach (VenueFamily other in descriptor.Families.Where(f => f.Name != name))
         {
-            (string otherHttp, string? otherWs) = Talks(venue, Configure(venue, other));
-            Assert.True(
-                http != otherHttp || ws != otherWs,
-                $"{venue}'s {name} and {other.Name} are configured differently and talk to exactly the same place, "
-                + "so nothing here can tell whether the declared settings really select the family they claim to.");
+            (string otherHttp, string? otherWs, string? otherMarket) = Talks(venue, Configure(venue, other));
+            if (http != otherHttp || ws != otherWs || market != otherMarket)
+            {
+                continue;
+            }
+
+            Assert.False(
+                family.Config.Count == 0 || family.Config.SequenceEqual(other.Config),
+                $"{venue}'s {name} and {other.Name} ask for exactly the same market in exactly the same place AND "
+                + "declare the same settings, so nothing anywhere could tell which family a host had configured.");
+
+            IReadOnlyList<InstrumentClass> produced = await ProducedAsync(venue, family);
+            Assert.NotEqual(other.InstrumentClasses.Distinct().Order().ToArray(), produced.ToArray());
+            Assert.Equal(family.InstrumentClasses.Distinct().Order().ToArray(), produced.ToArray());
         }
     }
 
@@ -483,13 +689,19 @@ public sealed class VenueDeclarationTests
     public void Default_fees_are_fractions_of_a_trade_rather_than_percentages(string venue, string name)
     {
         // Ten basis points is 0.001 here. Written as 0.1 it reads the same to a person and costs a hundred times as
-        // much in a backtest, which is the mistake that makes a strategy look unprofitable rather than broken.
+        // much in a backtest, which is the mistake that makes a strategy look unprofitable rather than broken. That
+        // is what the magnitude bound is for, and it applies to a rebate just as much - a rebate written as a
+        // percentage is the same error with the sign reversed.
         VenueFamily family = Family(venue, name);
 
-        foreach (decimal fee in new[] { family.DefaultFees.Maker, family.DefaultFees.Taker })
-        {
-            Assert.InRange(fee, 0m, 0.01m);
-        }
+        // A maker rate may be negative: some venues pay for liquidity rather than charging for it, and a venue that
+        // publishes a rebate has to be able to declare it. Declaring zero instead would understate what trading
+        // there is worth, and would not be what the venue says.
+        Assert.InRange(family.DefaultFees.Maker, -0.01m, 0.01m);
+
+        // A taker rate may not. No venue pays for taking liquidity, so a negative here is a sign error, and it would
+        // flatter every result by exactly what trading costs.
+        Assert.InRange(family.DefaultFees.Taker, 0m, 0.01m);
     }
 
     [Theory]

@@ -72,6 +72,30 @@ public sealed class AdapterParityTests
                 ["GenerateFillReportsAsync"] = Parity.Own,
                 ["GeneratePositionStatusReportsAsync"] = Parity.Own,
             },
+            ["Bitget"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubmitOrderAsync"] = Parity.Own,
+                ["SubmitOrderListAsync"] = Parity.Base,
+
+                // Implemented, and it does different things on the two markets: the derivative endpoint amends in
+                // place, and spot has no amend at all so the venue's own cancel-and-replace is used instead.
+                ["ModifyOrderAsync"] = Parity.Own,
+
+                ["CancelOrderAsync"] = Parity.Own,
+                ["CancelAllOrdersAsync"] = Parity.Own,
+                ["BatchCancelOrdersAsync"] = Parity.Base,
+
+                // As Bybit and KuCoin: answered by the base out of this venue's own order report.
+                ["QueryOrderAsync"] = Parity.Base,
+
+                ["GenerateMassStatusAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportsAsync"] = Parity.Own,
+                ["GenerateFillReportsAsync"] = Parity.Own,
+                ["GeneratePositionStatusReportsAsync"] = Parity.Own,
+            },
             ["Bybit"] = new(StringComparer.Ordinal)
             {
                 ["ConnectAsync"] = Parity.Own,
@@ -84,6 +108,64 @@ public sealed class AdapterParityTests
                 ["BatchCancelOrdersAsync"] = Parity.Base,
 
                 // Answered by the base out of this venue's own order report, which is implemented below.
+                ["QueryOrderAsync"] = Parity.Base,
+
+                ["GenerateMassStatusAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportsAsync"] = Parity.Own,
+                ["GenerateFillReportsAsync"] = Parity.Own,
+                ["GeneratePositionStatusReportsAsync"] = Parity.Own,
+            },
+
+            // Gate's rows describe its SPOT clients, which is what this table finds by naming convention. Its two
+            // derivative markets have clients of their own - GateFuturesExecutionClient and its delivery subclass -
+            // and the tests in Gate/ compare those against these, because a table that cannot see them would let one
+            // of the three markets quietly stop answering something the other two answer.
+            ["Gate"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubmitOrderAsync"] = Parity.Own,
+                ["SubmitOrderListAsync"] = Parity.Base,
+                ["ModifyOrderAsync"] = Parity.Own,
+                ["CancelOrderAsync"] = Parity.Own,
+                ["CancelAllOrdersAsync"] = Parity.Own,
+                ["BatchCancelOrdersAsync"] = Parity.Base,
+
+                // As Bybit and KuCoin: answered by the base out of this venue's own order report, which is below.
+                ["QueryOrderAsync"] = Parity.Base,
+
+                ["GenerateMassStatusAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportsAsync"] = Parity.Own,
+                ["GenerateFillReportsAsync"] = Parity.Own,
+
+                // A cash account holds no position, so this answers an empty list - but it is the adapter that
+                // says so rather than the base, which is the difference between a deliberate answer and a gap.
+                ["GeneratePositionStatusReportsAsync"] = Parity.Own,
+            },
+            ["Hyperliquid"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubmitOrderAsync"] = Parity.Own,
+                ["SubmitOrderListAsync"] = Parity.Base,
+                ["ModifyOrderAsync"] = Parity.Own,
+                ["CancelOrderAsync"] = Parity.Own,
+
+                // The base's loop over single cancels, and correct here for a reason worth writing down: this
+                // venue HAS a cancel-all action, and it cancels every order on the ACCOUNT rather than on one
+                // instrument. The command names an instrument, a strategy and a side, so the venue's own action
+                // would cancel orders the caller did not ask about - including another node's on the same
+                // account, which on this venue is an address anything can share.
+                ["CancelAllOrdersAsync"] = Parity.Base,
+
+                // Likewise: the venue takes a batch of cancels in one signed action, and the base's loop sends
+                // one each. Slower and identical in effect; a batch would be worth having and is not needed for
+                // correctness.
+                ["BatchCancelOrdersAsync"] = Parity.Base,
+
+                // As the other three venues: answered by the base out of this venue's own order report.
                 ["QueryOrderAsync"] = Parity.Base,
 
                 ["GenerateMassStatusAsync"] = Parity.Own,
@@ -111,6 +193,67 @@ public sealed class AdapterParityTests
                 ["GenerateOrderStatusReportsAsync"] = Parity.Own,
                 ["GenerateFillReportsAsync"] = Parity.Own,
                 ["GeneratePositionStatusReportsAsync"] = Parity.Own,
+            },
+
+            // OKX brings three markets through ONE client, where KuCoin's two markets need two: its endpoints are
+            // shared and an instType parameter selects the market, so there is no second client for this table to
+            // miss. What it cannot do is cancel-all - the venue has no such endpoint for these markets - so that
+            // row is Own rather than Base: the open orders are read and cancelled in batches, which is work the
+            // base's loop over single cancels would do one request at a time.
+            ["Okx"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubmitOrderAsync"] = Parity.Own,
+                ["SubmitOrderListAsync"] = Parity.Base,
+                ["ModifyOrderAsync"] = Parity.Own,
+                ["CancelOrderAsync"] = Parity.Own,
+                ["CancelAllOrdersAsync"] = Parity.Own,
+                ["BatchCancelOrdersAsync"] = Parity.Base,
+
+                // As Bybit and KuCoin: answered by the base out of this venue's own order report, which is
+                // implemented below.
+                ["QueryOrderAsync"] = Parity.Base,
+
+                ["GenerateMassStatusAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportsAsync"] = Parity.Own,
+                ["GenerateFillReportsAsync"] = Parity.Own,
+                ["GeneratePositionStatusReportsAsync"] = Parity.Own,
+            },
+
+            // The row describes the SPOT client, which is the one the naming convention finds. Its futures sibling
+            // is KrakenFuturesExecutionClient, and the two are compared against each other by name in the Kraken
+            // tests rather than here - as KuCoin's are, for the same reason.
+            ["Kraken"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubmitOrderAsync"] = Parity.Own,
+                ["SubmitOrderListAsync"] = Parity.Base,
+                ["ModifyOrderAsync"] = Parity.Own,
+                ["CancelOrderAsync"] = Parity.Own,
+
+                // The base's loop, and on this venue that is the CORRECT answer rather than a gap. Kraken spot's own
+                // /0/private/CancelAll takes no symbol and cancels every open order on the account, while a
+                // cancel-all command always names an instrument - so sending it would close orders on every other
+                // instrument the account holds. Its futures sibling takes a symbol and implements this itself.
+                ["CancelAllOrdersAsync"] = Parity.Base,
+
+                ["BatchCancelOrdersAsync"] = Parity.Base,
+
+                // As the other three: answered by the base out of this venue's own order report.
+                ["QueryOrderAsync"] = Parity.Base,
+
+                ["GenerateMassStatusAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportAsync"] = Parity.Own,
+                ["GenerateOrderStatusReportsAsync"] = Parity.Own,
+                ["GenerateFillReportsAsync"] = Parity.Own,
+
+                // A cash account holds no positions, so the base's empty list is the whole of the right answer and
+                // implementing it would be inventing one. The futures client, which does hold positions, reports
+                // them.
+                ["GeneratePositionStatusReportsAsync"] = Parity.Base,
             },
 
             // Tardis is a history source. There is nothing to trade on and no execution client to trade with, which
@@ -143,7 +286,31 @@ public sealed class AdapterParityTests
                 ["UnsubscribeAsync"] = Parity.Own,
                 ["RequestAsync"] = Parity.Own,
             },
+            ["Bitget"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubscribeAsync"] = Parity.Own,
+                ["UnsubscribeAsync"] = Parity.Own,
+                ["RequestAsync"] = Parity.Own,
+            },
             ["Bybit"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubscribeAsync"] = Parity.Own,
+                ["UnsubscribeAsync"] = Parity.Own,
+                ["RequestAsync"] = Parity.Own,
+            },
+            ["Gate"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubscribeAsync"] = Parity.Own,
+                ["UnsubscribeAsync"] = Parity.Own,
+                ["RequestAsync"] = Parity.Own,
+            },
+            ["Hyperliquid"] = new(StringComparer.Ordinal)
             {
                 ["ConnectAsync"] = Parity.Own,
                 ["DisconnectAsync"] = Parity.Own,
@@ -158,6 +325,22 @@ public sealed class AdapterParityTests
                 ["SubscribeAsync"] = Parity.Own,
                 ["RequestAsync"] = Parity.Own,
                 ["UnsubscribeAsync"] = Parity.Own,
+            },
+            ["Okx"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubscribeAsync"] = Parity.Own,
+                ["UnsubscribeAsync"] = Parity.Own,
+                ["RequestAsync"] = Parity.Own,
+            },
+            ["Kraken"] = new(StringComparer.Ordinal)
+            {
+                ["ConnectAsync"] = Parity.Own,
+                ["DisconnectAsync"] = Parity.Own,
+                ["SubscribeAsync"] = Parity.Own,
+                ["UnsubscribeAsync"] = Parity.Own,
+                ["RequestAsync"] = Parity.Own,
             },
             ["Tardis"] = new(StringComparer.Ordinal)
             {
@@ -186,13 +369,52 @@ public sealed class AdapterParityTests
                 ["LoadIdsAsync"] = Parity.Base,
                 ["LoadAsync"] = Parity.Own,
             },
+            ["Bitget"] = new(StringComparer.Ordinal)
+            {
+                ["LoadAllAsync"] = Parity.Own,
+
+                // The base loops over single loads, which is the right behaviour here and an expensive one: each
+                // contract of a derivative family costs a second request for its margin tiers, because the venue
+                // answers those for one symbol at a time.
+                ["LoadIdsAsync"] = Parity.Base,
+
+                ["LoadAsync"] = Parity.Own,
+            },
             ["Bybit"] = new(StringComparer.Ordinal)
             {
                 ["LoadAllAsync"] = Parity.Own,
                 ["LoadIdsAsync"] = Parity.Base,
                 ["LoadAsync"] = Parity.Own,
             },
+            ["Gate"] = new(StringComparer.Ordinal)
+            {
+                ["LoadAllAsync"] = Parity.Own,
+                ["LoadIdsAsync"] = Parity.Base,
+                ["LoadAsync"] = Parity.Own,
+            },
+            ["Hyperliquid"] = new(StringComparer.Ordinal)
+            {
+                ["LoadAllAsync"] = Parity.Own,
+                ["LoadIdsAsync"] = Parity.Base,
+
+                // Implemented, and worth a line because the venue has no per-instrument read at all: `meta` takes
+                // no filter, so this reads the whole universe and adds the one asked for. The capability is about
+                // what the ADAPTER can do, and it can.
+                ["LoadAsync"] = Parity.Own,
+            },
             ["Kucoin"] = new(StringComparer.Ordinal)
+            {
+                ["LoadAllAsync"] = Parity.Own,
+                ["LoadIdsAsync"] = Parity.Base,
+                ["LoadAsync"] = Parity.Own,
+            },
+            ["Okx"] = new(StringComparer.Ordinal)
+            {
+                ["LoadAllAsync"] = Parity.Own,
+                ["LoadIdsAsync"] = Parity.Base,
+                ["LoadAsync"] = Parity.Own,
+            },
+            ["Kraken"] = new(StringComparer.Ordinal)
             {
                 ["LoadAllAsync"] = Parity.Own,
                 ["LoadIdsAsync"] = Parity.Base,
@@ -465,6 +687,26 @@ public sealed class AdapterParityTests
             // And the venue pays for it: the programme is live and this adapter carries an id for it.
             ["BrokerProgramme"] = Owed.Has,
         },
+        ["Bitget"] = new(StringComparer.Ordinal)
+        {
+            ["HistoryBars"] = Owed.Has,
+
+            // Owed by the two perpetual families and answered for them. Spot pays no funding and has none to fetch,
+            // and asking for it there throws rather than answering an empty list - an empty list would read as "this
+            // pair was never charged anything", which is a different statement.
+            ["HistoryFunding"] = Owed.Has,
+
+            ["VerifyKeys"] = Owed.Has,
+            ["Declaration"] = Owed.Has,
+
+            // A header on the request - the channel API code the venue's broker programme issues - so an id rides
+            // outside the signature and changes nothing about the order itself.
+            ["BrokerTag"] = Owed.Has,
+
+            // And the venue pays for it: the programme is published, its mechanism is published with it, and this
+            // adapter carries an id for it. What is left is applying for a code.
+            ["BrokerProgramme"] = Owed.Has,
+        },
         ["Bybit"] = new(StringComparer.Ordinal)
         {
             ["HistoryBars"] = Owed.Has,
@@ -476,6 +718,58 @@ public sealed class AdapterParityTests
             ["BrokerTag"] = Owed.Has,
 
             ["BrokerProgramme"] = Owed.Has,
+        },
+        ["Gate"] = new(StringComparer.Ordinal)
+        {
+            // One helper for all three markets: it reads the family off the http client's own product, because the
+            // three answer three different candle shapes and a caller storing history has no business knowing that.
+            ["HistoryBars"] = Owed.Has,
+
+            // Owed by the perpetual family and answered for it. The dated contracts settle at expiry and the spot
+            // pairs are not margined, so neither is charged funding and neither has any to fetch.
+            ["HistoryFunding"] = Owed.Has,
+
+            ["VerifyKeys"] = Owed.Has,
+            ["Declaration"] = Owed.Has,
+
+            // Nothing here carries an id, and on the owner's ruling that is a default no-op rather than a refusal.
+            ["BrokerTag"] = Owed.NotApplicable,
+
+            // The venue runs an API broker programme and names its mechanism only on the programme page - an
+            // additional channel id, applied for through a business manager - without publishing the header's
+            // spelling or its value format anywhere in the API reference. So nothing can be carried before somebody
+            // applies, and an id invented from a third-party client's source would be a magic string with no source.
+            //
+            // Unclaimed rather than NotApplicable, because it does apply: every trade routed here earns a rebate
+            // nobody is collecting. It is not Missing either - the venue trades correctly.
+            ["BrokerProgramme"] = Owed.Unclaimed,
+        },
+        ["Hyperliquid"] = new(StringComparer.Ordinal)
+        {
+            ["HistoryBars"] = Owed.Has,
+            ["HistoryFunding"] = Owed.Has,
+
+            // A key test that answers a different question from the other venues', because this venue issues no
+            // key: what can be established is which account the private key controls and whether it is the
+            // account's own wallet key - which can withdraw - or an API wallet, which cannot.
+            ["VerifyKeys"] = Owed.Has,
+
+            ["Declaration"] = Owed.Has,
+
+            // Nothing carries an id, as on KuCoin and for the same reason: the mechanism needs more than one
+            // configured string.
+            ["BrokerTag"] = Owed.NotApplicable,
+
+            // And a programme that really exists, measured rather than assumed. The venue runs builder codes: an
+            // order may carry a `builder` object naming an address AND a fee in tenths of a basis point, the
+            // account has to have approved that builder's maximum fee with a signed action of its own, and the
+            // referral read reports what a builder has earned under `builderRewards`. The `maxBuilderFee` read
+            // answered 0 for an unapproved pair, with no key, which is how the mechanism was confirmed to be
+            // published rather than undisclosed.
+            //
+            // Unclaimed and not NotApplicable, because it does apply: an address plus a fee cannot be expressed
+            // by one configured id, so every trade routed here earns a rebate nobody collects.
+            ["BrokerProgramme"] = Owed.Unclaimed,
         },
         ["Kucoin"] = new(StringComparer.Ordinal)
         {
@@ -502,6 +796,62 @@ public sealed class AdapterParityTests
             // nobody is collecting. It is not Missing either - the venue trades correctly and shipping it was not
             // a mistake.
             ["BrokerProgramme"] = Owed.Unclaimed,
+        },
+        ["Okx"] = new(StringComparer.Ordinal)
+        {
+            ["HistoryBars"] = Owed.Has,
+
+            // Owed by the swap family and answered for it. Spot pays no funding and neither do the dated futures -
+            // a contract that delivers converges by delivering - so this is a venue-level row that one of three
+            // families makes true.
+            ["HistoryFunding"] = Owed.Has,
+
+            ["VerifyKeys"] = Owed.Has,
+            ["Declaration"] = Owed.Has,
+
+            // Nothing here carries an id, on the same default-no-op terms as KuCoin: a configured id is ignored, so
+            // nothing above the adapter has to know which venues have a programme.
+            ["BrokerTag"] = Owed.NotApplicable,
+
+            // The venue runs a broker programme and publishes its mechanism ONLY TO APPROVED APPLICANTS. What an
+            // order would have to carry - a tag, a header, a credential - is not in the public documentation at
+            // all, so nothing can be built before somebody applies: this is not adapter work waiting to be
+            // scheduled, it waits on a decision.
+            //
+            // Unclaimed and not NotApplicable, because it does apply: every trade routed here earns a rebate that
+            // nobody is collecting. Not Missing either - the venue trades correctly and shipping it is not a
+            // mistake.
+            ["BrokerProgramme"] = Owed.Unclaimed,
+        },
+
+        ["Kraken"] = new(StringComparer.Ordinal)
+        {
+            // Both families, out of one helper that routes on which platform its http client is pointed at. Worth
+            // saying what each can really reach: the futures charts service pages properly, and the spot OHLC
+            // endpoint does not page AT ALL - it clamps every request to the newest 720 intervals, so one-minute
+            // spot history older than twelve hours cannot be fetched from this venue at any price.
+            ["HistoryBars"] = Owed.Has,
+
+            // Owed by the futures family and answered for it. A year of hourly settlements, which is everything the
+            // venue retains; spot pays no funding and has none to fetch.
+            ["HistoryFunding"] = Owed.Has,
+
+            // And it answers a question no other venue's key test has to: WHICH of the two platforms the key in the
+            // file belongs to. A spot key and a futures key are issued separately and neither works on the other,
+            // so a perfectly good key against the wrong family is this venue's own invitation to failure.
+            ["VerifyKeys"] = Owed.Has,
+
+            ["Declaration"] = Owed.Has,
+
+            // A field on the order - `broker`, carrying the partner's own Kraken IIBAN - on AddOrder and on
+            // sendorder alike. Nothing about the order's identity changes, so this needs no reconciliation test of
+            // the kind Binance's prefix does.
+            ["BrokerTag"] = Owed.Has,
+
+            // The venue runs the programme, publishes the mechanism, and this adapter carries an id for it. What
+            // cannot be verified from outside an approved account is whether the field is honoured: the futures
+            // platform documents its own `broker` parameter as available in pre-production only.
+            ["BrokerProgramme"] = Owed.Has,
         },
         ["Tardis"] = new(StringComparer.Ordinal)
         {
@@ -566,6 +916,33 @@ public sealed class AdapterParityTests
         }
     }
 
+
+    [Fact]
+    public void A_venue_that_declares_itself_is_registered_where_a_host_can_find_it()
+    {
+        // Found by trying it rather than by reasoning about it, which is the only way this one shows up. Every test
+        // in this project passed with the fifth venue fully built, fully declared and INVISIBLE: `bytex venues`
+        // lists what the plugin registry holds, the registry is filled by hand in one method, and an adapter that
+        // is not named there declares itself to nobody. A host onboarding from the declaration would not know the
+        // venue existed.
+        //
+        // Read off the source rather than by building a registry, for the same reason the verify-keys row above is:
+        // the method that fills it is private, and what matters is that somebody wrote the line.
+        string source = File.ReadAllText(Source("src", "Bytex.Cli", "Program.cs"));
+
+        foreach (string venue in ShippedVenues())
+        {
+            bool declares = Assembly.Load("Bytex.Adapters." + venue).GetTypes()
+                .Any(t => !t.IsAbstract && typeof(IVenuePlugin).IsAssignableFrom(t));
+
+            if (!declares)
+            {
+                continue;
+            }
+
+            Assert.Contains($"new {venue}Plugin()", source, StringComparison.Ordinal);
+        }
+    }
 
     [Fact]
     public void A_venue_that_claims_a_declaration_has_a_plugin_that_describes_it()

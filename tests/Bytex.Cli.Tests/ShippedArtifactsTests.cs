@@ -14,8 +14,9 @@ public sealed class ShippedArtifactsTests
     private static readonly string[] _packageProjects =
     [
         "Bytex.Core", "Bytex.Indicators", "Bytex.Documents", "Bytex.Data", "Bytex.Backtest", "Bytex.Live",
-        "Bytex.Adapters.Binance", "Bytex.Adapters.Bybit", "Bytex.Adapters.Kucoin", "Bytex.Adapters.Tardis",
-        "Bytex.Persistence.Redis", "Bytex.Cli",
+        "Bytex.Adapters.Binance", "Bytex.Adapters.Bitget", "Bytex.Adapters.Bybit", "Bytex.Adapters.Gate",
+        "Bytex.Adapters.Hyperliquid", "Bytex.Adapters.Kraken", "Bytex.Adapters.Kucoin", "Bytex.Adapters.Okx",
+        "Bytex.Adapters.Tardis", "Bytex.Persistence.Redis", "Bytex.Cli",
     ];
 
     // ----- what the documentation says about releases -----
@@ -45,8 +46,7 @@ public sealed class ShippedArtifactsTests
         Assert.NotEmpty(released);
 
         // A row like "| **0.3** ✅ |" in the README, or a heading like "## 0.3 · Risk ✅" in the roadmap.
-        Regex ticked = new(@"(?:\|\s*\*\*|##\s*)(\d+\.\d+)(?:\*\*)?[^|
-]*✅", RegexOptions.Multiline, TimeSpan.FromSeconds(1));
+        Regex ticked = new(@"(?:\|\s*\*\*|##\s*)(\d+\.\d+)(?:\*\*)?[^|\r\n]*✅", RegexOptions.Multiline, TimeSpan.FromSeconds(1));
         foreach ((string path, string text) in DocumentsAndTheReadme())
         {
             foreach (Match milestone in ticked.Matches(text))
@@ -274,7 +274,15 @@ public sealed class ShippedArtifactsTests
     private static readonly string[] _knownProviders = ["bytex.importable", "bytex.document"];
     private static readonly string[] _knownDataKinds = ["bars", "quotes", "trades", "deltas"];
     private static readonly string[] _knownEnvironments = ["backtest", "sandbox", "live"];
-    private static readonly string[] _knownFactories = ["BINANCE", "BYBIT", "KUCOIN", "TARDIS", "SANDBOX"];
+    /// <summary>
+    /// Every factory an example configuration may name. All eight venues, because five arrived at once and only one
+    /// of them was added here - so the first example naming any of the other four would have failed a test about
+    /// something else entirely, with a message about an unknown factory rather than a missing entry in this list.
+    /// </summary>
+    private static readonly string[] _knownFactories =
+    [
+        "BINANCE", "BITGET", "BYBIT", "GATE", "HYPERLIQUID", "KRAKEN", "KUCOIN", "OKX", "TARDIS", "SANDBOX",
+    ];
 
     public static TheoryData<string> ExampleConfigs()
     {

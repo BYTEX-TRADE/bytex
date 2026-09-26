@@ -245,6 +245,67 @@ public sealed class VerifyKeysCommandTests
     }
 
     [Fact]
+    public async Task A_Binance_key_with_futures_on_is_asked_whether_it_reaches_the_coin_margined_host()
+    {
+        // This venue grants futures with ONE permission and serves its two futures markets on two different hosts,
+        // so "futures on" does not establish that the key reaches the coin-margined one - and a key that does not
+        // is a live node that authenticates, starts, and is refused by the venue on its first order.
+        Run run = await VerifyAsync("BINANCE", BinanceEnv, r => r.Path switch
+        {
+            "/api/v3/account" => StubResponse.Json(BinanceAccount),
+            "/sapi/v1/account/apiRestrictions" => StubResponse.Json("""{"ipRestrict":true,"enableWithdrawals":false,"enableReading":true,"enableFutures":true,"enableSpotAndMarginTrading":true}"""),
+            "/dapi/v1/balance" => StubResponse.Json("""[{"accountAlias":"x","asset":"BTC","balance":"1.5","availableBalance":"1.5"}]"""),
+            _ => StubResponse.Error(404, "{}"),
+        });
+
+        Assert.Equal(0, run.Cli.ExitCode);
+        Assert.True(Fact(run.Json, "markets", "futures"));
+        Assert.Contains("/dapi/v1/balance", run.Requests.Select(r => r.Path));
+
+        JsonElement check = Assert.Single(run.Json.GetProperty("checks").EnumerateArray(), c => c.GetProperty("name").GetString() == "coinm-futures");
+        Assert.Equal("ok", check.GetProperty("status").GetString());
+        Assert.Contains("1 assets", check.GetProperty("detail").GetString()!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_Binance_key_the_coin_margined_host_refuses_is_warned_about_rather_than_failed()
+    {
+        // The key is known good by this point, so what is being reported is which of the venue's markets it
+        // reaches. Failing the whole report over one market would tell somebody their key is bad when it is not.
+        Run run = await VerifyAsync("BINANCE", BinanceEnv, r => r.Path switch
+        {
+            "/api/v3/account" => StubResponse.Json(BinanceAccount),
+            "/sapi/v1/account/apiRestrictions" => StubResponse.Json("""{"ipRestrict":true,"enableWithdrawals":false,"enableReading":true,"enableFutures":true,"enableSpotAndMarginTrading":true}"""),
+            _ => StubResponse.Error(401, BinanceError(-2015, "Invalid API-key, IP, or permissions for action.")),
+        });
+
+        Assert.Equal(0, run.Cli.ExitCode);
+        Assert.True(run.Json.GetProperty("ok").GetBoolean());
+
+        JsonElement check = Assert.Single(run.Json.GetProperty("checks").EnumerateArray(), c => c.GetProperty("name").GetString() == "coinm-futures");
+        Assert.Equal("warn", check.GetProperty("status").GetString());
+        Assert.DoesNotContain(Secret, run.Cli.AllOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_Binance_key_without_futures_is_not_asked_about_the_coin_margined_host_at_all()
+    {
+        // A key without the permission would be refused for the permission, and the report would then say the same
+        // thing twice - once as "futures off" and once as a warning about a host it was never going to reach.
+        Run run = await VerifyAsync("BINANCE", BinanceEnv, r => r.Path switch
+        {
+            "/api/v3/account" => StubResponse.Json(BinanceAccount),
+            "/sapi/v1/account/apiRestrictions" => StubResponse.Json("""{"ipRestrict":true,"enableWithdrawals":false,"enableReading":true,"enableFutures":false,"enableSpotAndMarginTrading":true}"""),
+            _ => StubResponse.Error(404, "{}"),
+        });
+
+        Assert.Equal(0, run.Cli.ExitCode);
+        Assert.False(Fact(run.Json, "markets", "futures"));
+        Assert.DoesNotContain("/dapi/v1/balance", run.Requests.Select(r => r.Path));
+        Assert.DoesNotContain(run.Json.GetProperty("checks").EnumerateArray(), c => c.GetProperty("name").GetString() == "coinm-futures");
+    }
+
+    [Fact]
     public async Task Binance_mainnet_with_unreadable_restrictions_keeps_the_unknown_facts_null()
     {
         Run run = await VerifyAsync("BINANCE", BinanceEnv, r => r.Path == "/api/v3/account" ? StubResponse.Json(BinanceAccount) : StubResponse.Error(400, BinanceError(-1002, "You are not authorized to execute this request.")));
@@ -386,10 +447,13 @@ public sealed class VerifyKeysCommandTests
     [Fact]
     public async Task An_unknown_venue_is_venue_unknown()
     {
-        Run run = await VerifyAsync("KRAKEN", BybitEnv, r => Bybit(r, BybitKeyInfo()));
+        // A name no adapter will ever carry. This test used to name KRAKEN, which stopped being unknown the day the
+        // Kraken adapter landed - and then it failed for the right reason at the wrong place, reporting that a
+        // venue check was broken when what had happened was that a venue had been added.
+        Run run = await VerifyAsync("NOTAVENUE", BybitEnv, r => Bybit(r, BybitKeyInfo()));
 
         AssertFailure(run, "venue_unknown", null, null);
-        Assert.Equal("KRAKEN", run.Json.GetProperty("venue").GetString());
+        Assert.Equal("NOTAVENUE", run.Json.GetProperty("venue").GetString());
         Assert.Empty(run.Requests);
     }
 
@@ -514,4 +578,117 @@ public sealed class VerifyKeysCommandTests
         Assert.Empty(run.Requests);
     }
 
+    // ----- Kraken: one venue name, two platforms, and a key that works on only one of them -----
+    //
+    // Kraken is the venue where this check answers a question none of the others has to. A spot key is issued on
+    // kraken.com and a futures key on futures.kraken.com; they sign differently and NEITHER WORKS ON THE OTHER, so
+    // a perfectly valid key configured against the wrong family is this venue's own invitation to failure. Both
+    // platforms are therefore tried and the report says which one took it.
+    //
+    // What it cannot say is what the key may DO. Kraken publishes no endpoint that reports a key's permissions, its
+    // withdrawal rights or its address restrictions - the other three venues each have one - so those facts stay
+    // null and a check says so in as many words. A green "withdrawals disabled" line that nothing had checked would
+    // be worse than no line at all.
+
+    private const string KrakenEnv = $"KRAKEN_API_KEY={Key}\nKRAKEN_API_SECRET={Secret}\n";
+
+    private const string KrakenBalance = """{"error":[],"result":{"ZUSD":{"balance":"100000.0000","hold_trade":"0.0000"}}}""";
+
+    private const string KrakenToken = """{"error":[],"result":{"token":"a-short-lived-token","expires":900}}""";
+
+    private const string KrakenAccounts = """{"result":"success","serverTime":"2026-09-25T18:00:00.000Z","accounts":{"flex":{"currencies":{},"type":"multiCollateralMarginAccount"}}}""";
+
+    /// <summary>The futures platform's answer to any bad credential: one word, whatever is actually wrong.</summary>
+    private const string KrakenAuthError = """{"result":"error","error":"authenticationError","serverTime":"2026-09-25T18:00:00.000Z"}""";
+
+    private static StubResponse Kraken(RecordedRequest request, bool spot, bool futures) => request.Path switch
+    {
+        "/0/private/BalanceEx" => StubResponse.Json(spot ? KrakenBalance : """{"error":["EAPI:Invalid key"],"result":null}"""),
+        "/0/private/GetWebSocketsToken" => StubResponse.Json(spot ? KrakenToken : """{"error":["EAPI:Invalid key"],"result":null}"""),
+        "/derivatives/api/v3/accounts" => futures ? StubResponse.Json(KrakenAccounts) : StubResponse.Json(KrakenAuthError),
+        _ => StubResponse.Error(404, "{}"),
+    };
+
+    [Fact]
+    public async Task A_Kraken_spot_key_is_reported_as_a_spot_key_and_not_as_a_working_venue_key()
+    {
+        Run run = await VerifyAsync("kraken", KrakenEnv, r => Kraken(r, spot: true, futures: false));
+
+        Assert.Equal(0, run.Cli.ExitCode);
+        Assert.True(run.Json.GetProperty("ok").GetBoolean());
+        Assert.Equal("KRAKEN", run.Json.GetProperty("venue").GetString());
+        Assert.True(Fact(run.Json, "keyAccepted"));
+
+        // The fact that matters on this venue: it is good for one platform and not the other.
+        Assert.True(Fact(run.Json, "markets", "spot"));
+        Assert.False(Fact(run.Json, "markets", "futures"));
+
+        // And a live node needs more than reading: the private socket is opened with a token from a signed call, so
+        // a key that cannot fetch one cannot receive an order event however well it reads.
+        Assert.Contains(
+            run.Json.GetProperty("checks").EnumerateArray(),
+            c => c.GetProperty("name").GetString() == "stream" && c.GetProperty("status").GetString() == "ok");
+
+        Assert.Contains(run.Requests, r => r.Path == "/0/private/GetWebSocketsToken");
+        Assert.DoesNotContain(Secret, run.Cli.AllOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_Kraken_futures_key_is_reported_as_a_futures_key_rather_than_as_a_bad_key()
+    {
+        // The case this exists for. A futures key put through the spot check is refused with "EAPI:Invalid key" -
+        // which is true and is the wrong conclusion - so the report must not stop there.
+        Run run = await VerifyAsync("kraken", KrakenEnv, r => Kraken(r, spot: false, futures: true));
+
+        Assert.Equal(0, run.Cli.ExitCode);
+        Assert.True(Fact(run.Json, "keyAccepted"));
+        Assert.False(Fact(run.Json, "markets", "spot"));
+        Assert.True(Fact(run.Json, "markets", "futures"));
+
+        Assert.Contains(
+            run.Json.GetProperty("checks").EnumerateArray(),
+            c => c.GetProperty("name").GetString() == "platform"
+                && c.GetProperty("detail").GetString()!.Contains("futures", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_Kraken_key_neither_platform_takes_is_reported_with_the_reason_spot_gave()
+    {
+        // The spot refusal is the one reported, because it is the only one that names a reason: the futures
+        // platform answers a wrong key, a wrong signature and a clock that is off with the same single word.
+        Run run = await VerifyAsync("kraken", KrakenEnv, r => Kraken(r, spot: false, futures: false));
+
+        AssertFailure(run, "bad_key", null, "EAPI:Invalid key");
+        Assert.False(Fact(run.Json, "keyAccepted"));
+    }
+
+    [Fact]
+    public async Task What_Kraken_does_not_publish_is_reported_as_unknown_rather_than_as_safe()
+    {
+        Run run = await VerifyAsync("kraken", KrakenEnv, r => Kraken(r, spot: true, futures: true));
+
+        // No permission endpoint on either platform, so nothing is claimed about any of these.
+        Assert.Null(Fact(run.Json, "canWithdraw"));
+        Assert.Null(Fact(run.Json, "ipRestricted"));
+        Assert.Null(Fact(run.Json, "canTrade"));
+
+        // And that is said out loud, as a warning, with somewhere for a person to go and look.
+        Assert.Contains(
+            run.Json.GetProperty("checks").EnumerateArray(),
+            c => c.GetProperty("name").GetString() == "permissions"
+                && c.GetProperty("status").GetString() == "warn"
+                && c.GetProperty("detail").GetString()!.StartsWith("unknown", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData($"KRAKEN_API_KEY={Key}\n")]
+    [InlineData($"KRAKEN_API_SECRET={Secret}\n")]
+    public async Task A_Kraken_file_missing_half_the_key_is_no_key_in_file_and_nothing_is_sent(string env)
+    {
+        Run run = await VerifyAsync("kraken", env, r => Kraken(r, spot: true, futures: true));
+
+        AssertFailure(run, "no_key_in_file", null, null);
+        Assert.Contains("KRAKEN_API_", run.Json.GetProperty("failure").GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Empty(run.Requests);
+    }
 }

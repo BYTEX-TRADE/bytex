@@ -179,6 +179,7 @@ Identifiers are stable and used in design notes, issues, and tests.
 | R11.2 | Binance spot: instruments, quotes, trades, bars, book deltas; orders; reconciliation | Release |
 | R11.3 | Binance USDⓈ-M futures: as above plus mark price, funding | Release |
 | R11.4 | Bybit spot and linear perpetuals: instruments, data, orders, reconciliation | Release |
+| R11.10 | Bybit inverse and options: coin-margined perpetuals and dated futures sized in the venue's own contracts and settled in the base coin, and USDT-settled option contracts with strike, kind and expiry | Release |
 | R11.13 | A broker id on every order an adapter sends, settable per venue, delivered with each adapter rather than retrofitted | Roadmap |
 | R11.14 | KuCoin spot: instruments, data, orders, reconciliation | Release |
 | R11.15 | KuCoin Futures: perpetual and delivery contracts on the venue's own API - contracts sized by multiplier, linear and inverse, funding, leverage and positions | Roadmap |

@@ -313,6 +313,7 @@ public sealed class TradingNode : IAsyncDisposable
             }
 
             DataClientConfig config = CoerceConfig<DataClientConfig>(entry.Config, factory.ConfigType);
+            EnsureVenueDoes(entry, config, c => c.MarketData, "market data");
             IDataClient client = factory.Create(new ClientId(entry.ClientId), config, _kernel.Services);
             AddDataClient(client);
         }
@@ -325,6 +326,7 @@ public sealed class TradingNode : IAsyncDisposable
             }
 
             ExecutionClientConfig config = CoerceConfig<ExecutionClientConfig>(entry.Config, factory.ConfigType);
+            EnsureVenueDoes(entry, config, c => c.Execution, "execution");
             IExecutionClient client = factory.Create(new ClientId(entry.ClientId), config, _kernel.Services);
             AddExecutionClient(client);
         }
@@ -345,6 +347,32 @@ public sealed class TradingNode : IAsyncDisposable
         }
 
         _built = true;
+    }
+
+    /// <summary>
+    /// Refuses a client whose venue family does not declare what it is being built to do.
+    /// <para>
+    /// A host reads the declaration and does not offer what a venue will not do, which is the better message and the
+    /// earlier one. It is not the only door: a node assembled by hand, or from a configuration file, or by a script
+    /// arrives here having read nothing, and would start, connect and then be quiet for a reason appearing in no
+    /// report. So the same fact is checked where every node passes, whatever built it.
+    /// </para>
+    /// <para>
+    /// The venue is found by name among the registered plugins. A venue that declares nothing - a history service,
+    /// or a plugin that brings no venue at all - is not checked, because there is nothing to check it against.
+    /// </para>
+    /// </summary>
+    private void EnsureVenueDoes(ClientEntry entry, object config, Func<VenueCapabilities, bool> capability, string what)
+    {
+        VenueDescriptor? venue = _registry.Plugins
+            .OfType<IVenuePlugin>()
+            .Select(p => p.Describe())
+            .FirstOrDefault(v => string.Equals(v.Venue.Value, entry.Factory, StringComparison.OrdinalIgnoreCase));
+
+        if (venue is not null)
+        {
+            CapabilityGuard.EnsureDeclared(venue, config, capability, what, entry.ClientId);
+        }
     }
 
     private static T CoerceConfig<T>(object config, Type expected) where T : class

@@ -9,6 +9,124 @@ change public APIs; a patch version only fixes.
 
 ### Added
 
+- Two more Bybit families: INVERSE contracts and OPTIONS, alongside the spot
+  and linear markets the adapter already carried. Selected the same way, by
+  `productType: Inverse` or `productType: Option` on a client's configuration.
+
+  Inverse contracts are the family every adapter in this repository had
+  excluded, and the stated reason was that a USD-quoted, base-settled contract
+  cannot be sized in base units without a price. It never needed to be: the
+  venue sizes them in its own USD contracts, and the engine's money arithmetic
+  inverts from one flag on the instrument - notional divides by the price and
+  answers in the base currency, and margin, commission and funding all follow
+  it. So they are published as the venue publishes them, 22 perpetuals and 4
+  dated contracts, with the margin and the ceiling the venue states per symbol.
+
+  Two facts about them cost more than the arithmetic. The dated contracts are
+  spelled `BTCUSDZ26` - no dash, no date a reader could parse - so the linear
+  family's rule for telling a perpetual from a future would have called all
+  four of them perpetuals; the class comes from the venue's `contractType`
+  field instead. And spot lists `BTCUSD` and `ETHUSD`, both trading, so an
+  inverse perpetual named for its own symbol would share an instrument id with
+  a spot pair and the family resolver would answer both with the pair. The
+  suffix goes on the inverse symbols that end where their quote coin does,
+  which is every perpetual and none of the dated contracts.
+
+  Options are structurally unlike everything else here, and every difference
+  was measured against the live venue rather than read from its documentation.
+  They are charged no funding: the funding endpoint refuses the category. They
+  have no bar history by any route: the kline endpoint refuses the category,
+  and the kline socket topic is accepted, reported under `successTopics` and
+  then silent. They publish no margin and no leverage ceiling: the risk-limit
+  endpoint refuses the category and the contract data carries no leverage
+  filter, so both are left unset and the ceiling reads as "the venue did not
+  say" rather than as unlimited. Their strike is published nowhere but the
+  symbol, so it is read from there and checked against the venue's own
+  `baseCoin` and `optionsType` as it is read. Their book is published at depths
+  25 and 100 rather than 50 and 200 - the other families' depths are accepted
+  and never delivered. Their trades are published per underlying rather than
+  per contract. Their quotes arrive on the tickers topic, under that market's
+  own field names, because `orderbook.1` delivers nothing for them either.
+
+  Four of those are declared as capabilities the family does NOT have, which is
+  the point of declaring them: the venue would have accepted every one of those
+  subscriptions, reported it as a success, and sent nothing.
+
+  Two things about options could not be established without a key and are
+  recorded rather than assumed. Whether the venue honours an amend on an option
+  order: the amend path is signed, so no option order could be placed to amend.
+  And what an option really costs - the venue charges a fraction of the
+  underlying's index price capped at a share of the premium, while this engine
+  prices a commission as a fraction of the traded notional, which for an option
+  is the premium. The declared rate applied that way is a lower bound on the
+  charge rather than the charge.
+
+- Bybit asks about a whole market with the filter each of its families
+  requires, rather than with the linear market's. A read of every order or
+  position used to send `settleCoin=USDT` whatever was configured, which is
+  right for one of the four: an inverse contract settles in its own base coin,
+  so there is no single settle coin for that market, and an option market is
+  asked for by underlying. The coins come from the contracts the client holds,
+  one request each - which also means a client holding USDC linear contracts is
+  now asked about them instead of only about its USDT ones.
+- Binance's COIN-M (coin-margined) futures as a third family beside spot and
+  USDⓈ-margined futures, selected with `accountType: coinMFutures`: data,
+  execution, catalog, bar history and funding history on the venue's `dapi`
+  host. Its contracts are quoted in USD, sized in a whole number of USD
+  contracts, and margined and settled in the base coin - so they are inverse,
+  and notional, margin, profit, commission and funding all come out in the coin
+  and all go through one over the price. An instrument carries the venue's own
+  `contractSize` as its multiplier, measured as 100 USD on every BTCUSD
+  contract and 10 on the other 27, because a size left at one values a BTCUSD
+  position at a hundredth of what it is and margin, commission and the
+  liquidation price all follow it down.
+
+  A third family and not a flag on the second: measured against the live venue,
+  the two disagree about the host, the endpoint version of every account read
+  (`/dapi/v1/balance` where the other is `/fapi/v2/balance`, and neither path
+  exists under the other's version), the field a contract's tradability is
+  published in (`contractStatus`, with no `status` at all - so a reader looking
+  for the sibling's field took every pending and delivering contract for
+  tradable), the fee schedule, and how many sockets its market data needs.
+  Instrument ids keep the venue's own spelling - `BTCUSD_PERP` and
+  `BTCUSD_261225` - because the venue has already marked which contract is
+  which, and a second marking would have to be undone from an id that no longer
+  says which family it came from. The instrument class comes from the venue's
+  `contractType` field, never from the symbol.
+
+  Its `exchangeInfo` ignores its own `symbol` filter, the same defect as the
+  USD-margined family's and measured on this one rather than assumed from it:
+  all 30 contracts come back for a symbol that exists, one that does not, and a
+  pair. Its leverage brackets are behind the signed endpoint on its own host,
+  so margin falls back to the venue-wide default and `maxLeverage` is null -
+  "the venue did not say" rather than unlimited - and the leverage guard refuses
+  a configured leverage above the ceiling wherever a key read one. Reachable
+  from `catalog fetch-instruments --instrument-type CoinMFutures`, and
+  `verify-keys` now asks whether a key with futures enabled really reaches that
+  host, because one permission covers both futures markets on two addresses.
+
+- A Hyperliquid adapter: perpetual futures, with data, execution, catalog and
+  history. The fifth venue and the first whose credential is not a key pair the
+  exchange issued - authentication is a wallet signature over EIP-712 typed
+  data, so the credential is a secp256k1 private key that controls an address
+  and the address is the account. The signing (Keccak-256, recoverable
+  secp256k1 ECDSA, and the MessagePack encoding the venue re-derives the digest
+  from) is written against the framework alone, with no new dependency, and was
+  verified against the live venue without an account: signing with a key nobody
+  has funded and reading back the address the venue recovered checks the whole
+  pipeline, field order included, and it recovered the signing address for
+  every action the adapter sends on both networks.
+
+  Three of the venue's facts are unlike the others and are declared rather than
+  discovered. Its margins come from the venue - `maxLeverage` per asset, with
+  maintenance margin at half the initial margin, measured against three live
+  positions to the last decimal place, rather than the flat 0.05/0.025 two
+  other adapters carry. It has no market order at all, so one becomes an
+  immediate-or-cancel limit through the book. And its candle read serves only
+  about the last 5000 bars of an interval, counted from now and not from the
+  window asked for, so there is a period of history it cannot be asked for at
+  any page size - which the adapter says rather than returning quietly short.
+
 - A node type declares whether it changes an order after placing it
   (`amendsOrders` on the node catalog), true for `act.modify`, `act.trail`,
   `act.moveStop` and `risk.exit`. A venue family already states whether it

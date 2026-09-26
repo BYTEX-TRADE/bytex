@@ -13,7 +13,8 @@ using Microsoft.Extensions.Logging;
 namespace Bytex.Adapters.Binance;
 
 /// <summary>
-/// Market data from Binance spot or USDⓈ-M futures: streaming quotes, trades, bars, book deltas, mark prices, and historical requests.
+/// Market data from a Binance spot, USDⓈ-margined or coin-margined market: streaming quotes, trades, bars, book
+/// deltas, mark prices, and historical requests.
 /// </summary>
 public sealed class BinanceDataClient : DataClientBase
 {
@@ -47,11 +48,17 @@ public sealed class BinanceDataClient : DataClientBase
         // USDⓈ-M futures serve market data on two routes: /public carries book tickers, trades and depth; /market carries
         // klines, mark prices and aggregated trades. The unrouted path still accepts a subscription to the latter but never
         // delivers it. Spot has a single route.
-        bool futures = _config.AccountType == BinanceAccountType.UsdMFutures;
+        //
+        // So does the coin-margined family, and that was measured rather than taken from its sibling. Its unrouted
+        // /stream was subscribed to all six stream kinds this client uses - book ticker, trade, aggTrade, kline,
+        // mark price and depth - three times for twenty-five seconds each on 2026-09-25, and all six delivered on
+        // every run. Splitting it anyway would open a second socket for nothing, and a second socket is a second
+        // thing that can drop and leave a healthy client marked disconnected.
+        bool split = _config.AccountType == BinanceAccountType.UsdMFutures;
         string wsBase = BinanceVenue.WsBase(_config);
-        _ws = CreateSocket(wsBase + (futures ? "/public/stream" : "/stream"), market: false);
+        _ws = CreateSocket(wsBase + (split ? "/public/stream" : "/stream"), market: false);
         await _ws.ConnectAsync(ct).ConfigureAwait(false);
-        if (futures)
+        if (split)
         {
             _wsMarket = CreateSocket(wsBase + "/market/stream", market: true);
             await _wsMarket.ConnectAsync(ct).ConfigureAwait(false);
@@ -157,13 +164,16 @@ public sealed class BinanceDataClient : DataClientBase
                 AddStream($"{Lower(d.InstrumentId)}@depth@{BinanceVenue.BookStreamInterval}");
                 await SendBookSnapshotAsync(d.InstrumentId, d.Depth, ct).ConfigureAwait(false);
                 break;
-            case SubscribeMarkPrices m when _config.AccountType == BinanceAccountType.UsdMFutures:
+            // One stream carries all three on either futures family: measured on the coin-margined host, a
+            // markPriceUpdate frame arrives each second with the mark price in p, the index price in i and the
+            // funding rate in r, exactly as on the USD-margined one. Spot has none of the three to subscribe to.
+            case SubscribeMarkPrices m when BinanceVenue.IsFutures(_config.AccountType):
                 AddStream($"{Lower(m.InstrumentId)}@markPrice@1s");
                 break;
-            case SubscribeIndexPrices i when _config.AccountType == BinanceAccountType.UsdMFutures:
+            case SubscribeIndexPrices i when BinanceVenue.IsFutures(_config.AccountType):
                 AddStream($"{Lower(i.InstrumentId)}@markPrice@1s");
                 break;
-            case SubscribeFundingRates f when _config.AccountType == BinanceAccountType.UsdMFutures:
+            case SubscribeFundingRates f when BinanceVenue.IsFutures(_config.AccountType):
                 AddStream($"{Lower(f.InstrumentId)}@markPrice@1s");
                 break;
             default:

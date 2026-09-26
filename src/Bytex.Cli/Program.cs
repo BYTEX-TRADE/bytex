@@ -2,8 +2,13 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text.Json;
 using Bytex.Adapters.Binance;
+using Bytex.Adapters.Bitget;
 using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Gate;
+using Bytex.Adapters.Hyperliquid;
+using Bytex.Adapters.Kraken;
 using Bytex.Adapters.Kucoin;
+using Bytex.Adapters.Okx;
 using Bytex.Adapters.Tardis;
 using Bytex.Backtest;
 using Bytex.Core.Adapters;
@@ -471,12 +476,14 @@ internal static class Program
             return 0;
         });
 
-        Option<string> venue = new("--venue") { Description = "BINANCE | BYBIT | KUCOIN", Required = true };
+        Option<string> venue = new("--venue") { Description = "BINANCE | BYBIT | KUCOIN | OKX", Required = true };
         Option<string?> quote = new("--quote") { Description = "Only instruments with this quote currency" };
         Option<bool> futures = new("--futures") { Description = "Load perpetual/futures instruments instead of spot" };
         Option<string?> fetchBaseUrl = new("--base-url") { Description = "Override the venue's REST address (a proxy or a test venue)" };
+        Option<string?> instrumentType = new("--instrument-type") { Description = "For a venue with more than two markets, the market to load by its own name (BINANCE: Spot | UsdMFutures | CoinMFutures; OKX: Spot | Swap | Futures)" };
         Command fetchInstruments = new("fetch-instruments", "Download instrument definitions from a venue into the catalog");
         fetchInstruments.Options.Add(path);
+        fetchInstruments.Options.Add(instrumentType);
         fetchInstruments.Options.Add(venue);
         fetchInstruments.Options.Add(quote);
         fetchInstruments.Options.Add(futures);
@@ -493,7 +500,19 @@ internal static class Program
             {
                 case "BINANCE":
                     {
-                        BinanceDataClientConfig cfg = new() { AccountType = useFutures ? BinanceAccountType.UsdMFutures : BinanceAccountType.Spot, BaseUrlHttp = restBase };
+                        // Binance has three markets rather than two, so --futures cannot select between them on its
+                        // own. Its USD-margined contracts are what --futures means on every other venue here; its
+                        // coin-margined ones are asked for with --instrument-type, which names the venue's own word
+                        // for the market, exactly as OKX's third market is below.
+                        // IsDefined as well as TryParse: this parse accepts any number, so "--instrument-type 99"
+                        // would otherwise become an account type the adapter has no host for and fail somewhere
+                        // further in than the flag that caused it.
+                        BinanceAccountType account = Enum.TryParse(parseResult.GetValue(instrumentType), ignoreCase: true, out BinanceAccountType chosen)
+                            && Enum.IsDefined(chosen)
+                                ? chosen
+                                : useFutures ? BinanceAccountType.UsdMFutures : BinanceAccountType.Spot;
+
+                        BinanceDataClientConfig cfg = new() { AccountType = account, BaseUrlHttp = restBase };
                         using BinanceHttp http = new(cfg, loggerFactory.CreateLogger("binance"));
                         BinanceInstrumentProvider provider = new(http, cfg.AccountType, null, loggerFactory.CreateLogger("binance"));
                         await provider.LoadAllAsync(ct, filters).ConfigureAwait(false);
@@ -523,8 +542,25 @@ internal static class Program
                         break;
                     }
 
+                case "OKX":
+                    {
+                        // OKX has three markets rather than two, so --futures cannot select between them on its own.
+                        // Its perpetuals are what --futures means on every other venue here; its dated contracts are
+                        // asked for with --instrument-type, which names the venue's own word for the market.
+                        OkxInstrumentType type = Enum.TryParse(parseResult.GetValue(instrumentType), ignoreCase: true, out OkxInstrumentType named)
+                            ? named
+                            : useFutures ? OkxInstrumentType.Swap : OkxInstrumentType.Spot;
+
+                        OkxDataClientConfig cfg = new() { InstrumentType = type, BaseUrlHttp = restBase };
+                        using OkxHttp http = new(cfg, loggerFactory.CreateLogger("okx"));
+                        OkxInstrumentProvider provider = new(http, type, null, loggerFactory.CreateLogger("okx"));
+                        await provider.LoadAllAsync(ct, filters).ConfigureAwait(false);
+                        instruments = provider.GetAll();
+                        break;
+                    }
+
                 default:
-                    Console.Error.WriteLine("Unknown venue; expected BINANCE, BYBIT or KUCOIN.");
+                    Console.Error.WriteLine("Unknown venue; expected BINANCE, BYBIT, KUCOIN or OKX.");
                     return 1;
             }
 
@@ -624,8 +660,13 @@ internal static class Program
     {
         PluginRegistry registry = new();
         registry.AddPlugin(new BinancePlugin());
+        registry.AddPlugin(new BitgetPlugin());
         registry.AddPlugin(new BybitPlugin());
+        registry.AddPlugin(new GatePlugin());
+        registry.AddPlugin(new HyperliquidPlugin());
+        registry.AddPlugin(new KrakenPlugin());
         registry.AddPlugin(new KucoinPlugin());
+        registry.AddPlugin(new OkxPlugin());
         registry.AddPlugin(new DocumentsPlugin());
         registry.AddPlugin(new TardisPlugin());
         registry.AddExecutionClientFactory(new SandboxExecutionClientFactory());

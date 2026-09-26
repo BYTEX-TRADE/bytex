@@ -18,6 +18,9 @@ public sealed class BinanceDataClientStreamTests
     private static readonly InstrumentId _spotBtc = InstrumentId.Parse("BTCUSDT.BINANCE");
     private static readonly InstrumentId _perpBtc = InstrumentId.Parse("BTCUSDT-PERP.BINANCE");
 
+    /// <summary>The coin-margined perpetual, in the venue's own spelling: no dash is added where it wrote one.</summary>
+    private static readonly InstrumentId _coinMBtc = InstrumentId.Parse("BTCUSD_PERP.BINANCE");
+
     private sealed class Rig : IAsyncDisposable
     {
         private Rig(LoopbackServer server, TestKernel kernel, BinanceDataClient client, RecordingDataSink sink, WsSession session, WsSession? market)
@@ -38,10 +41,13 @@ public sealed class BinanceDataClientStreamTests
 
         public RecordingDataSink Sink { get; }
 
-        /// <summary>Spot: the single combined stream. Futures: the /public route (book tickers, trades, depth).</summary>
+        /// <summary>
+        /// Spot and coin-margined futures: the single combined stream. USD-margined futures: the /public route
+        /// (book tickers, trades, depth).
+        /// </summary>
         public WsSession Session { get; }
 
-        /// <summary>Futures only: the /market route (klines, mark prices, aggregated trades).</summary>
+        /// <summary>USD-margined futures only: the /market route (klines, mark prices, aggregated trades).</summary>
         public WsSession? Market { get; }
 
         public static async Task<Rig> ConnectAsync(BinanceAccountType type, bool handleRevisedBars = false)
@@ -49,8 +55,10 @@ public sealed class BinanceDataClientStreamTests
             Routes routes = new Routes()
                 .On("GET", "/api/v3/exchangeInfo", BinancePayloads.SpotExchangeInfo)
                 .On("GET", "/fapi/v1/exchangeInfo", BinancePayloads.FuturesExchangeInfo)
+                .On("GET", "/dapi/v1/exchangeInfo", BinancePayloads.CoinMExchangeInfo)
                 .On("GET", "/api/v3/depth", BinancePayloads.DepthSnapshot)
-                .On("GET", "/fapi/v1/depth", BinancePayloads.DepthSnapshot);
+                .On("GET", "/fapi/v1/depth", BinancePayloads.DepthSnapshot)
+                .On("GET", "/dapi/v1/depth", BinancePayloads.CoinMDepthSnapshot);
             LoopbackServer server = new(routes.Handle);
             TestKernel kernel = new();
             BinanceDataClientConfig config = new()
@@ -93,18 +101,131 @@ public sealed class BinanceDataClientStreamTests
     }
 
     [Theory]
-    [InlineData(BinanceAccountType.Spot, 2)]
-    [InlineData(BinanceAccountType.UsdMFutures, 2)]
-    public async Task Connecting_loads_instruments_publishes_them_and_opens_the_combined_stream_route(BinanceAccountType type, int expectedInstruments)
+    [InlineData(BinanceAccountType.Spot, 2, "/stream", null, "/api/v3/exchangeInfo")]
+    [InlineData(BinanceAccountType.UsdMFutures, 2, "/public/stream", "/market/stream", "/fapi/v1/exchangeInfo")]
+
+    // One socket on the coin-margined family, and its own catalog path. Three of the fixture's five contracts are
+    // tradable; the other two are the ones that state their tradability in contractStatus rather than in status.
+    [InlineData(BinanceAccountType.CoinMFutures, 3, "/stream", null, "/dapi/v1/exchangeInfo")]
+    public async Task Connecting_loads_instruments_publishes_them_and_opens_the_combined_stream_route(
+        BinanceAccountType type,
+        int expectedInstruments,
+        string publicRoute,
+        string? marketRoute,
+        string catalogPath)
     {
         await using Rig rig = await Rig.ConnectAsync(type);
 
-        Assert.Equal(type == BinanceAccountType.Spot ? "/stream" : "/public/stream", rig.Session.Path);
-        Assert.Equal(type == BinanceAccountType.Spot ? null : "/market/stream", rig.Market?.Path);
+        Assert.Equal(publicRoute, rig.Session.Path);
+        Assert.Equal(marketRoute, rig.Market?.Path);
         Assert.True(rig.Client.IsConnected);
         Assert.Equal("connected", await rig.Sink.NextConnectionEventAsync());
         Assert.Equal(expectedInstruments, rig.Sink.Instruments.Count);
-        Assert.Equal(type == BinanceAccountType.Spot ? "/api/v3/exchangeInfo" : "/fapi/v1/exchangeInfo", Assert.Single(rig.Server.Requests).Path);
+        Assert.Equal(catalogPath, Assert.Single(rig.Server.Requests).Path);
+    }
+
+    [Fact]
+    public async Task The_coin_margined_family_carries_every_stream_kind_on_the_one_socket_it_opens()
+    {
+        // Measured on 2026-09-25: its unrouted /stream was subscribed to all six stream kinds this client uses,
+        // three times for twenty-five seconds each, and every one of them delivered on every run. So the client
+        // opens one socket - splitting it would add a second thing that can drop and mark a healthy client down -
+        // and every subscription has to land on that one rather than on a /market route that is not there.
+        await using Rig rig = await Rig.ConnectAsync(BinanceAccountType.CoinMFutures);
+
+        await rig.Client.SubscribeAsync(Commands.Quotes(_coinMBtc), CancellationToken.None);
+        await rig.Client.SubscribeAsync(Commands.Trades(_coinMBtc), CancellationToken.None);
+        await rig.Client.SubscribeAsync(Commands.Bars(BarType.Parse("BTCUSD_PERP.BINANCE-1-MINUTE-LAST-EXTERNAL")), CancellationToken.None);
+        await rig.Client.SubscribeAsync(Commands.Mark(_coinMBtc), CancellationToken.None);
+
+        Assert.Null(rig.Market);
+        Assert.Equal("SUBSCRIBE btcusd_perp@bookTicker", await rig.NextControlMessageAsync());
+        Assert.Equal("SUBSCRIBE btcusd_perp@trade", await rig.NextControlMessageAsync());
+        Assert.Equal("SUBSCRIBE btcusd_perp@kline_1m", await rig.NextControlMessageAsync());
+        Assert.Equal("SUBSCRIBE btcusd_perp@markPrice@1s", await rig.NextControlMessageAsync());
+    }
+
+    [Fact]
+    public async Task A_coin_margined_bookTicker_sizes_the_quote_in_contracts_and_keeps_the_venues_own_id()
+    {
+        await using Rig rig = await Rig.ConnectAsync(BinanceAccountType.CoinMFutures);
+
+        await rig.Session.SendTextAsync(BinancePayloads.CoinMBookTicker);
+
+        QuoteTick quote = Assert.IsType<QuoteTick>(await rig.Sink.NextDataAsync());
+
+        // The venue's own spelling, because that is what the catalog produced - a frame naming BTCUSD_PERP has to
+        // resolve to the instrument the provider holds, or the data is dropped as belonging to nothing.
+        Assert.Equal(_coinMBtc, quote.InstrumentId);
+        Assert.Equal(new Price(83_732.4m, 1), quote.Bid);
+        Assert.Equal(new Price(83_732.5m, 1), quote.Ask);
+
+        // Whole contracts, at this family's own size precision of zero - not a fraction of a coin.
+        Assert.Equal(new Quantity(680m, 0), quote.BidSize);
+        Assert.Equal(new Quantity(2458m, 0), quote.AskSize);
+        Assert.Equal(1_790_373_637_547_000_000L, quote.TsEvent.Value);
+    }
+
+    [Fact]
+    public async Task A_coin_margined_kline_is_close_stamped_and_its_volume_is_a_number_of_contracts()
+    {
+        await using Rig rig = await Rig.ConnectAsync(BinanceAccountType.CoinMFutures);
+        BarType barType = BarType.Parse("BTCUSD_PERP.BINANCE-1-MINUTE-LAST-EXTERNAL");
+        await rig.Client.SubscribeAsync(Commands.Bars(barType), CancellationToken.None);
+
+        await rig.Session.SendTextAsync(BinancePayloads.CoinMKlineClosed);
+
+        Bar bar = Assert.IsType<Bar>(await rig.Sink.NextDataAsync());
+
+        // The close in the frame plus one millisecond: the end of the minute that opened at "t".
+        Assert.Equal(1_790_373_660_000_000_000L, bar.TsEvent.Value);
+        Assert.Equal(new Price(83_732.4m, 1), bar.Close);
+
+        // "v" is contracts on this family and the coin they are worth is in "q"; the instrument is sized in
+        // contracts, so the volume needs no conversion and 180 stays 180.
+        Assert.Equal(new Quantity(180m, 0), bar.Volume);
+        Assert.False(bar.IsRevision);
+    }
+
+    [Fact]
+    public async Task A_coin_margined_mark_price_frame_carries_the_mark_the_index_and_the_funding_rate()
+    {
+        await using Rig rig = await Rig.ConnectAsync(BinanceAccountType.CoinMFutures);
+
+        await rig.Session.SendTextAsync(BinancePayloads.CoinMMarkPrice);
+
+        MarkPriceUpdate mark = Assert.IsType<MarkPriceUpdate>(await rig.Sink.NextDataAsync());
+        IndexPriceUpdate index = Assert.IsType<IndexPriceUpdate>(await rig.Sink.NextDataAsync());
+        FundingRateUpdate funding = Assert.IsType<FundingRateUpdate>(await rig.Sink.NextDataAsync());
+
+        Assert.Equal(_coinMBtc, mark.InstrumentId);
+        Assert.Equal(new Price(83_732.5m, 1), mark.Value);
+        Assert.Equal(new Price(83_786.2m, 1), index.Value);
+        Assert.Equal(-0.00000573m, funding.Rate);
+        Assert.Equal(UnixNanos.FromMilliseconds(1_790_380_800_000L), funding.NextFundingTime);
+    }
+
+    [Fact]
+    public async Task A_coin_margined_book_snapshot_and_delta_are_sized_in_contracts()
+    {
+        await using Rig rig = await Rig.ConnectAsync(BinanceAccountType.CoinMFutures);
+
+        await rig.Client.SubscribeAsync(Commands.Book(_coinMBtc), CancellationToken.None);
+
+        OrderBookDeltas snapshot = Assert.IsType<OrderBookDeltas>(await rig.Sink.NextDataAsync());
+        Assert.Equal(_coinMBtc, snapshot.InstrumentId);
+        Assert.Equal(new Quantity(5078m, 0), snapshot.Deltas[1].Order.Size);
+
+        await rig.Session.SendTextAsync(BinancePayloads.CoinMDepthUpdate);
+
+        OrderBookDeltas update = Assert.IsType<OrderBookDeltas>(await rig.Sink.NextDataAsync());
+        Assert.Equal(new Quantity(1382m, 0), update.Deltas[0].Order.Size);
+
+        // A zero size is the venue saying the level is gone, on this family as on the others.
+        Assert.Equal(BookAction.Delete, update.Deltas[1].Action);
+
+        // And the snapshot came from this family's own depth path.
+        Assert.Contains(rig.Server.Requests, r => r.Path == "/dapi/v1/depth");
     }
 
     [Fact]

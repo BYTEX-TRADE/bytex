@@ -220,13 +220,18 @@ public sealed class RunCommandEnvFileTests
     [Fact]
     public async Task A_configuration_naming_an_unknown_client_factory_fails_with_that_name()
     {
+        // The factory name has to be one that will never ship. This test named KRAKEN until Kraken shipped, at
+        // which point the premise inverted: the CLI stopped refusing an unknown factory and started BUILDING a real
+        // Kraken client with an empty configuration, reaching the live venue for a second with no base url. So the
+        // test passed or failed on whether a venue was reachable, which is the kind of test that fails in somebody
+        // else's build for a reason they cannot act on.
         using TempDirectory temp = new();
-        string config = temp.File("node.json", """{ "dataClients": [ { "factory": "KRAKEN", "clientId": "KRAKEN", "config": {} } ], "heartbeatInterval": "00:00:00" }""");
+        string config = temp.File("node.json", """{ "dataClients": [ { "factory": "NOTAVENUE", "clientId": "NOTAVENUE", "config": {} } ], "heartbeatInterval": "00:00:00" }""");
 
         CliResult result = await CliRunner.RunAsync(["run", "--config", config, "--duration", "00:00:01"]);
 
         Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("KRAKEN", result.AllOutput);
+        Assert.Contains("NOTAVENUE", result.AllOutput);
     }
 
     [Fact]

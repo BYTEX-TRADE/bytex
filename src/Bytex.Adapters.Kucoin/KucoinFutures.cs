@@ -339,6 +339,11 @@ public sealed class KucoinFuturesInstrumentProvider : InstrumentProviderBase
             TakerFee = item.Has("takerFeeRate") ? item.Dec("takerFeeRate") : 0.0006m,
             MarginInit = item.Has("initialMargin") ? item.Dec("initialMargin") : 0m,
             MarginMaint = item.Has("maintainMargin") ? item.Dec("maintainMargin") : 0m,
+
+            // The ceiling this venue grants on this contract, which it publishes and nothing read until now. It is
+            // the only one of the three shipped venues that gives margin and maximum leverage in one public
+            // response, so reading it costs nothing.
+            MaxLeverage = item.Has("maxLeverage") && item.Dec("maxLeverage") > 0m ? item.Dec("maxLeverage") : null,
             Info = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 [KucoinFuturesVenue.MultiplierInfo] = multiplier.ToString(CultureInfo.InvariantCulture),

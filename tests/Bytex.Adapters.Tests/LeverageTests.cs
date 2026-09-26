@@ -132,10 +132,49 @@ public sealed class LeverageTests
         await using BinanceExecRig rig = new(BinanceAccountType.UsdMFutures, leverage: 3);
         await rig.ConnectAsync("""{"assets":[],"positions":[]}""");
 
-        RecordedRequest set = Assert.Single(rig.Server.RequestsTo(BinanceVenue.LeveragePath));
+        RecordedRequest set = Assert.Single(rig.Server.RequestsTo(BinanceVenue.LeveragePath(BinanceAccountType.UsdMFutures)));
         Assert.Equal("POST", set.Method);
         Assert.Equal(rig.Instrument.RawSymbol!.Value, set.Query("symbol"));
         Assert.Equal("3", set.Query("leverage"));
+    }
+
+    [Fact]
+    public async Task Binance_sets_the_leverage_on_its_coin_margined_host_under_that_familys_own_prefix()
+    {
+        // The same account state on a different host. Sent to the sibling family's path it would set the leverage
+        // of a USD-margined symbol that may not even exist, and the coin-margined position would trade at whatever
+        // the account was last left on.
+        await using BinanceExecRig rig = new(BinanceAccountType.CoinMFutures, leverage: 3);
+        await rig.ConnectAsync("[]");
+
+        RecordedRequest set = Assert.Single(rig.Server.RequestsTo(BinanceVenue.LeveragePath(BinanceAccountType.CoinMFutures)));
+        Assert.Equal("POST", set.Method);
+        Assert.Equal(rig.Instrument.RawSymbol!.Value, set.Query("symbol"));
+        Assert.Equal("3", set.Query("leverage"));
+        Assert.Empty(rig.Server.RequestsTo(BinanceVenue.LeveragePath(BinanceAccountType.UsdMFutures)));
+    }
+
+    [Fact]
+    public void Binance_refuses_a_fractional_leverage_on_the_coin_margined_family_as_well()
+    {
+        // Documented as an integer on both futures families and unmeasurable without a key: this venue checks the
+        // API key before it looks at a parameter, so nothing unauthenticated can be made to reject a fraction and
+        // prove it. The refusal is kept because its direction is the safe one.
+        using TestKernel kernel = new();
+
+        ArgumentOutOfRangeException refused = Assert.Throws<ArgumentOutOfRangeException>(() => new BinanceExecutionClient(
+            new ClientId("BINANCE"),
+            new BinanceExecutionClientConfig
+            {
+                AccountType = BinanceAccountType.CoinMFutures,
+                ApiKey = Key,
+                ApiSecret = Secret,
+                Leverage = 2.5m,
+            },
+            kernel.Services));
+
+        Assert.Contains("whole-number", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("2.5", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -144,7 +183,7 @@ public sealed class LeverageTests
         await using BinanceExecRig rig = new(BinanceAccountType.UsdMFutures);
         await rig.ConnectAsync("""{"assets":[],"positions":[]}""");
 
-        Assert.Empty(rig.Server.RequestsTo(BinanceVenue.LeveragePath));
+        Assert.Empty(rig.Server.RequestsTo(BinanceVenue.LeveragePath(BinanceAccountType.UsdMFutures)));
     }
 
     [Fact]
@@ -153,7 +192,7 @@ public sealed class LeverageTests
         await using BinanceExecRig rig = new(BinanceAccountType.Spot, leverage: 3);
         await rig.ConnectAsync("""{"balances":[{"asset":"USDT","free":"1","locked":"0"}]}""");
 
-        Assert.Empty(rig.Server.RequestsTo(BinanceVenue.LeveragePath));
+        Assert.Empty(rig.Server.RequestsTo(BinanceVenue.LeveragePath(BinanceAccountType.UsdMFutures)));
     }
 
     [Fact]
@@ -163,12 +202,12 @@ public sealed class LeverageTests
         // is logged and the node starts, because abandoning a start silently would be worse than trading at a
         // leverage a person can then read about and change.
         await using BinanceExecRig rig = new(BinanceAccountType.UsdMFutures, leverage: 125);
-        rig.Routes.On("POST", BinanceVenue.LeveragePath, _ => new StubResponse(400, """{"code":-4028,"msg":"Leverage 125 is not valid"}"""));
+        rig.Routes.On("POST", BinanceVenue.LeveragePath(BinanceAccountType.UsdMFutures), _ => new StubResponse(400, """{"code":-4028,"msg":"Leverage 125 is not valid"}"""));
 
         await rig.ConnectAsync("""{"assets":[],"positions":[]}""");
 
         Assert.True(rig.Client.IsConnected, "a refused leverage must not stop the node from starting");
-        Assert.NotEmpty(rig.Server.RequestsTo(BinanceVenue.LeveragePath));
+        Assert.NotEmpty(rig.Server.RequestsTo(BinanceVenue.LeveragePath(BinanceAccountType.UsdMFutures)));
     }
 
     [Fact]
