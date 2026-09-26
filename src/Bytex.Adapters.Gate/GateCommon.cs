@@ -714,6 +714,9 @@ public sealed class GateInstrumentProvider : InstrumentProviderBase
             MaxNotional = maxQuote > 0m ? new Money(maxQuote, quote) : null,
             MakerFee = fee,
             TakerFee = fee,
+            // Nothing is borrowed on a cash pair, so the absent margin above is a fact about spot and not a figure
+            // nobody read. Said here because the default is "unrecorded", which would be a different claim.
+            MarginSource = MarginSource.NotMargined,
             TsEvent = now,
             TsInit = now,
         });

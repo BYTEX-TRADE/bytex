@@ -56,7 +56,16 @@ internal static class BinancePayloads
         }
         """;
 
-    /// <summary>GET /fapi/v1/exchangeInfo: one perpetual, one quarterly delivery contract, one contract being settled.</summary>
+    /// <summary>
+    /// GET /fapi/v1/exchangeInfo: one perpetual, one quarterly delivery contract, one contract being settled.
+    /// <para>
+    /// Every symbol carries <c>requiredMarginPercent</c> and <c>maintMarginPercent</c>, which this family publishes on
+    /// all 909 of its contracts and this fixture did not carry until 2026-09-26. They were missing while a test
+    /// asserted the adapter read them, and it passed: the figure the venue publishes is 5.0 and the figure the adapter
+    /// falls back to is 0.05, so the assertion held either way and proved nothing about the read. A provenance is what
+    /// told them apart, which is the argument for having one.
+    /// </para>
+    /// </summary>
     public const string FuturesExchangeInfo = """
         {
           "timezone": "UTC",
@@ -68,6 +77,7 @@ internal static class BinancePayloads
           "symbols": [
             {
               "symbol": "BTCUSDT", "pair": "BTCUSDT", "contractType": "PERPETUAL",
+              "maintMarginPercent": "2.5000", "requiredMarginPercent": "5.0000",
               "deliveryDate": 4133404800000, "onboardDate": 1569398400000, "status": "TRADING",
               "baseAsset": "BTC", "quoteAsset": "USDT", "marginAsset": "USDT",
               "pricePrecision": 2, "quantityPrecision": 3, "baseAssetPrecision": 8, "quotePrecision": 8,
@@ -85,6 +95,7 @@ internal static class BinancePayloads
             },
             {
               "symbol": "BTCUSDT_250926", "pair": "BTCUSDT", "contractType": "CURRENT_QUARTER",
+              "maintMarginPercent": "2.5000", "requiredMarginPercent": "5.0000",
               "deliveryDate": 1758873600000, "onboardDate": 1742544000000, "status": "TRADING",
               "baseAsset": "BTC", "quoteAsset": "USDT", "marginAsset": "USDT",
               "pricePrecision": 1, "quantityPrecision": 3, "baseAssetPrecision": 8, "quotePrecision": 8,
@@ -98,6 +109,7 @@ internal static class BinancePayloads
             },
             {
               "symbol": "ETHUSDT_230630", "pair": "ETHUSDT", "contractType": "CURRENT_QUARTER",
+              "maintMarginPercent": "2.5000", "requiredMarginPercent": "5.0000",
               "deliveryDate": 1688112000000, "onboardDate": 1679644800000, "status": "SETTLING",
               "baseAsset": "ETH", "quoteAsset": "USDT", "marginAsset": "USDT",
               "filters": [

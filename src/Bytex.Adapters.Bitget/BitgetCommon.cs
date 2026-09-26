@@ -1070,6 +1070,9 @@ public sealed class BitgetInstrumentProvider : InstrumentProviderBase
             MinNotional = minNotional > 0m ? new Money(minNotional, quote) : null,
             MakerFee = item.Dec("makerFeeRate"),
             TakerFee = item.Dec("takerFeeRate"),
+            // Nothing is borrowed on a cash pair, so the absent margin above is a fact about spot and not a figure
+            // nobody read. Said here because the default is "unrecorded", which would be a different claim.
+            MarginSource = MarginSource.NotMargined,
             TsEvent = now,
             TsInit = now,
         });
@@ -1155,6 +1158,11 @@ public sealed class BitgetInstrumentProvider : InstrumentProviderBase
             TakerFee = item.Dec("takerFeeRate"),
             MarginInit = marginInit,
             MarginMaint = marginMaint,
+
+            // Either figure above came from this contract's own tier table or from the ceiling published beside it,
+            // both of them the venue's. A zero means neither was there, which is a gap and not a requirement of
+            // none.
+            MarginSource = marginInit > 0m ? MarginSource.VenuePerContract : MarginSource.VenueSilent,
             Info = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 [MaxLeverageInfo] = Json.Fmt(maxLeverage),

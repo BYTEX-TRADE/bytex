@@ -512,6 +512,10 @@ public sealed class KrakenFuturesInstrumentProvider : InstrumentProviderBase
             MarginInit = initial,
             MarginMaint = maintenance,
 
+            // From this contract's own first tier. A zero means the instruments endpoint carried no marginLevels for
+            // it, which is a gap in what the venue said rather than a requirement of none.
+            MarginSource = initial > 0m ? MarginSource.VenuePerContract : MarginSource.VenueSilent,
+
             // The ceiling the venue's first margin tier implies, as the typed fact every venue publishes it as. It
             // stays in Info too, because this adapter reads it from there for its own margin-mode reporting.
             MaxLeverage = maxLeverage > 0m ? maxLeverage : null,

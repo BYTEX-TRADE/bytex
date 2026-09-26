@@ -61,6 +61,7 @@ public abstract class Instrument
         MinPrice = spec.MinPrice;
         MarginInit = spec.MarginInit;
         MarginMaint = spec.MarginMaint;
+        MarginSource = spec.MarginSource;
         MaxLeverage = spec.MaxLeverage;
         MakerFee = spec.MakerFee;
         TakerFee = spec.TakerFee;
@@ -116,6 +117,18 @@ public abstract class Instrument
 
     /// <summary>Maintenance margin requirement as a fraction of notional.</summary>
     public decimal MarginMaint { get; }
+
+    /// <summary>
+    /// Where <see cref="MarginInit"/> and <see cref="MarginMaint"/> came from: the venue for this contract, the
+    /// venue for all of them, or the engine.
+    /// <para>
+    /// The figure alone cannot say. 0.05 read from a venue and 0.05 chosen by an adapter are the same number and a
+    /// different claim, and until 0.7.0 two venues carried the second while every report presented it as the first.
+    /// It defaults to <see cref="Instruments.MarginSource.Unrecorded"/> so that an instrument stored before this
+    /// existed says so instead of claiming a provenance it never had.
+    /// </para>
+    /// </summary>
+    public MarginSource MarginSource { get; }
 
     /// <summary>
     /// The most leverage this venue will grant on this instrument, or null where the venue does not publish it
@@ -281,6 +294,13 @@ public sealed record InstrumentSpec
     public decimal MarginInit { get; init; }
 
     public decimal MarginMaint { get; init; }
+
+    /// <summary>
+    /// Where the two figures above came from. Left unset it is <see cref="Instruments.MarginSource.Unrecorded"/>,
+    /// which is what an instrument built by hand honestly is; every shipped adapter states it, and
+    /// <c>MarginSourceTests</c> fails the build for one that sets a margin without saying where it got it.
+    /// </summary>
+    public MarginSource MarginSource { get; init; }
 
     /// <summary>The most leverage the venue will grant here; null where the venue publishes it only to a key holder.</summary>
     public decimal? MaxLeverage { get; init; }

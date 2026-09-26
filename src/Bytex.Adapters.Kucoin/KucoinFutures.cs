@@ -340,6 +340,10 @@ public sealed class KucoinFuturesInstrumentProvider : InstrumentProviderBase
             MarginInit = item.Has("initialMargin") ? item.Dec("initialMargin") : 0m,
             MarginMaint = item.Has("maintainMargin") ? item.Dec("maintainMargin") : 0m,
 
+            // This venue states it on the contract, which is why it was the one venue never carrying an invented
+            // figure. A contract without the field is a gap, not a free position.
+            MarginSource = item.Has("initialMargin") ? MarginSource.VenuePerContract : MarginSource.VenueSilent,
+
             // The ceiling this venue grants on this contract, which it publishes and nothing read until now. It is
             // the only one of the three shipped venues that gives margin and maximum leverage in one public
             // response, so reading it costs nothing.

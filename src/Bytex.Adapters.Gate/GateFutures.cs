@@ -360,6 +360,9 @@ public sealed class GateFuturesInstrumentProvider : InstrumentProviderBase
             TakerFee = item.Dec("taker_fee_rate"),
             MarginInit = GateFuturesVenue.MarginInit(leverageMax),
             MarginMaint = item.Dec("maintenance_rate"),
+
+            // The contract's own leverage_max, so per contract - and a zero says the contract published none.
+            MarginSource = leverageMax > 0m ? MarginSource.VenuePerContract : MarginSource.VenueSilent,
             Info = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 [GateFuturesVenue.MultiplierInfo] = multiplier.ToString(CultureInfo.InvariantCulture),
@@ -498,6 +501,9 @@ public sealed class GateDeliveryInstrumentProvider : InstrumentProviderBase
                 TakerFee = item.Dec("taker_fee_rate"),
                 MarginInit = GateFuturesVenue.MarginInit(leverageMax),
                 MarginMaint = item.Dec("maintenance_rate"),
+
+                // As the perpetual family above: the dated contract's own ceiling, or a gap where it published none.
+                MarginSource = leverageMax > 0m ? MarginSource.VenuePerContract : MarginSource.VenueSilent,
                 Info = new Dictionary<string, string>(StringComparer.Ordinal)
                 {
                     [GateFuturesVenue.MultiplierInfo] = multiplier.ToString(CultureInfo.InvariantCulture),

@@ -103,6 +103,37 @@ divides the arithmetic by nothing: `MarginAccount.SetLeverage`,
 `SetDefaultLeverage` and a simulated venue's `DefaultLeverage` and `Leverages`
 all refuse it where it is written.
 
+### Where the requirement comes from
+
+`Instrument.MarginInit` is read from the venue, per instrument, by the adapter
+that loaded it - Bybit's risk limits, Binance's published percentages or its
+signed notional brackets where a credential is held, KuCoin's contract, OKX's
+position tiers, and each of the others' own. It matters more than it looks,
+because `InitialMarginRate` takes the LARGER of it and 1/leverage: the figure is
+a **floor** under every leverage a strategy asks for, so a requirement higher
+than the venue's silently sizes and liquidates a 50x position as though it were
+20x.
+
+Reading it cannot be the whole answer, because a wrong figure and a right one are
+the same decimal. `Instrument.MarginSource` says which it is, and a backtest
+carries the set of sources its positions used as `MarginSources` in the result
+and in `result.json`:
+
+| `MarginSource` | What it means |
+|---|---|
+| `venuePerContract` | the venue published it for this contract, at the tier a position starts in |
+| `venueWideDefault` | the venue published it, but not per contract - Binance's public 5% stands for all 909 of its USDⓈ-M contracts |
+| `venueSilent` | the venue publishes none for a product that is margined there, so nothing is posted and no liquidation fires on the requirement - Bybit's options |
+| `notMargined` | nothing is borrowed, so zero is the requirement rather than a gap - spot |
+| `adapterDefault` | the venue published nothing usable and the engine substituted its own figure |
+| `unrecorded` | nobody recorded it: an instrument stored before this existed, or one built by hand |
+
+This is what lets a saved result be compared with a fresh one. Until 0.7.0 two
+adapters supplied 0.05 and 0.025 for every contract from a constant, where
+Bybit's own risk limits give 0.0066 on BTCUSDT - so a run from then is a real
+result computed against an invented requirement, and it reports `unrecorded`
+rather than looking like one that read the venue.
+
 ## The switch
 
 `TradingNode.Halt(cancelOrders, closePositions)` stops a node trading without

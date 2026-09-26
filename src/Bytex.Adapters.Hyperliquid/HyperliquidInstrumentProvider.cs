@@ -288,6 +288,10 @@ public sealed class HyperliquidInstrumentProvider : InstrumentProviderBase
             // the last decimal place rather than read off a page.
             MarginInit = 1m / asset.MaxLeverage,
             MarginMaint = 1m / (asset.MaxLeverage * HyperliquidVenue.MaintenanceMarginFraction),
+
+            // Per asset, from the venue's own universe. An asset reaching here has a maximum leverage - the parse
+            // above requires one - so there is no silent case to report.
+            MarginSource = MarginSource.VenuePerContract,
             Info = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 [HyperliquidVenue.AssetIndexInfo] = asset.Index.ToString(CultureInfo.InvariantCulture),

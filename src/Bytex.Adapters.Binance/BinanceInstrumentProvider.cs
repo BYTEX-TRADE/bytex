@@ -97,16 +97,20 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
     /// as a percentage - "5.0000" meaning a twentieth - where the engine holds a fraction of notional.
     /// <para>
     /// Read rather than assumed: the adapter carried one hard-coded pair for all 909 contracts, which happened to
-    /// match BTCUSDT and was a guess on every other one. A symbol that publishes nothing keeps the venue-wide
-    /// default, because a zero here would mean this venue asks for no margin at all.
+    /// match BTCUSDT and was a guess on every other one.
+    /// </para>
+    /// <para>
+    /// Null where the symbol publishes nothing, rather than a figure chosen here: the caller substitutes the
+    /// venue-wide default and records that it did, because a zero would mean this venue asks for no margin at all
+    /// and a silent substitution would mean a report cannot tell the two apart.
     /// </para>
     /// </summary>
-    private static decimal PublishedMargin(JsonElement symbol, string field, decimal whenAbsent) =>
+    private static decimal? PublishedMargin(JsonElement symbol, string field) =>
         symbol.TryGetProperty(field, out JsonElement published)
             && decimal.TryParse(published.ValueKind == JsonValueKind.String ? published.GetString() : published.GetRawText(), NumberStyles.Float, CultureInfo.InvariantCulture, out decimal percent)
             && percent > 0m
                 ? percent / BinanceVenue.MarginPercentToFraction
-                : whenAbsent;
+                : null;
 
     /// <summary>
     /// What this venue really requires per symbol, at the bracket a position starts in, or an empty map where no
@@ -290,6 +294,10 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
             ? published.DecValue()
             : 0m;
 
+        // Read once, used for the figure and for its provenance below.
+        decimal? publishedInit = PublishedMargin(symbol, "requiredMarginPercent");
+        decimal? publishedMaint = PublishedMargin(symbol, "maintMarginPercent");
+
         InstrumentSpec spec = new()
         {
             Id = BinanceVenue.ToInstrumentId(raw, _accountType, contractType),
@@ -360,10 +368,22 @@ public sealed class BinanceInstrumentProvider : InstrumentProviderBase
             // 0.8 percent and 125x on the same contract.
             MarginInit = _accountType == BinanceAccountType.Spot
                 ? 0m
-                : bracket?.Initial ?? PublishedMargin(symbol, "requiredMarginPercent", BinanceVenue.DefaultMarginInit),
+                : bracket?.Initial ?? publishedInit ?? BinanceVenue.DefaultMarginInit,
             MarginMaint = _accountType == BinanceAccountType.Spot
                 ? 0m
-                : bracket?.Maintenance ?? PublishedMargin(symbol, "maintMarginPercent", BinanceVenue.DefaultMarginMaint),
+                : bracket?.Maintenance ?? publishedMaint ?? BinanceVenue.DefaultMarginMaint,
+
+            // The three ways this venue answers, told apart rather than collapsed into the figure they produce. A
+            // 0.05 from the bracket read and a 0.05 chosen here are the same number and a different claim, and this
+            // venue is the one where the difference is largest: the public figure supports 20x where the brackets
+            // grant 125x on the same contract, so a result carrying one is not the result carrying the other.
+            MarginSource = _accountType == BinanceAccountType.Spot
+                ? MarginSource.NotMargined
+                : bracket is not null
+                    ? MarginSource.VenuePerContract
+                    : publishedInit is not null
+                        ? MarginSource.VenueWideDefault
+                        : MarginSource.AdapterDefault,
 
             // Null, and deliberately: this venue keeps its notional brackets behind a signed endpoint, so the most
             // leverage it will grant cannot be read from public data. Null says "not published", which is a
