@@ -172,6 +172,33 @@ public sealed class BacktestResult
     public required IReadOnlyList<MarginSource> MarginSources { get; init; }
 
     /// <summary>
+    /// What leverage this run asked for on each instrument it worked an order in, and what it actually got.
+    ///
+    /// <para>
+    /// <b>Why a run has to say this.</b> A live run is refused outright when the venue grants less leverage than was
+    /// asked for - that is <c>LeverageGuard</c>, and it names both figures. A backtest is not refused, because
+    /// nothing calls that guard here; it is CLAMPED, by <see cref="Instrument.InitialMarginRate"/> taking the larger
+    /// of 1/leverage and the instrument's own margin. An instrument carrying 0.05 therefore supports 20x however
+    /// much a document asked for, and a strategy written for 50x is measured at 20x - smaller positions, a
+    /// different drawdown, orders denied for margin that would have passed. A result for a strategy nobody wrote,
+    /// with nothing in it to say so.
+    /// </para>
+    ///
+    /// <para>
+    /// It is reported rather than refused on purpose. A backtest is cheap to run again, and stopping one at the
+    /// moment somebody presses go, over a figure they can only discover by reading a venue's margin schedule, buys
+    /// less than telling them what the run did. The refusal belongs where real money does.
+    /// </para>
+    ///
+    /// <para>
+    /// Orders rather than positions, unlike <see cref="MarginSources"/>: the clamp binds when an order's margin is
+    /// held, so it can change a result through orders that never filled - including denying them - and a run whose
+    /// orders were all refused for margin is exactly the one whose reader needs this.
+    /// </para>
+    /// </summary>
+    public required IReadOnlyList<LeverageReportRow> Leverages { get; init; }
+
+    /// <summary>
     /// What the bounding of fills came to: the share of a bar's volume one participant was allowed, how many fills
     /// were held back by the size on offer, and by how much in total. A result can then say what it assumed rather
     /// than asking to be trusted.
@@ -321,6 +348,19 @@ public sealed class BacktestResult
                 .Select(i => i.MarginSource)
                 .Distinct()
                 .OrderBy(source => source)
+                .ToList(),
+            Leverages = orders
+                .Select(o => o.InstrumentId)
+                .Distinct()
+                .Select(id => (Id: id, Instrument: cache.Instrument(id)))
+                .Where(x => x.Instrument is not null)
+                .Select(x => LeverageReportRow.For(
+                    x.Instrument!,
+                    engine.Exchanges.TryGetValue(x.Id.Venue, out SimulatedExchange? exchange)
+                        ? exchange.Config.Leverages.GetValueOrDefault(x.Id, exchange.Config.DefaultLeverage)
+                        : 1m))
+                .OfType<LeverageReportRow>()
+                .OrderBy(row => row.InstrumentId.Value, StringComparer.Ordinal)
                 .ToList(),
             Participation = new ParticipationSummary(
                 engine.Exchanges.Values.Select(x => x.Config.BarVolumeShare).FirstOrDefault(s => s is not null),
@@ -548,6 +588,58 @@ public sealed record PositionReportRow(
 public sealed record AccountReportRow(AccountId AccountId, UnixNanos Timestamp, Currency Currency, decimal Total, decimal Locked, decimal Free);
 
 /// <summary>
+/// What one instrument's leverage came to in a run: what was asked for, what the simulator could give, and the two
+/// facts that decide the difference.
+///
+/// <para>
+/// <c>Applied</c> is the reciprocal of what <see cref="Instrument.InitialMarginRate"/> returned, which is the
+/// leverage the run's arithmetic really used. It equals <c>Requested</c> whenever the instrument's margin leaves
+/// room for it, and is lower when the margin is a floor - so <c>Capped</c> is not a separate judgement, it is the
+/// two numbers disagreeing.
+/// </para>
+///
+/// <para>
+/// <c>MarginInit</c> and <c>MarginSource</c> travel with the row because the cap is only as trustworthy as the
+/// figure that caused it. A 0.05 read from this contract's own bracket is a fact about this contract; a 0.05 held
+/// because no credential could read the brackets is a placeholder that happens to be a number, and it caps a run
+/// just as hard. A reader deciding whether to go and fetch the real figure needs to know which one capped them.
+/// </para>
+/// </summary>
+public sealed record LeverageReportRow(
+    InstrumentId InstrumentId,
+    decimal Requested,
+    decimal Applied,
+    decimal MarginInit,
+    MarginSource MarginSource)
+{
+    /// <summary>Whether this run used less leverage than it was asked to.</summary>
+    public bool Capped => Applied < Requested;
+
+    /// <summary>
+    /// The row for one instrument at the leverage its venue was configured with, or null where leverage has nothing
+    /// to say: an unleveraged request on an instrument that borrows nothing, which is every spot order and would
+    /// otherwise put a row saying "1 and 1" beside every real one.
+    /// </summary>
+    public static LeverageReportRow? For(Instrument instrument, decimal requested)
+    {
+        ArgumentNullException.ThrowIfNull(instrument);
+        if (instrument.MarginInit <= 0m && requested <= 1m)
+        {
+            return null;
+        }
+
+        decimal rate = instrument.InitialMarginRate(requested);
+
+        return new LeverageReportRow(
+            instrument.Id,
+            requested,
+            rate <= 0m ? requested : 1m / rate,
+            instrument.MarginInit,
+            instrument.MarginSource);
+    }
+}
+
+/// <summary>
 /// What bounding fills came to over a run: the share of a bar's volume one participant was allowed (null where no
 /// venue was told to bound by volume), how many fills were bounded by the size on offer, and how much went in under a
 /// bound. Read as "this run assumed it could take that share of the market, and did so this many times".
@@ -702,6 +794,7 @@ public static class ReportWriter
             result.Simulation,
             result.Applied,
             result.MarginSources,
+            result.Leverages,
             result.Participation,
         }, options);
     }
