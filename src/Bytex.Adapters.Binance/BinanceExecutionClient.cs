@@ -984,6 +984,7 @@ public sealed class BinancePlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePl
                 Name = "spot",
                 InstrumentClasses = [InstrumentClass.Spot],
                 PaysFunding = false,
+                Collateral = VenueCollateral.None,
                 HttpBase = BinanceVenue.SpotHttpBase,
                 WsBase = BinanceVenue.SpotWsBase,
                 Key = BinanceKey,
@@ -1012,6 +1013,7 @@ public sealed class BinancePlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePl
                 Name = "usdm-futures",
                 InstrumentClasses = [InstrumentClass.Swap, InstrumentClass.Future],
                 PaysFunding = true,
+                Collateral = VenueCollateral.Quote,
                 HttpBase = BinanceVenue.UsdMFuturesHttpBase,
                 WsBase = BinanceVenue.UsdMFuturesWsBase,
                 Key = BinanceKey,
@@ -1046,6 +1048,7 @@ public sealed class BinancePlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePl
                 // means; the dated contracts answering an empty funding history is that same fact from the
                 // instrument's side rather than a gap in the fetch.
                 PaysFunding = true,
+                Collateral = VenueCollateral.Base,
                 HttpBase = BinanceVenue.CoinMFuturesHttpBase,
                 WsBase = BinanceVenue.CoinMFuturesWsBase,
 

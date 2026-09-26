@@ -201,7 +201,7 @@ public sealed class ReportsAndSerializationTests
         Assert.Equal(
             [
                 "runId", "traderId", "runStarted", "runFinished", "backtestStart", "backtestEnd", "elapsedSeconds", "iterations", "totalEvents",
-                "totalOrders", "totalPositions", "faultedStrategies", "currencies", "trades", "equityCurves", "orders", "fills", "positions", "accounts", "funding", "liquidations", "moduleCharges", "simulation", "applied", "marginSources", "participation",
+                "totalOrders", "totalPositions", "faultedStrategies", "currencies", "trades", "equityCurves", "orders", "fills", "positions", "accounts", "funding", "liquidations", "moduleCharges", "simulation", "applied", "marginSources", "leverages", "participation",
             ],
             root.EnumerateObject().Select(p => p.Name));
         Assert.Equal("statistics", root.GetProperty("runId").GetString());

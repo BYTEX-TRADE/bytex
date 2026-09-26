@@ -865,6 +865,7 @@ public sealed class KucoinPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlu
                 Name = "spot",
                 InstrumentClasses = [InstrumentClass.Spot],
                 PaysFunding = false,
+                Collateral = VenueCollateral.None,
                 HttpBase = KucoinVenue.DefaultHttpBase,
 
                 // None: KuCoin answers a REST call with the address to connect to and a token that expires, so
@@ -899,6 +900,7 @@ public sealed class KucoinPlugin : Core.Plugins.IPlugin, Core.Adapters.IVenuePlu
                 // offered here because a quantity of one cannot be expressed in base currency without a price.
                 InstrumentClasses = [InstrumentClass.Swap],
                 PaysFunding = true,
+                Collateral = VenueCollateral.Quote,
                 HttpBase = KucoinFuturesVenue.DefaultHttpBase,
 
                 // As spot: the venue answers a REST call with the address and a token, per connection.

@@ -70,6 +70,7 @@ public sealed class HyperliquidPlugin : IPlugin, IVenuePlugin
                 // venue's - the venue calls the asset "BTC" with no suffix at all.
                 InstrumentClasses = [InstrumentClass.Swap],
                 PaysFunding = true,
+                Collateral = VenueCollateral.Quote,
                 HttpBase = HyperliquidVenue.DefaultHttpBase,
 
                 // A fixed address, unlike KuCoin's: one socket for the public channels AND for an account's own
