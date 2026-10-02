@@ -1,0 +1,41 @@
+class Bytex.Adapters.Tardis.TardisDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Tardis.TardisDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    BookLevels = 25 : System.Int32
+    BookSnapshotDataType = book_snapshot_25 : System.String
+    DownloadTimeout : System.TimeSpan static
+    EnvApiKey = TARDIS_API_KEY : System.String
+    LoadBookDeltasAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.IData>>
+    LoadBookSnapshotsAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.IData>>
+    LoadQuotesAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.IData>>
+    LoadTradesAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.IData>>
+    OnDispose() -> System.Void
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    RequestWindow : System.TimeSpan static
+    RequestsPerWindow = 30 : System.Int32
+    SubscribeAsync(Bytex.Core.Model.Commands.SubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Tardis.TardisDataClientConfig : Bytex.Core.Adapters.DataClientConfig, System.IEquatable<Bytex.Adapters.Tardis.TardisDataClientConfig>, System.IEquatable<Bytex.Core.Adapters.DataClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    BaseUrl : System.String { get; init; }
+    CacheDirectory : System.String { get; init; }
+    DatasetFor(Bytex.Core.Model.Instruments.Instrument instrument) -> System.String
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Tardis.TardisDataClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.DataClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    ExchangeMap : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Tardis.TardisDataClientConfig left, Bytex.Adapters.Tardis.TardisDataClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Tardis.TardisDataClientConfig left, Bytex.Adapters.Tardis.TardisDataClientConfig right) -> System.Boolean
+class Bytex.Adapters.Tardis.TardisDataClientFactory : Bytex.Core.Adapters.IDataClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.DataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IDataClient
+    Name : System.String { get; }
+class Bytex.Adapters.Tardis.TardisPlugin : Bytex.Core.Plugins.IPlugin
+    .ctor()
+    Id : System.String { get; }
+    Register(Bytex.Core.Plugins.IPluginRegistry registry) -> System.Void
+    Version : System.String { get; }

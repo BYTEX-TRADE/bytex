@@ -1,0 +1,923 @@
+class Bytex.Documents.Annotations.Annotation : Bytex.Core.Model.Data.CustomData, Bytex.Core.Model.Data.IData, System.IEquatable<Bytex.Core.Model.Data.CustomData>, System.IEquatable<Bytex.Documents.Annotations.Annotation>
+    .ctor(System.Guid Id, Bytex.Core.Model.Primitives.UnixNanos EventTime, Bytex.Core.Model.Primitives.UnixNanos CreatedTime, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> TsEnd, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Annotations.AnnotationScope> Scopes, System.String Category, Bytex.Documents.Annotations.AnnotationSeverity Severity, System.String Title, System.String Summary, System.String Source, System.String Provenance, System.Nullable<System.Decimal> Confidence = null, System.Boolean UserOverridden = False)
+    AppliesTo(Bytex.Core.Model.Instruments.Instrument instrument) -> System.Boolean
+    Category : System.String { get; init; }
+    Confidence : System.Nullable<System.Decimal> { get; init; }
+    DataTypeFor(System.String category = null) -> Bytex.Core.Model.Data.DataType
+    Deconstruct(System.Guid& Id, Bytex.Core.Model.Primitives.UnixNanos& EventTime, Bytex.Core.Model.Primitives.UnixNanos& CreatedTime, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos>& TsEnd, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Annotations.AnnotationScope>& Scopes, System.String& Category, Bytex.Documents.Annotations.AnnotationSeverity& Severity, System.String& Title, System.String& Summary, System.String& Source, System.String& Provenance, System.Nullable<System.Decimal>& Confidence, System.Boolean& UserOverridden) -> System.Void
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Core.Model.Data.CustomData other) -> System.Boolean
+    Equals(Bytex.Documents.Annotations.Annotation other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Id : System.Guid { get; init; }
+    IsAiClassified : System.Boolean { get; }
+    IsWindow : System.Boolean { get; }
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    Provenance : System.String { get; init; }
+    ProvenanceAiPrefix = ai: : System.String
+    Scopes : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Annotations.AnnotationScope> { get; init; }
+    Severity : Bytex.Documents.Annotations.AnnotationSeverity { get; init; }
+    Source : System.String { get; init; }
+    Summary : System.String { get; init; }
+    Title : System.String { get; init; }
+    ToString() -> System.String
+    TsEnd : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    UserOverridden : System.Boolean { get; init; }
+    op_Equality(Bytex.Documents.Annotations.Annotation left, Bytex.Documents.Annotations.Annotation right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Annotations.Annotation left, Bytex.Documents.Annotations.Annotation right) -> System.Boolean
+class Bytex.Documents.Annotations.AnnotationScope : System.IEquatable<Bytex.Documents.Annotations.AnnotationScope>
+    .ctor(Bytex.Documents.Annotations.ScopeLevel Level, System.String Target = null, Bytex.Documents.Annotations.CurrencyRole Role = 0)
+    Deconstruct(Bytex.Documents.Annotations.ScopeLevel& Level, System.String& Target, Bytex.Documents.Annotations.CurrencyRole& Role) -> System.Void
+    Equals(Bytex.Documents.Annotations.AnnotationScope other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    ForAssetClass(Bytex.Core.Model.AssetClass assetClass) -> Bytex.Documents.Annotations.AnnotationScope
+    ForCurrency(System.String code, Bytex.Documents.Annotations.CurrencyRole role = 0) -> Bytex.Documents.Annotations.AnnotationScope
+    ForInstrument(Bytex.Core.Model.Identifiers.MarketKey id) -> Bytex.Documents.Annotations.AnnotationScope
+    ForVenue(Bytex.Core.Model.Identifiers.Venue venue) -> Bytex.Documents.Annotations.AnnotationScope
+    GetHashCode() -> System.Int32
+    Global : Bytex.Documents.Annotations.AnnotationScope { get; }
+    Level : Bytex.Documents.Annotations.ScopeLevel { get; init; }
+    Matches(Bytex.Core.Model.Instruments.Instrument instrument) -> System.Boolean
+    Role : Bytex.Documents.Annotations.CurrencyRole { get; init; }
+    Target : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Annotations.AnnotationScope left, Bytex.Documents.Annotations.AnnotationScope right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Annotations.AnnotationScope left, Bytex.Documents.Annotations.AnnotationScope right) -> System.Boolean
+enum Bytex.Documents.Annotations.AnnotationSeverity : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Critical = 3 : Bytex.Documents.Annotations.AnnotationSeverity
+    Info = 0 : Bytex.Documents.Annotations.AnnotationSeverity
+    Notice = 1 : Bytex.Documents.Annotations.AnnotationSeverity
+    Warning = 2 : Bytex.Documents.Annotations.AnnotationSeverity
+    value__ : System.Int32
+enum Bytex.Documents.Annotations.CurrencyRole : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Any = 0 : Bytex.Documents.Annotations.CurrencyRole
+    Base = 1 : Bytex.Documents.Annotations.CurrencyRole
+    Quote = 2 : Bytex.Documents.Annotations.CurrencyRole
+    value__ : System.Int32
+enum Bytex.Documents.Annotations.ScopeLevel : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    AssetClass = 1 : Bytex.Documents.Annotations.ScopeLevel
+    Currency = 2 : Bytex.Documents.Annotations.ScopeLevel
+    Global = 0 : Bytex.Documents.Annotations.ScopeLevel
+    Instrument = 4 : Bytex.Documents.Annotations.ScopeLevel
+    Venue = 3 : Bytex.Documents.Annotations.ScopeLevel
+    value__ : System.Int32
+class Bytex.Documents.Annotations.ScopeResolver
+    For(Bytex.Core.Model.Instruments.Instrument instrument) -> System.Collections.Generic.IReadOnlyList<Bytex.Documents.Annotations.AnnotationScope>
+class Bytex.Documents.Catalog.BuiltinNodes
+    All() -> System.Collections.Generic.IEnumerable<Bytex.Documents.Catalog.NodeTypeDescriptor>
+    Create() -> Bytex.Documents.Catalog.NodeCatalog
+class Bytex.Documents.Catalog.ChoiceSpec : System.IEquatable<Bytex.Documents.Catalog.ChoiceSpec>
+    .ctor()
+    Default : System.String { get; init; }
+    Description : System.String { get; init; }
+    Equals(Bytex.Documents.Catalog.ChoiceSpec other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Governs : System.String { get; init; }
+    Label : System.String { get; init; }
+    Max : System.String { get; init; }
+    Min : System.String { get; init; }
+    Step : System.String { get; init; }
+    ToString() -> System.String
+    Unit : System.String { get; init; }
+    Value : System.String { get; init; }
+    op_Equality(Bytex.Documents.Catalog.ChoiceSpec left, Bytex.Documents.Catalog.ChoiceSpec right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Catalog.ChoiceSpec left, Bytex.Documents.Catalog.ChoiceSpec right) -> System.Boolean
+interface Bytex.Documents.Catalog.INodeTypeProvider
+    NodeTypes() -> System.Collections.Generic.IEnumerable<Bytex.Documents.Catalog.NodeTypeDescriptor>
+    TypePrefix : System.String { get; }
+class Bytex.Documents.Catalog.NodeCatalog
+    .ctor()
+    .ctor(System.Collections.Generic.IEnumerable<Bytex.Documents.Catalog.NodeTypeDescriptor> descriptors)
+    CatalogVersion = 1.0 : System.String
+    Contains(System.String type) -> System.Boolean
+    Default : Bytex.Documents.Catalog.NodeCatalog { get; }
+    ExportJson(System.Boolean indented = True) -> System.String
+    Find(System.String type) -> Bytex.Documents.Catalog.NodeTypeDescriptor
+    Register(Bytex.Documents.Catalog.NodeTypeDescriptor descriptor) -> System.Void
+    Types : System.Collections.Generic.IReadOnlyCollection<Bytex.Documents.Catalog.NodeTypeDescriptor> { get; }
+class Bytex.Documents.Catalog.NodeCatalogComposer
+    Compose(System.Collections.Generic.IEnumerable<Bytex.Documents.Catalog.INodeTypeProvider> providers) -> Bytex.Documents.Catalog.NodeCatalog
+    ReservedPrefixes : System.Collections.Generic.IReadOnlySet<System.String> static
+enum Bytex.Documents.Catalog.NodeKind : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Action = 4 : Bytex.Documents.Catalog.NodeKind
+    Condition = 3 : Bytex.Documents.Catalog.NodeKind
+    Custom = 8 : Bytex.Documents.Catalog.NodeKind
+    Data = 0 : Bytex.Documents.Catalog.NodeKind
+    Event = 7 : Bytex.Documents.Catalog.NodeKind
+    Flow = 6 : Bytex.Documents.Catalog.NodeKind
+    Indicator = 1 : Bytex.Documents.Catalog.NodeKind
+    Level = 2 : Bytex.Documents.Catalog.NodeKind
+    Risk = 5 : Bytex.Documents.Catalog.NodeKind
+    value__ : System.Int32
+enum Bytex.Documents.Catalog.NodeModes : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    All = 7 : Bytex.Documents.Catalog.NodeModes
+    Lab = 1 : Bytex.Documents.Catalog.NodeModes
+    Live = 4 : Bytex.Documents.Catalog.NodeModes
+    None = 0 : Bytex.Documents.Catalog.NodeModes
+    Paper = 2 : Bytex.Documents.Catalog.NodeModes
+    value__ : System.Int32
+class Bytex.Documents.Catalog.NodeTypeDescriptor : System.IEquatable<Bytex.Documents.Catalog.NodeTypeDescriptor>
+    .ctor()
+    AmendsOrders : System.Boolean { get; init; }
+    Description : System.String { get; init; }
+    DisplayName : System.String { get; init; }
+    Equals(Bytex.Documents.Catalog.NodeTypeDescriptor other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    FaceTemplate : System.String { get; init; }
+    Factory : System.Func<Bytex.Documents.Runtime.NodeBuildContext, Bytex.Documents.Runtime.INodeEvaluator> { get; init; }
+    GetHashCode() -> System.Int32
+    Input(System.String name) -> Bytex.Documents.Catalog.PortSpec
+    Inputs : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Catalog.PortSpec> { get; init; }
+    Kind : Bytex.Documents.Catalog.NodeKind { get; init; }
+    Modes : Bytex.Documents.Catalog.NodeModes { get; init; }
+    Output(System.String name) -> Bytex.Documents.Catalog.PortSpec
+    Outputs : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Catalog.PortSpec> { get; init; }
+    Param(System.String name) -> Bytex.Documents.Catalog.ParamSpec
+    Params : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Catalog.ParamSpec> { get; init; }
+    ToString() -> System.String
+    Type : System.String { get; init; }
+    op_Equality(Bytex.Documents.Catalog.NodeTypeDescriptor left, Bytex.Documents.Catalog.NodeTypeDescriptor right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Catalog.NodeTypeDescriptor left, Bytex.Documents.Catalog.NodeTypeDescriptor right) -> System.Boolean
+class Bytex.Documents.Catalog.ParamSpec : System.IEquatable<Bytex.Documents.Catalog.ParamSpec>
+    .ctor()
+    Choice(System.String value) -> Bytex.Documents.Catalog.ChoiceSpec
+    ChoiceValues : System.Collections.Generic.IReadOnlyList<System.String> { get; }
+    Choices : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Catalog.ChoiceSpec> { get; init; }
+    Default : System.String { get; init; }
+    Description : System.String { get; init; }
+    Equals(Bytex.Documents.Catalog.ParamSpec other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Fields : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Catalog.ParamSpec> { get; init; }
+    GetHashCode() -> System.Int32
+    IsNumeric : System.Boolean { get; }
+    Label : System.String { get; init; }
+    Max : System.String { get; init; }
+    Min : System.String { get; init; }
+    Name : System.String { get; init; }
+    Required : System.Boolean { get; init; }
+    Step : System.String { get; init; }
+    ToString() -> System.String
+    Type : Bytex.Documents.Catalog.ParamType { get; init; }
+    Unit : System.String { get; init; }
+    op_Equality(Bytex.Documents.Catalog.ParamSpec left, Bytex.Documents.Catalog.ParamSpec right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Catalog.ParamSpec left, Bytex.Documents.Catalog.ParamSpec right) -> System.Boolean
+enum Bytex.Documents.Catalog.ParamType : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Bool = 2 : Bytex.Documents.Catalog.ParamType
+    CandleSeries = 7 : Bytex.Documents.Catalog.ParamType
+    Decimal = 1 : Bytex.Documents.Catalog.ParamType
+    Enum = 4 : Bytex.Documents.Catalog.ParamType
+    Instrument = 6 : Bytex.Documents.Catalog.ParamType
+    Int = 0 : Bytex.Documents.Catalog.ParamType
+    Object = 5 : Bytex.Documents.Catalog.ParamType
+    String = 3 : Bytex.Documents.Catalog.ParamType
+    Time = 8 : Bytex.Documents.Catalog.ParamType
+    value__ : System.Int32
+class Bytex.Documents.Catalog.PortSpec : System.IEquatable<Bytex.Documents.Catalog.PortSpec>
+    .ctor(System.String Name, Bytex.Documents.Catalog.ValueKind Kind, System.Boolean Required = False, System.String Label = null, System.String Description = null, Bytex.Documents.Catalog.PortUnit Unit = 0, System.Nullable<System.Decimal> Min = null, System.Nullable<System.Decimal> Max = null)
+    Compatible(Bytex.Documents.Catalog.ValueKind from, Bytex.Documents.Catalog.ValueKind to) -> System.Boolean
+    Deconstruct(System.String& Name, Bytex.Documents.Catalog.ValueKind& Kind, System.Boolean& Required, System.String& Label, System.String& Description, Bytex.Documents.Catalog.PortUnit& Unit, System.Nullable<System.Decimal>& Min, System.Nullable<System.Decimal>& Max) -> System.Void
+    Description : System.String { get; init; }
+    Equals(Bytex.Documents.Catalog.PortSpec other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Kind : Bytex.Documents.Catalog.ValueKind { get; init; }
+    Label : System.String { get; init; }
+    Max : System.Nullable<System.Decimal> { get; init; }
+    Min : System.Nullable<System.Decimal> { get; init; }
+    Name : System.String { get; init; }
+    Required : System.Boolean { get; init; }
+    ToString() -> System.String
+    Unit : Bytex.Documents.Catalog.PortUnit { get; init; }
+    op_Equality(Bytex.Documents.Catalog.PortSpec left, Bytex.Documents.Catalog.PortSpec right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Catalog.PortSpec left, Bytex.Documents.Catalog.PortSpec right) -> System.Boolean
+enum Bytex.Documents.Catalog.PortUnit : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Percent = 3 : Bytex.Documents.Catalog.PortUnit
+    Price = 1 : Bytex.Documents.Catalog.PortUnit
+    Quantity = 2 : Bytex.Documents.Catalog.PortUnit
+    Ratio = 4 : Bytex.Documents.Catalog.PortUnit
+    Unbounded = 5 : Bytex.Documents.Catalog.PortUnit
+    Unknown = 0 : Bytex.Documents.Catalog.PortUnit
+    value__ : System.Int32
+enum Bytex.Documents.Catalog.ValueKind : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Bars = 0 : Bytex.Documents.Catalog.ValueKind
+    Bool = 4 : Bytex.Documents.Catalog.ValueKind
+    Position = 6 : Bytex.Documents.Catalog.ValueKind
+    Price = 2 : Bytex.Documents.Catalog.ValueKind
+    Pulse = 5 : Bytex.Documents.Catalog.ValueKind
+    Quantity = 3 : Bytex.Documents.Catalog.ValueKind
+    Series = 1 : Bytex.Documents.Catalog.ValueKind
+    value__ : System.Int32
+class Bytex.Documents.DocumentStrategyProvider : Bytex.Core.Plugins.IStrategyProvider
+    .ctor(Bytex.Documents.Catalog.NodeCatalog catalog = null)
+    Create(Bytex.Core.Plugins.StrategyDefinition definition) -> Bytex.Core.Trading.Strategy
+    Describe() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Plugins.StrategyDescriptor>
+    Id : System.String { get; }
+    ParsePayload(Bytex.Core.Plugins.StrategyDefinition definition) -> Bytex.Documents.Runtime.DocumentStrategyConfig
+    ProviderId = bytex.document : System.String
+    Validate(Bytex.Core.Plugins.StrategyDefinition definition) -> Bytex.Core.Plugins.ValidationResult
+class Bytex.Documents.DocumentsPlugin : Bytex.Core.Plugins.IPlugin
+    .ctor()
+    .ctor(Bytex.Documents.Catalog.NodeCatalog catalog)
+    Id : System.String { get; }
+    Register(Bytex.Core.Plugins.IPluginRegistry registry) -> System.Void
+    Version : System.String { get; }
+class Bytex.Documents.Runtime.ConditionSnapshot : System.IEquatable<Bytex.Documents.Runtime.ConditionSnapshot>
+    .ctor(System.String NodeId, System.String Type, System.String Label, System.Nullable<System.Boolean> Output, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Inputs, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Params)
+    Deconstruct(System.String& NodeId, System.String& Type, System.String& Label, System.Nullable<System.Boolean>& Output, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>& Inputs, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>& Params) -> System.Void
+    Equals(Bytex.Documents.Runtime.ConditionSnapshot other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Inputs : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    Label : System.String { get; init; }
+    NodeId : System.String { get; init; }
+    Output : System.Nullable<System.Boolean> { get; init; }
+    Params : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    ToString() -> System.String
+    Type : System.String { get; init; }
+    op_Equality(Bytex.Documents.Runtime.ConditionSnapshot left, Bytex.Documents.Runtime.ConditionSnapshot right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Runtime.ConditionSnapshot left, Bytex.Documents.Runtime.ConditionSnapshot right) -> System.Boolean
+class Bytex.Documents.Runtime.DocumentMonitorFrame : System.IEquatable<Bytex.Documents.Runtime.DocumentMonitorFrame>
+    .ctor(System.Int64 Index, System.Int64 BarTs, System.String Phase, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.ConditionSnapshot> Conditions, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Values)
+    BarTs : System.Int64 { get; init; }
+    Conditions : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.ConditionSnapshot> { get; init; }
+    Deconstruct(System.Int64& Index, System.Int64& BarTs, System.String& Phase, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.ConditionSnapshot>& Conditions, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>& Values) -> System.Void
+    Equals(Bytex.Documents.Runtime.DocumentMonitorFrame other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Index : System.Int64 { get; init; }
+    Phase : System.String { get; init; }
+    ToString() -> System.String
+    Values : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    op_Equality(Bytex.Documents.Runtime.DocumentMonitorFrame left, Bytex.Documents.Runtime.DocumentMonitorFrame right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Runtime.DocumentMonitorFrame left, Bytex.Documents.Runtime.DocumentMonitorFrame right) -> System.Boolean
+class Bytex.Documents.Runtime.DocumentMonitorView : System.IEquatable<Bytex.Documents.Runtime.DocumentMonitorView>
+    .ctor(System.String MarketKey, System.String CandleSeries, System.Int64 BarIntervalSeconds, System.Nullable<System.Int64> LastBarTs, System.String Phase, System.Int64 BarIndex, System.Boolean WarmupPending, System.Boolean WarmedUp, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.DocumentMonitorWarmup> Warmup, Bytex.Documents.Runtime.DocumentMonitorFrame Frame, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.DocumentMonitorWarmupPoint> WarmupSeries)
+    BarIndex : System.Int64 { get; init; }
+    BarIntervalSeconds : System.Int64 { get; init; }
+    CandleSeries : System.String { get; init; }
+    Deconstruct(System.String& MarketKey, System.String& CandleSeries, System.Int64& BarIntervalSeconds, System.Nullable<System.Int64>& LastBarTs, System.String& Phase, System.Int64& BarIndex, System.Boolean& WarmupPending, System.Boolean& WarmedUp, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.DocumentMonitorWarmup>& Warmup, Bytex.Documents.Runtime.DocumentMonitorFrame& Frame, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.DocumentMonitorWarmupPoint>& WarmupSeries) -> System.Void
+    Equals(Bytex.Documents.Runtime.DocumentMonitorView other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Frame : Bytex.Documents.Runtime.DocumentMonitorFrame { get; init; }
+    GetHashCode() -> System.Int32
+    LastBarTs : System.Nullable<System.Int64> { get; init; }
+    MarketKey : System.String { get; init; }
+    Phase : System.String { get; init; }
+    ToString() -> System.String
+    WarmedUp : System.Boolean { get; init; }
+    Warmup : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.DocumentMonitorWarmup> { get; init; }
+    WarmupPending : System.Boolean { get; init; }
+    WarmupSeries : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.DocumentMonitorWarmupPoint> { get; init; }
+    op_Equality(Bytex.Documents.Runtime.DocumentMonitorView left, Bytex.Documents.Runtime.DocumentMonitorView right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Runtime.DocumentMonitorView left, Bytex.Documents.Runtime.DocumentMonitorView right) -> System.Boolean
+class Bytex.Documents.Runtime.DocumentMonitorWarmup : System.IEquatable<Bytex.Documents.Runtime.DocumentMonitorWarmup>
+    .ctor(System.String CandleSeries, System.Int32 Needed, System.Int32 Received, System.Int32 FromHistory, System.Boolean Done, System.Nullable<System.Int64> First, System.Nullable<System.Int64> Last)
+    CandleSeries : System.String { get; init; }
+    Deconstruct(System.String& CandleSeries, System.Int32& Needed, System.Int32& Received, System.Int32& FromHistory, System.Boolean& Done, System.Nullable<System.Int64>& First, System.Nullable<System.Int64>& Last) -> System.Void
+    Done : System.Boolean { get; init; }
+    Equals(Bytex.Documents.Runtime.DocumentMonitorWarmup other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    First : System.Nullable<System.Int64> { get; init; }
+    FromHistory : System.Int32 { get; init; }
+    GetHashCode() -> System.Int32
+    Last : System.Nullable<System.Int64> { get; init; }
+    Needed : System.Int32 { get; init; }
+    Received : System.Int32 { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Runtime.DocumentMonitorWarmup left, Bytex.Documents.Runtime.DocumentMonitorWarmup right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Runtime.DocumentMonitorWarmup left, Bytex.Documents.Runtime.DocumentMonitorWarmup right) -> System.Boolean
+class Bytex.Documents.Runtime.DocumentMonitorWarmupPoint : System.IEquatable<Bytex.Documents.Runtime.DocumentMonitorWarmupPoint>
+    .ctor(System.Int64 BarTs, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Values)
+    BarTs : System.Int64 { get; init; }
+    Deconstruct(System.Int64& BarTs, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>& Values) -> System.Void
+    Equals(Bytex.Documents.Runtime.DocumentMonitorWarmupPoint other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    ToString() -> System.String
+    Values : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    op_Equality(Bytex.Documents.Runtime.DocumentMonitorWarmupPoint left, Bytex.Documents.Runtime.DocumentMonitorWarmupPoint right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Runtime.DocumentMonitorWarmupPoint left, Bytex.Documents.Runtime.DocumentMonitorWarmupPoint right) -> System.Boolean
+class Bytex.Documents.Runtime.DocumentStrategy : Bytex.Core.Trading.Strategy<Bytex.Documents.Runtime.DocumentStrategyConfig>, Bytex.Core.Common.IComponent, Bytex.Core.Trading.INeedsOrderSchedules, Bytex.Core.Trading.IStrategyMonitorView
+    .ctor(Bytex.Documents.Runtime.DocumentStrategyConfig config)
+    .ctor(Bytex.Documents.Runtime.DocumentStrategyConfig config, Bytex.Documents.Catalog.NodeCatalog catalog)
+    BarFrames : System.Int64 { get; }
+    BarIndex : System.Int64 { get; }
+    CurrentPhase : System.String { get; }
+    Decisions : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.StrategyEvent> { get; }
+    Document : Bytex.Documents.Schema.StrategyDocument { get; }
+    IsWarmedUp : System.Boolean { get; }
+    LastFrame : Bytex.Documents.Runtime.FrameSnapshot { get; }
+    LastValues : System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object> { get; }
+    MonitorView() -> System.Object
+    OnBar(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    OnData(Bytex.Core.Model.Data.IData data) -> System.Void
+    OnDataResponse(Bytex.Core.Model.Commands.DataResponse response) -> System.Void
+    OnLoad(System.Collections.Generic.IDictionary<System.String, System.Byte[]> state) -> System.Void
+    OnOrderEvent(Bytex.Core.Model.Events.OrderEvent e) -> System.Void
+    OnPositionEvent(Bytex.Core.Model.Events.PositionEvent e) -> System.Void
+    OnQuoteTick(Bytex.Core.Model.Data.QuoteTick tick) -> System.Void
+    OnReset() -> System.Void
+    OnSave() -> System.Collections.Generic.IDictionary<System.String, System.Byte[]>
+    OnStart() -> System.Void
+    OnStop() -> System.Void
+    OnTradeTick(Bytex.Core.Model.Data.TradeTick tick) -> System.Void
+    Plan : Bytex.Documents.Runtime.EvaluationPlan { get; }
+    RequiredOrderSchedules() -> System.Collections.Generic.IEnumerable<Bytex.Core.Trading.OrderSchedule>
+    StopReason : System.String { get; }
+    TickFrames : System.Int64 { get; }
+    Warmup : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.WarmupState> { get; }
+    WarmupPending : System.Boolean { get; }
+    WarmupValues : System.Collections.Generic.IReadOnlyList<System.ValueTuple<System.Int64, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>>> { get; }
+class Bytex.Documents.Runtime.DocumentStrategyConfig : Bytex.Core.Trading.StrategyConfig, System.IEquatable<Bytex.Core.Trading.RuntimeModuleConfig>, System.IEquatable<Bytex.Core.Trading.StrategyConfig>, System.IEquatable<Bytex.Documents.Runtime.DocumentStrategyConfig>
+    .ctor()
+    AnnotationWindow : System.TimeSpan { get; init; }
+    DecisionHistory : System.Int32 { get; init; }
+    Document : Bytex.Documents.Schema.StrategyDocument { get; init; }
+    EmitDecisionEvents : System.Boolean { get; init; }
+    Environment : System.Nullable<Bytex.Core.Model.TradingEnvironment> { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Core.Trading.StrategyConfig other) -> System.Boolean
+    Equals(Bytex.Documents.Runtime.DocumentStrategyConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    ParameterOverrides : System.Collections.Generic.IReadOnlyDictionary<System.String, System.Decimal> { get; init; }
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ToString() -> System.String
+    WarmupBars : System.Nullable<System.Int32> { get; init; }
+    WarmupHistory : System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar> { get; init; }
+    WarmupTimeout : System.TimeSpan { get; init; }
+    op_Equality(Bytex.Documents.Runtime.DocumentStrategyConfig left, Bytex.Documents.Runtime.DocumentStrategyConfig right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Runtime.DocumentStrategyConfig left, Bytex.Documents.Runtime.DocumentStrategyConfig right) -> System.Boolean
+class Bytex.Documents.Runtime.EvalContext
+    .ctor(Bytex.Documents.Runtime.Frame frame, System.String nodeId, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> inputs, Bytex.Documents.Runtime.IStrategyServices services)
+    Bar : Bytex.Core.Model.Data.Bar { get; }
+    Bars(System.String input) -> System.Nullable<Bytex.Core.Model.Data.Bar>
+    Bool(System.String input) -> System.Boolean
+    Dec(System.String input) -> System.Nullable<System.Decimal>
+    Emit(System.String kind, System.String message, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> values = null) -> System.Void
+    Frame : Bytex.Documents.Runtime.Frame { get; }
+    Index : System.Int64 { get; }
+    Input(System.String input) -> System.Object
+    IsBarClose : System.Boolean { get; }
+    IsConnected(System.String input) -> System.Boolean
+    Last : System.Decimal { get; }
+    NodeId : System.String { get; }
+    Position(System.String input) -> System.Nullable<Bytex.Core.Model.Identifiers.PositionId>
+    Quote : System.Nullable<Bytex.Core.Model.Data.QuoteTick> { get; }
+    Services : Bytex.Documents.Runtime.IStrategyServices { get; }
+    Set(System.String output, System.Object value) -> System.Void
+    Trade : System.Nullable<Bytex.Core.Model.Data.TradeTick> { get; }
+    Trigger : Bytex.Documents.Runtime.FrameTrigger { get; }
+class Bytex.Documents.Runtime.EvaluationPlan
+    CandleSeriesDefinitions : System.Collections.Generic.IReadOnlyDictionary<System.String, Bytex.Core.Model.Data.CandleSeries> { get; }
+    Compile(Bytex.Documents.Schema.StrategyDocument document, Bytex.Documents.Catalog.NodeCatalog catalog, System.Collections.Generic.IReadOnlyDictionary<System.String, System.Decimal> overrides, Bytex.Documents.Runtime.IStrategyServices services) -> Bytex.Documents.Runtime.EvaluationPlan
+    EvaluatesOnQuotes : System.Boolean { get; }
+    EvaluatesOnTrades : System.Boolean { get; }
+    Evaluation : System.String { get; }
+    InitialPhase : System.String { get; }
+    Instruments : System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Identifiers.MarketKey> { get; }
+    NeedsAnnotations : System.Boolean { get; }
+    NeedsBook : System.Boolean { get; }
+    NeedsFunding : System.Boolean { get; }
+    NeedsMarkPrice : System.Boolean { get; }
+    NeedsQuotes : System.Boolean { get; }
+    NeedsTrades : System.Boolean { get; }
+    Nodes : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.PlannedNode> { get; }
+    Parameters : System.Collections.Generic.IReadOnlyDictionary<System.String, System.Decimal> { get; }
+    PrimaryCandleSeries : Bytex.Core.Model.Data.CandleSeries { get; }
+    PrimaryInstrument : Bytex.Core.Model.Identifiers.MarketKey { get; }
+    TextParameters : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; }
+    Transitions : System.Collections.Generic.IReadOnlyDictionary<System.String, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Schema.TransitionDef>> { get; }
+class Bytex.Documents.Runtime.Frame
+    .ctor()
+    Bar : Bytex.Core.Model.Data.Bar { get; }
+    Clear() -> System.Void
+    Index : System.Int64 { get; }
+    Quote : System.Nullable<Bytex.Core.Model.Data.QuoteTick> { get; }
+    Set(System.String key, System.Object value) -> System.Void
+    Trade : System.Nullable<Bytex.Core.Model.Data.TradeTick> { get; }
+    Trigger : Bytex.Documents.Runtime.FrameTrigger { get; }
+    TryGet(System.String key, System.Object& value) -> System.Boolean
+    Values : System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object> { get; }
+class Bytex.Documents.Runtime.FrameSnapshot : System.IEquatable<Bytex.Documents.Runtime.FrameSnapshot>
+    .ctor(System.Int64 Index, Bytex.Core.Model.Primitives.UnixNanos BarTs, System.String Phase, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.ConditionSnapshot> Conditions, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Values)
+    BarTs : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    Conditions : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.ConditionSnapshot> { get; init; }
+    Deconstruct(System.Int64& Index, Bytex.Core.Model.Primitives.UnixNanos& BarTs, System.String& Phase, System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.ConditionSnapshot>& Conditions, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>& Values) -> System.Void
+    Equals(Bytex.Documents.Runtime.FrameSnapshot other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Index : System.Int64 { get; init; }
+    Phase : System.String { get; init; }
+    ToString() -> System.String
+    Values : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    op_Equality(Bytex.Documents.Runtime.FrameSnapshot left, Bytex.Documents.Runtime.FrameSnapshot right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Runtime.FrameSnapshot left, Bytex.Documents.Runtime.FrameSnapshot right) -> System.Boolean
+enum Bytex.Documents.Runtime.FrameTrigger : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    BarClose = 0 : Bytex.Documents.Runtime.FrameTrigger
+    Quote = 1 : Bytex.Documents.Runtime.FrameTrigger
+    Trade = 2 : Bytex.Documents.Runtime.FrameTrigger
+    value__ : System.Int32
+interface Bytex.Documents.Runtime.IAnnotationObserver
+    OnAnnotation(Bytex.Documents.Annotations.Annotation annotation) -> System.Void
+interface Bytex.Documents.Runtime.IBarObserver
+    OnBar(Bytex.Core.Model.Data.Bar bar) -> System.Void
+interface Bytex.Documents.Runtime.IIndicatorHost
+    Indicators : System.Collections.Generic.IEnumerable<System.ValueTuple<Bytex.Core.Model.Data.CandleSeries, Bytex.Core.Indicators.IIndicator>> { get; }
+interface Bytex.Documents.Runtime.INodeEvaluator
+    Evaluate(Bytex.Documents.Runtime.EvalContext ctx) -> System.Void
+interface Bytex.Documents.Runtime.IOrderEventObserver
+    OnOrderEvent(Bytex.Core.Model.Events.OrderEvent e) -> System.Void
+interface Bytex.Documents.Runtime.IPhaseAware
+    OnPhaseEntered() -> System.Void
+    OnPhaseExited() -> System.Void
+interface Bytex.Documents.Runtime.IPositionEventObserver
+    OnPositionEvent(Bytex.Core.Model.Events.PositionEvent e) -> System.Void
+interface Bytex.Documents.Runtime.IStatefulNode
+    LoadState(System.Text.Json.JsonElement state) -> System.Void
+    SaveState() -> System.Text.Json.JsonElement
+interface Bytex.Documents.Runtime.IStoppableNode
+    OnStrategyStopping() -> System.Void
+interface Bytex.Documents.Runtime.IStrategyServices
+    Annotations : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Annotations.Annotation> { get; }
+    Cache : Bytex.Core.Caching.ICache { get; }
+    CancelAllOrders(Bytex.Core.Model.Identifiers.MarketKey marketKey) -> System.Void
+    CancelOrder(Bytex.Core.Model.Orders.Order order) -> System.Void
+    Clock : Bytex.Core.Timing.IClock { get; }
+    CloseAllPositions(Bytex.Core.Model.Identifiers.MarketKey marketKey) -> System.Void
+    Emit(System.String nodeId, System.String kind, System.String message, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> values = null) -> System.Void
+    Environment : Bytex.Core.Model.TradingEnvironment { get; }
+    Log : Microsoft.Extensions.Logging.ILogger { get; }
+    ModifyOrder(Bytex.Core.Model.Orders.Order order, System.Nullable<Bytex.Core.Model.Primitives.Quantity> quantity = null, System.Nullable<Bytex.Core.Model.Primitives.Price> price = null, System.Nullable<Bytex.Core.Model.Primitives.Price> triggerPrice = null) -> System.Void
+    OrderFactory : Bytex.Core.Trading.OrderFactory { get; }
+    Portfolio : Bytex.Core.Portfolios.IPortfolio { get; }
+    PublishSignal(System.String name, System.Decimal value) -> System.Void
+    RequestStop(System.String reason) -> System.Void
+    StrategyId : Bytex.Core.Model.Identifiers.StrategyId { get; }
+    SubmitOrder(Bytex.Core.Model.Orders.Order order) -> System.Void
+    SubmitOrderList(Bytex.Core.Model.Orders.OrderList list) -> System.Void
+class Bytex.Documents.Runtime.NodeBuildContext
+    .ctor(Bytex.Documents.Schema.StrategyDocument document, Bytex.Documents.Schema.NodeDef node, Bytex.Documents.Catalog.NodeTypeDescriptor descriptor, Bytex.Documents.Runtime.NodeParams parameters, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Data.CandleSeries> sourceCandleSeries, System.Collections.Generic.IReadOnlySet<System.String> connectedInputs, Bytex.Documents.Runtime.IStrategyServices services)
+    ConnectedInputs : System.Collections.Generic.IReadOnlySet<System.String> { get; }
+    Descriptor : Bytex.Documents.Catalog.NodeTypeDescriptor { get; }
+    Document : Bytex.Documents.Schema.StrategyDocument { get; }
+    Instrument : Bytex.Core.Model.Instruments.Instrument { get; }
+    IsConnected(System.String input) -> System.Boolean
+    MarketKey : Bytex.Core.Model.Identifiers.MarketKey { get; }
+    Node : Bytex.Documents.Schema.NodeDef { get; }
+    Params : Bytex.Documents.Runtime.NodeParams { get; }
+    Services : Bytex.Documents.Runtime.IStrategyServices { get; }
+    SourceCandleSeries : System.Nullable<Bytex.Core.Model.Data.CandleSeries> { get; }
+class Bytex.Documents.Runtime.NodeLevel
+    Entry : Bytex.Documents.Runtime.TrackedOrder { get; }
+    Exit : Bytex.Documents.Runtime.TrackedOrder { get; }
+    IsWorking : System.Boolean { get; }
+    Key : System.String { get; }
+    Price : System.Decimal { get; set; }
+    RoundTrips : System.Int32 { get; set; }
+    Size : System.Decimal { get; set; }
+class Bytex.Documents.Runtime.NodeLevels
+    .ctor()
+    All : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Runtime.NodeLevel> { get; }
+    Clear() -> System.Void
+    Contains(System.String key) -> System.Boolean
+    Count : System.Int32 { get; }
+    Ensure(System.String key) -> Bytex.Documents.Runtime.NodeLevel
+    Find(System.String key) -> Bytex.Documents.Runtime.NodeLevel
+    Item : Bytex.Documents.Runtime.NodeLevel { get; }
+    Load(System.Text.Json.JsonElement state) -> System.Void
+    OnOrderEvent(Bytex.Core.Model.Events.OrderEvent e) -> System.Void
+    Refresh(Bytex.Documents.Runtime.IStrategyServices services) -> System.Void
+    Remove(System.String key) -> System.Boolean
+    Save() -> System.Text.Json.JsonElement
+    Working : System.Collections.Generic.IEnumerable<Bytex.Documents.Runtime.NodeLevel> { get; }
+class Bytex.Documents.Runtime.NodeParams
+    .ctor(System.Nullable<System.Text.Json.JsonElement> root, System.Collections.Generic.IReadOnlyDictionary<System.String, System.Decimal> parameters, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> texts = null)
+    Bool(System.String name, System.Boolean default) -> System.Boolean
+    Dec(System.String name, System.Decimal default) -> System.Decimal
+    DecOrNull(System.String name) -> System.Nullable<System.Decimal>
+    Has(System.String name) -> System.Boolean
+    Int(System.String name, System.Int32 default) -> System.Int32
+    Obj(System.String name) -> Bytex.Documents.Runtime.NodeParams
+    Raw(System.String name) -> System.Nullable<System.Text.Json.JsonElement>
+    Str(System.String name, System.String default) -> System.String
+    StrList(System.String name) -> System.Collections.Generic.IReadOnlyList<System.String>
+    StrOrNull(System.String name) -> System.String
+    Time(System.String name, System.TimeOnly default) -> System.TimeOnly
+class Bytex.Documents.Runtime.OrderWork
+    Algorithm = algorithm : System.String
+    DefaultHorizonMinutes : System.Decimal static
+    DefaultIntervalMinutes : System.Decimal static
+    HorizonMinutes = horizonMinutes : System.String
+    IntervalMinutes = intervalMinutes : System.String
+    MaxMinutes : System.Decimal static
+    MinMinutes : System.Decimal static
+    None = none : System.String
+    Param = work : System.String
+    StepMinutes : System.Decimal static
+    Twap = twap : System.String
+    WorkableOrderTypes : System.Collections.Generic.IReadOnlyList<System.String> static
+class Bytex.Documents.Runtime.PlannedNode
+    .ctor(Bytex.Documents.Schema.NodeDef node, Bytex.Documents.Catalog.NodeTypeDescriptor descriptor, Bytex.Documents.Runtime.INodeEvaluator evaluator, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> inputs, System.Nullable<Bytex.Core.Model.Data.CandleSeries> sourceCandleSeries, System.String phaseId)
+    Descriptor : Bytex.Documents.Catalog.NodeTypeDescriptor { get; }
+    Evaluator : Bytex.Documents.Runtime.INodeEvaluator { get; }
+    Inputs : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; }
+    Node : Bytex.Documents.Schema.NodeDef { get; }
+    PhaseId : System.String { get; }
+    SourceCandleSeries : System.Nullable<Bytex.Core.Model.Data.CandleSeries> { get; }
+class Bytex.Documents.Runtime.StrategyEvent : Bytex.Core.Model.Data.CustomData, Bytex.Core.Model.Data.IData, System.IEquatable<Bytex.Core.Model.Data.CustomData>, System.IEquatable<Bytex.Documents.Runtime.StrategyEvent>
+    .ctor(System.String StrategyId, System.String Kind, System.String NodeId, System.String Message, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Values, Bytex.Core.Model.Primitives.UnixNanos EventTime, Bytex.Core.Model.Primitives.UnixNanos CreatedTime)
+    Deconstruct(System.String& StrategyId, System.String& Kind, System.String& NodeId, System.String& Message, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>& Values, Bytex.Core.Model.Primitives.UnixNanos& EventTime, Bytex.Core.Model.Primitives.UnixNanos& CreatedTime) -> System.Void
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Core.Model.Data.CustomData other) -> System.Boolean
+    Equals(Bytex.Documents.Runtime.StrategyEvent other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Kind : System.String { get; init; }
+    Message : System.String { get; init; }
+    NodeId : System.String { get; init; }
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    StrategyId : System.String { get; init; }
+    ToString() -> System.String
+    Values : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    op_Equality(Bytex.Documents.Runtime.StrategyEvent left, Bytex.Documents.Runtime.StrategyEvent right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Runtime.StrategyEvent left, Bytex.Documents.Runtime.StrategyEvent right) -> System.Boolean
+class Bytex.Documents.Runtime.TrackedOrder
+    .ctor()
+    FillPrice : System.Nullable<System.Decimal> { get; set; }
+    FilledQuantity : System.Decimal { get; set; }
+    FilledValue : System.Decimal { get; set; }
+    Id : System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId> { get; set; }
+    IsWorked : System.Boolean { get; set; }
+    IsWorking : System.Boolean { get; set; }
+    LastReason : System.String { get; set; }
+    Load(System.Text.Json.JsonElement state) -> System.Void
+    OnOrderEvent(Bytex.Core.Model.Events.OrderEvent e, Bytex.Core.Caching.ICache cache = null) -> System.Void
+    PendingFilled : System.Boolean { get; set; }
+    PendingRejected : System.Boolean { get; set; }
+    PendingSubmitted : System.Boolean { get; set; }
+    PositionId : System.Nullable<Bytex.Core.Model.Identifiers.PositionId> { get; set; }
+    Refresh(Bytex.Documents.Runtime.IStrategyServices services) -> System.Void
+    Save() -> System.Text.Json.JsonElement
+    SubmittedAt : System.Int64 { get; set; }
+    Track(Bytex.Core.Model.Orders.Order order, System.Int64 index, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> workedUntil = null) -> System.Void
+    WorkedQuantity : System.Decimal { get; set; }
+    WorkedUntil : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; set; }
+class Bytex.Documents.Runtime.WarmupState : System.IEquatable<Bytex.Documents.Runtime.WarmupState>
+    .ctor(Bytex.Core.Model.Data.CandleSeries CandleSeries, System.Int32 Needed, System.Int32 Received, System.Int32 FromHistory, System.Boolean Done, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> First, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> Last)
+    CandleSeries : Bytex.Core.Model.Data.CandleSeries { get; init; }
+    Deconstruct(Bytex.Core.Model.Data.CandleSeries& CandleSeries, System.Int32& Needed, System.Int32& Received, System.Int32& FromHistory, System.Boolean& Done, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos>& First, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos>& Last) -> System.Void
+    Done : System.Boolean { get; init; }
+    Equals(Bytex.Documents.Runtime.WarmupState other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    First : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    FromHistory : System.Int32 { get; init; }
+    GetHashCode() -> System.Int32
+    Last : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    Needed : System.Int32 { get; init; }
+    Received : System.Int32 { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Runtime.WarmupState left, Bytex.Documents.Runtime.WarmupState right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Runtime.WarmupState left, Bytex.Documents.Runtime.WarmupState right) -> System.Boolean
+class Bytex.Documents.Schema.AccountSettings : System.IEquatable<Bytex.Documents.Schema.AccountSettings>
+    .ctor()
+    Equals(Bytex.Documents.Schema.AccountSettings other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Leverage : System.Decimal { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.AccountSettings left, Bytex.Documents.Schema.AccountSettings right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.AccountSettings left, Bytex.Documents.Schema.AccountSettings right) -> System.Boolean
+class Bytex.Documents.Schema.CandleSeriesRef : System.IEquatable<Bytex.Documents.Schema.CandleSeriesRef>
+    .ctor()
+    Aggregation : System.String { get; init; }
+    Equals(Bytex.Documents.Schema.CandleSeriesRef other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Instrument : System.String { get; init; }
+    PriceType : System.String { get; init; }
+    Ref : System.String { get; init; }
+    Source : System.String { get; init; }
+    Step : System.Int32 { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.CandleSeriesRef left, Bytex.Documents.Schema.CandleSeriesRef right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.CandleSeriesRef left, Bytex.Documents.Schema.CandleSeriesRef right) -> System.Boolean
+class Bytex.Documents.Schema.DocumentJson
+    Create(System.Boolean indented) -> System.Text.Json.JsonSerializerOptions
+    Deserialize(System.String json) -> Bytex.Documents.Schema.StrategyDocument
+    Deserialize(System.Text.Json.JsonElement element) -> Bytex.Documents.Schema.StrategyDocument
+    FormatDecimal(System.Decimal value) -> System.String
+    IndentedOptions : System.Text.Json.JsonSerializerOptions { get; }
+    Options : System.Text.Json.JsonSerializerOptions { get; }
+    ReadParamValue(System.Text.Json.JsonElement element) -> System.Nullable<Bytex.Documents.Schema.ParamValue>
+    Serialize(Bytex.Documents.Schema.StrategyDocument document, System.Boolean indented = True) -> System.String
+class Bytex.Documents.Schema.DocumentMetadata : System.IEquatable<Bytex.Documents.Schema.DocumentMetadata>
+    .ctor()
+    Author : System.String { get; init; }
+    CreatedWith : System.String { get; init; }
+    Difficulty : System.String { get; init; }
+    Equals(Bytex.Documents.Schema.DocumentMetadata other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    MarketRegime : System.String { get; init; }
+    RunMode : System.String { get; init; }
+    Tags : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    Template : System.Boolean { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.DocumentMetadata left, Bytex.Documents.Schema.DocumentMetadata right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.DocumentMetadata left, Bytex.Documents.Schema.DocumentMetadata right) -> System.Boolean
+class Bytex.Documents.Schema.DocumentSchemaExporter
+    Export(Bytex.Documents.Catalog.NodeCatalog catalog = null) -> System.Text.Json.Nodes.JsonObject
+    ExportJson(Bytex.Documents.Catalog.NodeCatalog catalog = null) -> System.String
+class Bytex.Documents.Schema.EdgeDef : System.IEquatable<Bytex.Documents.Schema.EdgeDef>
+    .ctor()
+    Equals(Bytex.Documents.Schema.EdgeDef other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    From : System.String { get; init; }
+    GetHashCode() -> System.Int32
+    Split(System.String reference) -> System.ValueTuple<System.String, System.String>
+    To : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.EdgeDef left, Bytex.Documents.Schema.EdgeDef right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.EdgeDef left, Bytex.Documents.Schema.EdgeDef right) -> System.Boolean
+class Bytex.Documents.Schema.EvaluationModes
+    All : System.Collections.Generic.IReadOnlyList<System.String> static
+    BarClose = barClose : System.String
+    Either = either : System.String
+    Quote = quote : System.String
+    Trade = trade : System.String
+class Bytex.Documents.Schema.InstrumentRef : System.IEquatable<Bytex.Documents.Schema.InstrumentRef>
+    .ctor()
+    Equals(Bytex.Documents.Schema.InstrumentRef other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    MarketKey : System.String { get; init; }
+    Ref : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.InstrumentRef left, Bytex.Documents.Schema.InstrumentRef right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.InstrumentRef left, Bytex.Documents.Schema.InstrumentRef right) -> System.Boolean
+class Bytex.Documents.Schema.LegacyDocumentMigration
+    Convert(System.String json) -> System.String
+class Bytex.Documents.Schema.LiveModeSettings : System.IEquatable<Bytex.Documents.Schema.LiveModeSettings>
+    .ctor()
+    AllowAiAnnotationConditions : System.Boolean { get; init; }
+    Equals(Bytex.Documents.Schema.LiveModeSettings other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.LiveModeSettings left, Bytex.Documents.Schema.LiveModeSettings right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.LiveModeSettings left, Bytex.Documents.Schema.LiveModeSettings right) -> System.Boolean
+class Bytex.Documents.Schema.ModeSettings : System.IEquatable<Bytex.Documents.Schema.ModeSettings>
+    .ctor()
+    Equals(Bytex.Documents.Schema.ModeSettings other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Live : Bytex.Documents.Schema.LiveModeSettings { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.ModeSettings left, Bytex.Documents.Schema.ModeSettings right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.ModeSettings left, Bytex.Documents.Schema.ModeSettings right) -> System.Boolean
+class Bytex.Documents.Schema.NodeDef : System.IEquatable<Bytex.Documents.Schema.NodeDef>
+    .ctor()
+    Disabled : System.Boolean { get; init; }
+    Equals(Bytex.Documents.Schema.NodeDef other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Id : System.String { get; init; }
+    Label : System.String { get; init; }
+    Params : System.Nullable<System.Text.Json.JsonElement> { get; init; }
+    ToString() -> System.String
+    Type : System.String { get; init; }
+    op_Equality(Bytex.Documents.Schema.NodeDef left, Bytex.Documents.Schema.NodeDef right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.NodeDef left, Bytex.Documents.Schema.NodeDef right) -> System.Boolean
+struct Bytex.Documents.Schema.ParamValue : System.IEquatable<Bytex.Documents.Schema.ParamValue>
+    .ctor(System.Decimal literal)
+    .ctor(System.String parameterName)
+    Equals(Bytex.Documents.Schema.ParamValue other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    IsParameter : System.Boolean { get; }
+    Literal : System.Nullable<System.Decimal> { get; }
+    ParameterName : System.String { get; }
+    Resolve(System.Collections.Generic.IReadOnlyDictionary<System.String, System.Decimal> parameters) -> System.Decimal
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.ParamValue left, Bytex.Documents.Schema.ParamValue right) -> System.Boolean
+    op_Implicit(System.Decimal value) -> Bytex.Documents.Schema.ParamValue
+    op_Implicit(System.Int32 value) -> Bytex.Documents.Schema.ParamValue
+    op_Inequality(Bytex.Documents.Schema.ParamValue left, Bytex.Documents.Schema.ParamValue right) -> System.Boolean
+class Bytex.Documents.Schema.ParamValueJsonConverter : System.Text.Json.Serialization.JsonConverter<Bytex.Documents.Schema.ParamValue>
+    .ctor()
+    Read(System.Text.Json.Utf8JsonReader& reader, System.Type typeToConvert, System.Text.Json.JsonSerializerOptions options) -> Bytex.Documents.Schema.ParamValue
+    Write(System.Text.Json.Utf8JsonWriter writer, Bytex.Documents.Schema.ParamValue value, System.Text.Json.JsonSerializerOptions options) -> System.Void
+class Bytex.Documents.Schema.ParameterDef : System.IEquatable<Bytex.Documents.Schema.ParameterDef>
+    .ctor()
+    Choices : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    Description : System.String { get; init; }
+    Equals(Bytex.Documents.Schema.ParameterDef other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Label : System.String { get; init; }
+    Max : System.String { get; init; }
+    Min : System.String { get; init; }
+    Name : System.String { get; init; }
+    Step : System.String { get; init; }
+    ToString() -> System.String
+    Type : System.String { get; init; }
+    Value : System.String { get; init; }
+    op_Equality(Bytex.Documents.Schema.ParameterDef left, Bytex.Documents.Schema.ParameterDef right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.ParameterDef left, Bytex.Documents.Schema.ParameterDef right) -> System.Boolean
+class Bytex.Documents.Schema.PhaseDef : System.IEquatable<Bytex.Documents.Schema.PhaseDef>
+    .ctor()
+    Equals(Bytex.Documents.Schema.PhaseDef other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Id : System.String { get; init; }
+    Initial : System.Boolean { get; init; }
+    Name : System.String { get; init; }
+    Nodes : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.PhaseDef left, Bytex.Documents.Schema.PhaseDef right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.PhaseDef left, Bytex.Documents.Schema.PhaseDef right) -> System.Boolean
+class Bytex.Documents.Schema.RepeatSettings : System.IEquatable<Bytex.Documents.Schema.RepeatSettings>
+    .ctor()
+    Enabled : System.Boolean { get; init; }
+    Equals(Bytex.Documents.Schema.RepeatSettings other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.RepeatSettings left, Bytex.Documents.Schema.RepeatSettings right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.RepeatSettings left, Bytex.Documents.Schema.RepeatSettings right) -> System.Boolean
+class Bytex.Documents.Schema.RequirementDef : System.IEquatable<Bytex.Documents.Schema.RequirementDef>
+    .ctor(System.String Prefix, System.String Package = null, System.String MinVersion = null)
+    Deconstruct(System.String& Prefix, System.String& Package, System.String& MinVersion) -> System.Void
+    Equals(Bytex.Documents.Schema.RequirementDef other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    MinVersion : System.String { get; init; }
+    Package : System.String { get; init; }
+    Prefix : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.RequirementDef left, Bytex.Documents.Schema.RequirementDef right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.RequirementDef left, Bytex.Documents.Schema.RequirementDef right) -> System.Boolean
+class Bytex.Documents.Schema.StrategyDocument : System.IEquatable<Bytex.Documents.Schema.StrategyDocument>
+    .ctor()
+    Account : Bytex.Documents.Schema.AccountSettings { get; init; }
+    CandleSeries(System.String reference) -> Bytex.Documents.Schema.CandleSeriesRef
+    CandleSeriesDefinitions : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Schema.CandleSeriesRef> { get; init; }
+    CurrentSchemaVersion = 2.0 : System.String
+    Description : System.String { get; init; }
+    Edges : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Schema.EdgeDef> { get; init; }
+    Equals(Bytex.Documents.Schema.StrategyDocument other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Evaluation : System.String { get; init; }
+    Fees : Bytex.Core.Model.FeeSettings { get; init; }
+    GetHashCode() -> System.Int32
+    Id : System.String { get; init; }
+    Instrument(System.String reference) -> Bytex.Documents.Schema.InstrumentRef
+    Instruments : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Schema.InstrumentRef> { get; init; }
+    Layout : System.Nullable<System.Text.Json.JsonElement> { get; init; }
+    Metadata : Bytex.Documents.Schema.DocumentMetadata { get; init; }
+    Modes : Bytex.Documents.Schema.ModeSettings { get; init; }
+    Name : System.String { get; init; }
+    Node(System.String id) -> Bytex.Documents.Schema.NodeDef
+    Nodes : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Schema.NodeDef> { get; init; }
+    Parameter(System.String name) -> Bytex.Documents.Schema.ParameterDef
+    Parameters : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Schema.ParameterDef> { get; init; }
+    Phases : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Schema.PhaseDef> { get; init; }
+    Repeat : Bytex.Documents.Schema.RepeatSettings { get; init; }
+    Requires : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Schema.RequirementDef> { get; init; }
+    SchemaVersion : System.String { get; init; }
+    ToString() -> System.String
+    Transitions : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Schema.TransitionDef> { get; init; }
+    op_Equality(Bytex.Documents.Schema.StrategyDocument left, Bytex.Documents.Schema.StrategyDocument right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.StrategyDocument left, Bytex.Documents.Schema.StrategyDocument right) -> System.Boolean
+class Bytex.Documents.Schema.TransitionDef : System.IEquatable<Bytex.Documents.Schema.TransitionDef>
+    .ctor()
+    Equals(Bytex.Documents.Schema.TransitionDef other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    From : System.String { get; init; }
+    GetHashCode() -> System.Int32
+    On : System.String { get; init; }
+    To : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Schema.TransitionDef left, Bytex.Documents.Schema.TransitionDef right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Schema.TransitionDef left, Bytex.Documents.Schema.TransitionDef right) -> System.Boolean
+class Bytex.Documents.Validation.Codes
+    CandleSeriesInvalid = BARTYPE_INVALID : System.String
+    CandleSeriesMissing = BARTYPE_MISSING : System.String
+    CapExceeded = CAP_EXCEEDED : System.String
+    Contradiction = CONTRADICTION : System.String
+    DataRangeInsufficient = DATA_RANGE_INSUFFICIENT : System.String
+    DisconnectedNode = DISCONNECTED_NODE : System.String
+    EdgeDangling = EDGE_DANGLING : System.String
+    EvaluationOnTicks = EVALUATION_ON_TICKS : System.String
+    EvaluationUnknown = EVALUATION_UNKNOWN : System.String
+    FeesInvalid = FEES_INVALID : System.String
+    GraphCycle = GRAPH_CYCLE : System.String
+    InputMultiple = INPUT_MULTIPLE : System.String
+    InputRequired = INPUT_REQUIRED : System.String
+    InstrumentMissing = INSTRUMENT_MISSING : System.String
+    InstrumentUnknown = INSTRUMENT_UNKNOWN : System.String
+    LeverageInvalid = LEVERAGE_INVALID : System.String
+    LiveAiEventCondition = LIVE_AI_EVENT_CONDITION : System.String
+    LookbackTooLong = LOOKBACK_TOO_LONG : System.String
+    MarketKeyInvalid = INSTRUMENT_ID_INVALID : System.String
+    MinNotional = MIN_NOTIONAL : System.String
+    MinQuantity = MIN_QUANTITY : System.String
+    NameMissing = NAME_MISSING : System.String
+    NoEntry = NO_ENTRY : System.String
+    NoExit = NO_EXIT : System.String
+    NodeIdDuplicate = NODE_ID_DUPLICATE : System.String
+    NodeModeNotAllowed = NODE_MODE_NOT_ALLOWED : System.String
+    NodeNotRunnable = NODE_NOT_RUNNABLE : System.String
+    NodeProviderMissing = NODE_PROVIDER_MISSING : System.String
+    NodeProviderUndeclared = NODE_PROVIDER_UNDECLARED : System.String
+    NodeTypeUnknown = NODE_TYPE_UNKNOWN : System.String
+    OrderCannotBeWorked = ORDER_CANNOT_BE_WORKED : System.String
+    ParamInvalid = PARAM_INVALID : System.String
+    ParamMissing = PARAM_MISSING : System.String
+    ParamOutOfRange = PARAM_OUT_OF_RANGE : System.String
+    ParamUnknown = PARAM_UNKNOWN : System.String
+    ParameterDuplicate = PARAMETER_DUPLICATE : System.String
+    ParameterInvalid = PARAMETER_INVALID : System.String
+    ParameterUnknown = PARAMETER_UNKNOWN : System.String
+    PhaseDuplicate = PHASE_DUPLICATE : System.String
+    PhaseInitial = PHASE_INITIAL : System.String
+    PhaseNodeUnknown = PHASE_NODE_UNKNOWN : System.String
+    PortTypeMismatch = PORT_TYPE_MISMATCH : System.String
+    PortUnknown = PORT_UNKNOWN : System.String
+    Precision = PRECISION : System.String
+    SchemaVersion = SCHEMA_VERSION : System.String
+    ShortOnSpot = SHORT_ON_SPOT : System.String
+    SizingNeedsStop = SIZING_NEEDS_STOP : System.String
+    TargetInsideStop = TARGET_INSIDE_STOP : System.String
+    TransitionInvalid = TRANSITION_INVALID : System.String
+    UnreachablePhase = UNREACHABLE_PHASE : System.String
+class Bytex.Documents.Validation.DocumentValidator
+    .ctor(Bytex.Documents.Catalog.NodeCatalog catalog = null, Bytex.Documents.Validation.ValidatorOptions options = null)
+    ResolveParameters(Bytex.Documents.Schema.StrategyDocument doc, System.Collections.Generic.IReadOnlyDictionary<System.String, System.Decimal> overrides) -> System.Collections.Generic.IReadOnlyDictionary<System.String, System.Decimal>
+    ResolveTextParameters(Bytex.Documents.Schema.StrategyDocument doc, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> overrides = null) -> System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>
+    ToCandleSeries(Bytex.Documents.Schema.CandleSeriesRef reference, Bytex.Core.Model.Identifiers.MarketKey marketKey) -> Bytex.Core.Model.Data.CandleSeries
+    Validate(Bytex.Documents.Schema.StrategyDocument document, Bytex.Documents.Validation.IValidationContext context = null) -> Bytex.Documents.Validation.ValidationReport
+class Bytex.Documents.Validation.EmptyValidationContext : Bytex.Documents.Validation.IValidationContext
+    .ctor(Bytex.Core.Model.TradingEnvironment target = 1)
+    DataRange(Bytex.Core.Model.Data.CandleSeries candleSeries) -> System.Nullable<System.ValueTuple<Bytex.Core.Model.Primitives.UnixNanos, Bytex.Core.Model.Primitives.UnixNanos>>
+    Instrument(Bytex.Core.Model.Identifiers.MarketKey id) -> Bytex.Core.Model.Instruments.Instrument
+    ProvidesInstruments : System.Boolean { get; }
+    TargetEnvironment : Bytex.Core.Model.TradingEnvironment { get; }
+class Bytex.Documents.Validation.Finding : System.IEquatable<Bytex.Documents.Validation.Finding>
+    .ctor(Bytex.Documents.Validation.FindingLevel Level, System.String Code, System.String Message, System.String NodeId = null, System.String Port = null, System.String Fix = null)
+    Code : System.String { get; init; }
+    Deconstruct(Bytex.Documents.Validation.FindingLevel& Level, System.String& Code, System.String& Message, System.String& NodeId, System.String& Port, System.String& Fix) -> System.Void
+    Equals(Bytex.Documents.Validation.Finding other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Fix : System.String { get; init; }
+    GetHashCode() -> System.Int32
+    Level : Bytex.Documents.Validation.FindingLevel { get; init; }
+    Message : System.String { get; init; }
+    NodeId : System.String { get; init; }
+    Port : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Validation.Finding left, Bytex.Documents.Validation.Finding right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Validation.Finding left, Bytex.Documents.Validation.Finding right) -> System.Boolean
+enum Bytex.Documents.Validation.FindingLevel : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Block = 2 : Bytex.Documents.Validation.FindingLevel
+    Info = 0 : Bytex.Documents.Validation.FindingLevel
+    Warning = 1 : Bytex.Documents.Validation.FindingLevel
+    value__ : System.Int32
+interface Bytex.Documents.Validation.IValidationContext
+    DataRange(Bytex.Core.Model.Data.CandleSeries candleSeries) -> System.Nullable<System.ValueTuple<Bytex.Core.Model.Primitives.UnixNanos, Bytex.Core.Model.Primitives.UnixNanos>>
+    Instrument(Bytex.Core.Model.Identifiers.MarketKey id) -> Bytex.Core.Model.Instruments.Instrument
+    ProvidesInstruments : System.Boolean { get; }
+    TargetEnvironment : Bytex.Core.Model.TradingEnvironment { get; }
+class Bytex.Documents.Validation.ValidationReport : System.IEquatable<Bytex.Documents.Validation.ValidationReport>
+    .ctor(System.Collections.Generic.IReadOnlyList<Bytex.Documents.Validation.Finding> Findings, System.String StoppedAt)
+    Blocks : System.Collections.Generic.IEnumerable<Bytex.Documents.Validation.Finding> { get; }
+    Deconstruct(System.Collections.Generic.IReadOnlyList<Bytex.Documents.Validation.Finding>& Findings, System.String& StoppedAt) -> System.Void
+    Empty : Bytex.Documents.Validation.ValidationReport { get; }
+    Equals(Bytex.Documents.Validation.ValidationReport other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Findings : System.Collections.Generic.IReadOnlyList<Bytex.Documents.Validation.Finding> { get; init; }
+    GetHashCode() -> System.Int32
+    Infos : System.Collections.Generic.IEnumerable<Bytex.Documents.Validation.Finding> { get; }
+    IsValid : System.Boolean { get; }
+    StoppedAt : System.String { get; init; }
+    ToString() -> System.String
+    Warnings : System.Collections.Generic.IEnumerable<Bytex.Documents.Validation.Finding> { get; }
+    op_Equality(Bytex.Documents.Validation.ValidationReport left, Bytex.Documents.Validation.ValidationReport right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Validation.ValidationReport left, Bytex.Documents.Validation.ValidationReport right) -> System.Boolean
+class Bytex.Documents.Validation.ValidatorOptions : System.IEquatable<Bytex.Documents.Validation.ValidatorOptions>
+    .ctor()
+    Default : Bytex.Documents.Validation.ValidatorOptions { get; }
+    Equals(Bytex.Documents.Validation.ValidatorOptions other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    MaxEdges : System.Int32 { get; init; }
+    MaxLookback : System.Int32 { get; init; }
+    MaxNodes : System.Int32 { get; init; }
+    MaxParameters : System.Int32 { get; init; }
+    MaxPhases : System.Int32 { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Documents.Validation.ValidatorOptions left, Bytex.Documents.Validation.ValidatorOptions right) -> System.Boolean
+    op_Inequality(Bytex.Documents.Validation.ValidatorOptions left, Bytex.Documents.Validation.ValidatorOptions right) -> System.Boolean

@@ -1,0 +1,191 @@
+interface Bytex.Adapters.Okx.IOkxSettings
+    ApiKey : System.String { get; }
+    ApiPassphrase : System.String { get; }
+    ApiSecret : System.String { get; }
+    BaseUrlHttp : System.String { get; }
+    BaseUrlWs : System.String { get; }
+    DemoTrading : System.Boolean { get; }
+    InstrumentType : Bytex.Adapters.Okx.OkxInstrumentType { get; }
+class Bytex.Adapters.Okx.OkxApiException : System.Exception, System.Runtime.Serialization.ISerializable
+    .ctor(System.String code, System.String message, System.Int32 httpStatus)
+    Code : System.String { get; }
+    HttpStatus : System.Int32 { get; }
+    Msg : System.String { get; }
+class Bytex.Adapters.Okx.OkxCredentials : System.IEquatable<Bytex.Adapters.Okx.OkxCredentials>
+    .ctor(System.String Key, System.String Secret, System.String Passphrase)
+    Deconstruct(System.String& Key, System.String& Secret, System.String& Passphrase) -> System.Void
+    Equals(Bytex.Adapters.Okx.OkxCredentials other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Key : System.String { get; init; }
+    Passphrase : System.String { get; init; }
+    Secret : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Okx.OkxCredentials left, Bytex.Adapters.Okx.OkxCredentials right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Okx.OkxCredentials left, Bytex.Adapters.Okx.OkxCredentials right) -> System.Boolean
+class Bytex.Adapters.Okx.OkxDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Okx.OkxDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Instruments : Bytex.Adapters.Okx.OkxInstrumentProvider { get; }
+    OnDispose() -> System.Void
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubscribeAsync(Bytex.Core.Model.Commands.SubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    UnsubscribeAsync(Bytex.Core.Model.Commands.UnsubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Okx.OkxDataClientConfig : Bytex.Core.Adapters.DataClientConfig, Bytex.Adapters.Okx.IOkxSettings, System.IEquatable<Bytex.Adapters.Okx.OkxDataClientConfig>, System.IEquatable<Bytex.Core.Adapters.DataClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    ApiPassphrase : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    DemoTrading : System.Boolean { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Okx.OkxDataClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.DataClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    InstrumentType : Bytex.Adapters.Okx.OkxInstrumentType { get; init; }
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Okx.OkxDataClientConfig left, Bytex.Adapters.Okx.OkxDataClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Okx.OkxDataClientConfig left, Bytex.Adapters.Okx.OkxDataClientConfig right) -> System.Boolean
+class Bytex.Adapters.Okx.OkxDataClientFactory : Bytex.Core.Adapters.IDataClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.DataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IDataClient
+    Name : System.String { get; }
+class Bytex.Adapters.Okx.OkxExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Okx.OkxExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    CancelAllOrdersAsync(Bytex.Core.Model.Commands.CancelAllOrders command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    GenerateFillReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.FillReport>>
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    GenerateOrderStatusReportAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId> clientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.OrderStatusReport>
+    GenerateOrderStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Boolean openOnly, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.OrderStatusReport>>
+    GeneratePositionStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.PositionStatusReport>>
+    Instruments : Bytex.Adapters.Okx.OkxInstrumentProvider { get; }
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    OnDispose() -> System.Void
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Okx.OkxExecutionClientConfig : Bytex.Core.Adapters.ExecutionClientConfig, Bytex.Adapters.Okx.IOkxSettings, System.IEquatable<Bytex.Adapters.Okx.OkxExecutionClientConfig>, System.IEquatable<Bytex.Core.Adapters.ExecutionClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    ApiPassphrase : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    DemoTrading : System.Boolean { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Okx.OkxExecutionClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.ExecutionClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    InstrumentType : Bytex.Adapters.Okx.OkxInstrumentType { get; init; }
+    MarginMode : Bytex.Adapters.Okx.OkxMarginMode { get; init; }
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Okx.OkxExecutionClientConfig left, Bytex.Adapters.Okx.OkxExecutionClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Okx.OkxExecutionClientConfig left, Bytex.Adapters.Okx.OkxExecutionClientConfig right) -> System.Boolean
+class Bytex.Adapters.Okx.OkxExecutionClientFactory : Bytex.Core.Adapters.IExecutionClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.ExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IExecutionClient
+    Name : System.String { get; }
+class Bytex.Adapters.Okx.OkxHistory
+    FetchBarsAsync(Bytex.Adapters.Okx.OkxHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.DateTimeOffset start, System.DateTimeOffset end, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchBarsAsync(Bytex.Adapters.Okx.OkxHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, Bytex.Core.Model.Primitives.UnixNanos now, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchFundingRatesAsync(Bytex.Adapters.Okx.OkxHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.DateTimeOffset start, System.Nullable<System.DateTimeOffset> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+class Bytex.Adapters.Okx.OkxHttp : System.IDisposable
+    .ctor(Bytex.Adapters.Okx.IOkxSettings settings, Microsoft.Extensions.Logging.ILogger logger = null, System.Boolean requireCredentials = False)
+    Dispose() -> System.Void
+    GetPublicAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    GetSignedAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    HasCredentials : System.Boolean { get; }
+    InstType : System.String { get; }
+    InstrumentType : Bytex.Adapters.Okx.OkxInstrumentType { get; }
+    PostSignedAsync(System.String path, System.Object body, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+class Bytex.Adapters.Okx.OkxInstrumentProvider : Bytex.Core.Adapters.InstrumentProviderBase, Bytex.Core.Adapters.IInstrumentProvider
+    .ctor(Bytex.Adapters.Okx.OkxHttp http, Bytex.Adapters.Okx.OkxInstrumentType instrumentType, Bytex.Core.Adapters.InstrumentProviderConfig config = null, Microsoft.Extensions.Logging.ILogger logger = null)
+    InstrumentType : Bytex.Adapters.Okx.OkxInstrumentType { get; }
+    ListAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Adapters.InstrumentListing>>
+    LoadAllAsync(System.Threading.CancellationToken ct, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> filters = null) -> System.Threading.Tasks.Task
+    LoadAsync(Bytex.Core.Model.Identifiers.MarketKey id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+enum Bytex.Adapters.Okx.OkxInstrumentType : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Futures = 2 : Bytex.Adapters.Okx.OkxInstrumentType
+    Spot = 0 : Bytex.Adapters.Okx.OkxInstrumentType
+    Swap = 1 : Bytex.Adapters.Okx.OkxInstrumentType
+    value__ : System.Int32
+enum Bytex.Adapters.Okx.OkxMarginMode : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Cross = 0 : Bytex.Adapters.Okx.OkxMarginMode
+    Isolated = 1 : Bytex.Adapters.Okx.OkxMarginMode
+    value__ : System.Int32
+class Bytex.Adapters.Okx.OkxPlugin : Bytex.Core.Adapters.IVenuePlugin, Bytex.Core.Plugins.IPlugin
+    .ctor()
+    Describe() -> Bytex.Core.Adapters.VenueDescriptor
+    Id : System.String { get; }
+    Register(Bytex.Core.Plugins.IPluginRegistry registry) -> System.Void
+    Version : System.String { get; }
+class Bytex.Adapters.Okx.OkxVenue
+    AmendOrderPath = /api/v5/trade/amend-order : System.String
+    CandlePage = 300 : System.Int32
+    CashTradeMode = cash : System.String
+    ContractValue(Bytex.Core.Model.Instruments.Instrument instrument) -> System.Decimal
+    ContractValueInfo = contractValue : System.String
+    Credentials(Bytex.Adapters.Okx.IOkxSettings s) -> Bytex.Adapters.Okx.OkxCredentials
+    DefaultHttpBase = https://www.okx.com : System.String
+    DefaultWsBase = wss://ws.okx.com:8443 : System.String
+    EnvApiKey = OKX_API_KEY : System.String
+    EnvApiPassphrase = OKX_API_PASSPHRASE : System.String
+    EnvApiSecret = OKX_API_SECRET : System.String
+    ErrorNoSuchInstrument = 51001 : System.String
+    ErrorParameter = 51000 : System.String
+    ErrorTooManyRequests = 50011 : System.String
+    FirstTier = 1 : System.String
+    FromVenueSize(Bytex.Core.Model.Instruments.Instrument instrument, System.Decimal size) -> Bytex.Core.Model.Primitives.Quantity
+    FundingPage = 200 : System.Int32
+    HeaderApiKey = OK-ACCESS-KEY : System.String
+    HeaderPassphrase = OK-ACCESS-PASSPHRASE : System.String
+    HeaderSign = OK-ACCESS-SIGN : System.String
+    HeaderTimestamp = OK-ACCESS-TIMESTAMP : System.String
+    HttpBase(Bytex.Adapters.Okx.IOkxSettings s) -> System.String
+    InstType(Bytex.Adapters.Okx.OkxInstrumentType type) -> System.String
+    Interval(Bytex.Core.Model.Data.SamplingRule spec) -> System.String
+    IsAcceptableClientOrderId(System.String value) -> System.Boolean
+    MarginMode(Bytex.Adapters.Okx.OkxMarginMode mode) -> System.String
+    MaxClientOrderIdLength = 32 : System.Int32
+    MaxLeverageInfo = maxLeverage : System.String
+    Ok = 0 : System.String
+    OptionalCredentials(Bytex.Adapters.Okx.IOkxSettings s) -> Bytex.Adapters.Okx.OkxCredentials
+    PingInterval : System.TimeSpan static
+    PingMessage = ping : System.String
+    PongMessage = pong : System.String
+    RequestWindow : System.TimeSpan static
+    RequestsPerWindow = 20 : System.Int32
+    SetLeveragePath = /api/v5/account/set-leverage : System.String
+    SimulatedTradingHeader = x-simulated-trading : System.String
+    SimulatedTradingOn = 1 : System.String
+    SizeInBaseCurrency = base_ccy : System.String
+    SizeInQuoteCurrency = quote_ccy : System.String
+    TierFamilyPage = 5 : System.Int32
+    TierRequestConcurrency = 8 : System.Int32
+    TimestampFormat = yyyy-MM-ddTHH:mm:ss.fffZ : System.String
+    ToContracts(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Primitives.Quantity quantity) -> System.Decimal
+    ToMarketKey(System.String instId) -> Bytex.Core.Model.Identifiers.MarketKey
+    ToQuantity(Bytex.Core.Model.Instruments.Instrument instrument, System.Decimal contracts) -> Bytex.Core.Model.Primitives.Quantity
+    ToRawSymbol(Bytex.Core.Model.Identifiers.MarketKey id) -> System.String
+    ToVenueSize(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Primitives.Quantity quantity) -> System.Decimal
+    TooManyRequestsAttempts = 3 : System.Int32
+    TooManyRequestsBackoff : System.TimeSpan static
+    TradePage = 500 : System.Int32
+    UnderlyingInfo = underlying : System.String
+    Venue : Bytex.Core.Model.Identifiers.Venue static
+    WsBase(Bytex.Adapters.Okx.IOkxSettings s) -> System.String
+    WsBusiness(Bytex.Adapters.Okx.IOkxSettings s) -> System.Uri
+    WsBusinessPath = /ws/v5/business : System.String
+    WsPrivate(Bytex.Adapters.Okx.IOkxSettings s) -> System.Uri
+    WsPrivatePath = /ws/v5/private : System.String
+    WsPublic(Bytex.Adapters.Okx.IOkxSettings s) -> System.Uri
+    WsPublicPath = /ws/v5/public : System.String

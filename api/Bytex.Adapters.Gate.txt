@@ -1,0 +1,218 @@
+class Bytex.Adapters.Gate.GateApiException : System.Exception, System.Runtime.Serialization.ISerializable
+    .ctor(System.String label, System.String message, System.Int32 httpStatus)
+    HttpStatus : System.Int32 { get; }
+    Label : System.String { get; }
+    Msg : System.String { get; }
+class Bytex.Adapters.Gate.GateCredentials : System.IEquatable<Bytex.Adapters.Gate.GateCredentials>
+    .ctor(System.String Key, System.String Secret)
+    Deconstruct(System.String& Key, System.String& Secret) -> System.Void
+    Equals(Bytex.Adapters.Gate.GateCredentials other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Key : System.String { get; init; }
+    Secret : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Gate.GateCredentials left, Bytex.Adapters.Gate.GateCredentials right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Gate.GateCredentials left, Bytex.Adapters.Gate.GateCredentials right) -> System.Boolean
+class Bytex.Adapters.Gate.GateDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Gate.GateDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Instruments : Bytex.Adapters.Gate.GateInstrumentProvider { get; }
+    OnDispose() -> System.Void
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubscribeAsync(Bytex.Core.Model.Commands.SubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    UnsubscribeAsync(Bytex.Core.Model.Commands.UnsubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Gate.GateDataClientConfig : Bytex.Core.Adapters.DataClientConfig, Bytex.Adapters.Gate.IGateSettings, System.IEquatable<Bytex.Adapters.Gate.GateDataClientConfig>, System.IEquatable<Bytex.Core.Adapters.DataClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Gate.GateDataClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.DataClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ProductType : Bytex.Adapters.Gate.GateProductType { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Gate.GateDataClientConfig left, Bytex.Adapters.Gate.GateDataClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Gate.GateDataClientConfig left, Bytex.Adapters.Gate.GateDataClientConfig right) -> System.Boolean
+class Bytex.Adapters.Gate.GateDataClientFactory : Bytex.Core.Adapters.IDataClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.DataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IDataClient
+    Name : System.String { get; }
+class Bytex.Adapters.Gate.GateDeliveryDataClient : Bytex.Adapters.Gate.GateFuturesDataClient, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Gate.GateDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+class Bytex.Adapters.Gate.GateDeliveryExecutionClient : Bytex.Adapters.Gate.GateFuturesExecutionClient, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Gate.GateExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Gate.GateDeliveryInstrumentProvider : Bytex.Core.Adapters.InstrumentProviderBase, Bytex.Core.Adapters.IInstrumentProvider
+    .ctor(Bytex.Adapters.Gate.GateHttp http, Bytex.Core.Adapters.InstrumentProviderConfig config = null, Microsoft.Extensions.Logging.ILogger logger = null)
+    LoadAllAsync(System.Threading.CancellationToken ct, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> filters = null) -> System.Threading.Tasks.Task
+    LoadAsync(Bytex.Core.Model.Identifiers.MarketKey id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Gate.GateExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Gate.GateExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    CancelAllOrdersAsync(Bytex.Core.Model.Commands.CancelAllOrders command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    GenerateFillReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.FillReport>>
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    GenerateOrderStatusReportAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId> clientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.OrderStatusReport>
+    GenerateOrderStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Boolean openOnly, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.OrderStatusReport>>
+    GeneratePositionStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.PositionStatusReport>>
+    Instruments : Bytex.Adapters.Gate.GateInstrumentProvider { get; }
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    OnDispose() -> System.Void
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Gate.GateExecutionClientConfig : Bytex.Core.Adapters.ExecutionClientConfig, Bytex.Adapters.Gate.IGateSettings, System.IEquatable<Bytex.Adapters.Gate.GateExecutionClientConfig>, System.IEquatable<Bytex.Core.Adapters.ExecutionClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Gate.GateExecutionClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.ExecutionClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ProductType : Bytex.Adapters.Gate.GateProductType { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Gate.GateExecutionClientConfig left, Bytex.Adapters.Gate.GateExecutionClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Gate.GateExecutionClientConfig left, Bytex.Adapters.Gate.GateExecutionClientConfig right) -> System.Boolean
+class Bytex.Adapters.Gate.GateExecutionClientFactory : Bytex.Core.Adapters.IExecutionClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.ExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IExecutionClient
+    Name : System.String { get; }
+class Bytex.Adapters.Gate.GateFuturesDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Gate.GateDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Gate.GateDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services, Bytex.Adapters.Gate.GateProductType product)
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Instruments : Bytex.Core.Adapters.InstrumentProviderBase { get; }
+    OnDispose() -> System.Void
+    Product : Bytex.Adapters.Gate.GateProductType { get; }
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubscribeAsync(Bytex.Core.Model.Commands.SubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    UnsubscribeAsync(Bytex.Core.Model.Commands.UnsubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Gate.GateFuturesExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Gate.GateExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Gate.GateExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services, Bytex.Adapters.Gate.GateProductType product)
+    CancelAllOrdersAsync(Bytex.Core.Model.Commands.CancelAllOrders command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    GenerateFillReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.FillReport>>
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    GenerateOrderStatusReportAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId> clientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.OrderStatusReport>
+    GenerateOrderStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Boolean openOnly, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.OrderStatusReport>>
+    GeneratePositionStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.PositionStatusReport>>
+    Instruments : Bytex.Core.Adapters.InstrumentProviderBase { get; }
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    OnDispose() -> System.Void
+    Prefix : System.String { get; }
+    Product : Bytex.Adapters.Gate.GateProductType { get; }
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Gate.GateFuturesInstrumentProvider : Bytex.Core.Adapters.InstrumentProviderBase, Bytex.Core.Adapters.IInstrumentProvider
+    .ctor(Bytex.Adapters.Gate.GateHttp http, Bytex.Core.Adapters.InstrumentProviderConfig config = null, Microsoft.Extensions.Logging.ILogger logger = null)
+    LoadAllAsync(System.Threading.CancellationToken ct, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> filters = null) -> System.Threading.Tasks.Task
+    LoadAsync(Bytex.Core.Model.Identifiers.MarketKey id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Gate.GateFuturesVenue
+    CandlePage = 2000 : System.Int32
+    CandleSpan = 1999 : System.Int32
+    CrossLeverageLimitParameter = cross_leverage_limit : System.String
+    CrossMarginLeverage = 0 : System.String
+    CycleInfo = deliveryCycle : System.String
+    DefaultDeliveryWsBase = wss://fx-ws.gateio.ws/v4/ws/delivery/usdt : System.String
+    DefaultHttpBase = https://fx-api.gateio.ws : System.String
+    DefaultWsBase = wss://fx-ws.gateio.ws/v4/ws/usdt : System.String
+    DeliveryPrefix = /delivery/usdt : System.String
+    FuturesPrefix = /futures/usdt : System.String
+    LeverageParameter = leverage : System.String
+    LinearType = direct : System.String
+    MarginInit(System.Decimal leverageMax) -> System.Decimal
+    Multiplier(Bytex.Core.Model.Instruments.Instrument instrument) -> System.Decimal
+    MultiplierInfo = contractMultiplier : System.String
+    Prefix(Bytex.Adapters.Gate.GateProductType product) -> System.String
+    Settle = usdt : System.String
+    ToContracts(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Primitives.Quantity quantity) -> System.Int64
+    ToMarketKey(System.String rawSymbol) -> Bytex.Core.Model.Identifiers.MarketKey
+    ToQuantity(Bytex.Core.Model.Instruments.Instrument instrument, System.Decimal contracts) -> Bytex.Core.Model.Primitives.Quantity
+    ToRawSymbol(Bytex.Core.Model.Identifiers.MarketKey id) -> System.String
+    Trading = trading : System.String
+class Bytex.Adapters.Gate.GateHistory
+    FetchBarsAsync(Bytex.Adapters.Gate.GateHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.DateTimeOffset start, System.DateTimeOffset end, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchBarsAsync(Bytex.Adapters.Gate.GateHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, Bytex.Core.Model.Primitives.UnixNanos now, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchFundingRatesAsync(Bytex.Adapters.Gate.GateHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.DateTimeOffset start, System.Nullable<System.DateTimeOffset> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+    FetchFundingRatesAsync(Bytex.Adapters.Gate.GateHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, Bytex.Core.Model.Primitives.UnixNanos now, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+class Bytex.Adapters.Gate.GateHttp : System.IDisposable
+    .ctor(Bytex.Adapters.Gate.IGateSettings settings, Microsoft.Extensions.Logging.ILogger logger = null, System.Boolean requireCredentials = False)
+    DeleteSignedAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    Dispose() -> System.Void
+    GetPublicAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    GetSignedAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    HasCredentials : System.Boolean { get; }
+    MeasureClockAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    NowSeconds() -> System.Int64
+    PatchSignedAsync(System.String path, System.Object body, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    PostSignedAsync(System.String path, System.Object body, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    ProductType : Bytex.Adapters.Gate.GateProductType { get; }
+    PutSignedAsync(System.String path, System.Object body, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    SyncClockForStreamAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Gate.GateInstrumentProvider : Bytex.Core.Adapters.InstrumentProviderBase, Bytex.Core.Adapters.IInstrumentProvider
+    .ctor(Bytex.Adapters.Gate.GateHttp http, Bytex.Core.Adapters.InstrumentProviderConfig config = null, Microsoft.Extensions.Logging.ILogger logger = null)
+    LoadAllAsync(System.Threading.CancellationToken ct, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> filters = null) -> System.Threading.Tasks.Task
+    LoadAsync(Bytex.Core.Model.Identifiers.MarketKey id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Gate.GatePlugin : Bytex.Core.Adapters.IVenuePlugin, Bytex.Core.Plugins.IPlugin
+    .ctor()
+    Describe() -> Bytex.Core.Adapters.VenueDescriptor
+    Id : System.String { get; }
+    Register(Bytex.Core.Plugins.IPluginRegistry registry) -> System.Void
+    Version : System.String { get; }
+enum Bytex.Adapters.Gate.GateProductType : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Delivery = 2 : Bytex.Adapters.Gate.GateProductType
+    Futures = 1 : Bytex.Adapters.Gate.GateProductType
+    Spot = 0 : Bytex.Adapters.Gate.GateProductType
+    value__ : System.Int32
+class Bytex.Adapters.Gate.GateVenue
+    ApiPrefix = /api/v4 : System.String
+    ClientOrderIdExtraCharacters = _-. : System.String
+    ClientOrderIdPrefix = t- : System.String
+    Credentials(Bytex.Adapters.Gate.IGateSettings s) -> Bytex.Adapters.Gate.GateCredentials
+    DefaultHttpBase = https://api.gateio.ws : System.String
+    DefaultPingInterval : System.TimeSpan static
+    DefaultWsBase = wss://api.gateio.ws/ws/v4/ : System.String
+    EnvApiKey = GATE_API_KEY : System.String
+    EnvApiSecret = GATE_API_SECRET : System.String
+    ErrorsThatMeanNoSuchInstrument : System.Collections.Generic.IReadOnlySet<System.String> static
+    FromOrderText(System.String text) -> System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId>
+    FundingHistoryReach : System.TimeSpan static
+    FundingPage = 1000 : System.Int32
+    FundingWindow : System.TimeSpan static
+    HttpBase(Bytex.Adapters.Gate.IGateSettings s) -> System.String
+    Interval(Bytex.Core.Model.Data.SamplingRule spec) -> System.String
+    MaxClientOrderIdLength = 28 : System.Int32
+    OptionalCredentials(Bytex.Adapters.Gate.IGateSettings s) -> Bytex.Adapters.Gate.GateCredentials
+    RequestWindow : System.TimeSpan static
+    RequestsPerWindow = 200 : System.Int32
+    SpotCandlePage = 1000 : System.Int32
+    SpotCandleSpan = 999 : System.Int32
+    SpotFeePercentToFraction : System.Decimal static
+    SpotTradable = tradable : System.String
+    TimePath = /spot/time : System.String
+    ToMarketKey(System.String rawSymbol) -> Bytex.Core.Model.Identifiers.MarketKey
+    ToOrderText(Bytex.Core.Model.Identifiers.ClientOrderId id) -> System.String
+    ToRawSymbol(Bytex.Core.Model.Identifiers.MarketKey id) -> System.String
+    Venue : Bytex.Core.Model.Identifiers.Venue static
+    WsBase(Bytex.Adapters.Gate.IGateSettings s) -> System.String
+interface Bytex.Adapters.Gate.IGateSettings
+    ApiKey : System.String { get; }
+    ApiSecret : System.String { get; }
+    BaseUrlHttp : System.String { get; }
+    BaseUrlWs : System.String { get; }
+    ProductType : Bytex.Adapters.Gate.GateProductType { get; }

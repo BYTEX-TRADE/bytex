@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Kraken exchange adapter (spot and futures) for the BYTEX trading engine.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bytex.Core\Bytex.Core.csproj" />
+    <ProjectReference Include="..\Bytex.Live\Bytex.Live.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Request signing and the nonce counter are not a public surface - a caller has no reason to sign a Kraken
+      request by hand - but they are the part of this venue that cannot be exercised against it: it answers every
+      bad credential with one word and validates nothing before the signature. So the tests check them directly.
+    -->
+    <InternalsVisibleTo Include="Bytex.Adapters.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

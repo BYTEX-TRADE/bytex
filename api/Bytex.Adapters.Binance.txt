@@ -1,0 +1,191 @@
+enum Bytex.Adapters.Binance.BinanceAccountType : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    CoinMFutures = 3 : Bytex.Adapters.Binance.BinanceAccountType
+    Spot = 1 : Bytex.Adapters.Binance.BinanceAccountType
+    UsdMFutures = 2 : Bytex.Adapters.Binance.BinanceAccountType
+    value__ : System.Int32
+class Bytex.Adapters.Binance.BinanceDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Binance.BinanceDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Instruments : Bytex.Adapters.Binance.BinanceInstrumentProvider { get; }
+    OnDispose() -> System.Void
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubscribeAsync(Bytex.Core.Model.Commands.SubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    UnsubscribeAsync(Bytex.Core.Model.Commands.UnsubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Binance.BinanceDataClientConfig : Bytex.Core.Adapters.DataClientConfig, Bytex.Adapters.Binance.IBinanceSettings, System.IEquatable<Bytex.Adapters.Binance.BinanceDataClientConfig>, System.IEquatable<Bytex.Core.Adapters.DataClientConfig>
+    .ctor()
+    AccountType : Bytex.Adapters.Binance.BinanceAccountType { get; init; }
+    ApiKey : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Binance.BinanceDataClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.DataClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ToString() -> System.String
+    UseAggTrades : System.Boolean { get; init; }
+    op_Equality(Bytex.Adapters.Binance.BinanceDataClientConfig left, Bytex.Adapters.Binance.BinanceDataClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Binance.BinanceDataClientConfig left, Bytex.Adapters.Binance.BinanceDataClientConfig right) -> System.Boolean
+class Bytex.Adapters.Binance.BinanceDataClientFactory : Bytex.Core.Adapters.IDataClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.DataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IDataClient
+    Name : System.String { get; }
+class Bytex.Adapters.Binance.BinanceExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Binance.BinanceExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    CancelAllOrdersAsync(Bytex.Core.Model.Commands.CancelAllOrders command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    GenerateFillReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.FillReport>>
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    GenerateOrderStatusReportAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId> clientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.OrderStatusReport>
+    GenerateOrderStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Boolean openOnly, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.OrderStatusReport>>
+    GeneratePositionStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.PositionStatusReport>>
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    OnDispose() -> System.Void
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Binance.BinanceExecutionClientConfig : Bytex.Core.Adapters.ExecutionClientConfig, Bytex.Adapters.Binance.IBinanceSettings, System.IEquatable<Bytex.Adapters.Binance.BinanceExecutionClientConfig>, System.IEquatable<Bytex.Core.Adapters.ExecutionClientConfig>
+    .ctor()
+    AccountType : Bytex.Adapters.Binance.BinanceAccountType { get; init; }
+    ApiKey : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    DefaultTriggerType : Bytex.Core.Model.TriggerType { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Binance.BinanceExecutionClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.ExecutionClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    RecvWindowMs : System.Int32 { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Binance.BinanceExecutionClientConfig left, Bytex.Adapters.Binance.BinanceExecutionClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Binance.BinanceExecutionClientConfig left, Bytex.Adapters.Binance.BinanceExecutionClientConfig right) -> System.Boolean
+class Bytex.Adapters.Binance.BinanceExecutionClientFactory : Bytex.Core.Adapters.IExecutionClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.ExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IExecutionClient
+    Name : System.String { get; }
+class Bytex.Adapters.Binance.BinanceHistory
+    FetchBarsAsync(Bytex.Adapters.Binance.BinanceHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.DateTimeOffset start, System.DateTimeOffset end, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchBarsAsync(Bytex.Adapters.Binance.BinanceHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, Bytex.Core.Model.Primitives.UnixNanos now, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchFundingRatesAsync(Bytex.Adapters.Binance.BinanceHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.DateTimeOffset start, System.Nullable<System.DateTimeOffset> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+class Bytex.Adapters.Binance.BinanceHttp : System.IDisposable
+    .ctor(Bytex.Adapters.Binance.IBinanceSettings settings, Microsoft.Extensions.Logging.ILogger logger = null, System.Boolean requireCredentials = False, System.Int32 recvWindowMs = 5000)
+    AccountType : Bytex.Adapters.Binance.BinanceAccountType { get; }
+    DeleteSignedAsync(System.String path, System.Collections.Generic.Dictionary<System.String, System.String> query = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonDocument>
+    Dispose() -> System.Void
+    GetPublicAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonDocument>
+    GetSignedAsync(System.String path, System.Collections.Generic.Dictionary<System.String, System.String> query = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonDocument>
+    HasCredentials : System.Boolean { get; }
+    MeasureClockAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    PostSignedAsync(System.String path, System.Collections.Generic.Dictionary<System.String, System.String> query = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonDocument>
+    Prefix : System.String { get; }
+    PutSignedAsync(System.String path, System.Collections.Generic.Dictionary<System.String, System.String> query = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonDocument>
+    SendKeyedAsync(System.Net.Http.HttpMethod method, System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonDocument>
+class Bytex.Adapters.Binance.BinanceInstrumentProvider : Bytex.Core.Adapters.InstrumentProviderBase, Bytex.Core.Adapters.IInstrumentProvider
+    .ctor(Bytex.Adapters.Binance.BinanceHttp http, Bytex.Adapters.Binance.BinanceAccountType accountType, Bytex.Core.Adapters.InstrumentProviderConfig config = null, Microsoft.Extensions.Logging.ILogger logger = null)
+    LoadAllAsync(System.Threading.CancellationToken ct, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> filters = null) -> System.Threading.Tasks.Task
+    LoadAsync(Bytex.Core.Model.Identifiers.MarketKey id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Binance.BinancePlugin : Bytex.Core.Adapters.IVenuePlugin, Bytex.Core.Plugins.IPlugin
+    .ctor()
+    Describe() -> Bytex.Core.Adapters.VenueDescriptor
+    Id : System.String { get; }
+    Register(Bytex.Core.Plugins.IPluginRegistry registry) -> System.Void
+    Version : System.String { get; }
+class Bytex.Adapters.Binance.BinanceVenue
+    AllOpenOrdersPath(Bytex.Adapters.Binance.BinanceAccountType type) -> System.String
+    ApiPrefix(Bytex.Adapters.Binance.BinanceAccountType type) -> System.String
+    BalancePath(Bytex.Adapters.Binance.BinanceAccountType type) -> System.String
+    BookStreamInterval = 100ms : System.String
+    CoinMFuturesHttpBase = https://dapi.binance.com : System.String
+    CoinMFuturesMakerFee : System.Decimal static
+    CoinMFuturesTakerFee : System.Decimal static
+    CoinMFuturesWsBase = wss://dstream.binance.com : System.String
+    ContractSizeField = contractSize : System.String
+    Credentials(Bytex.Adapters.Binance.IBinanceSettings s) -> System.ValueTuple<System.String, System.String>
+    DefaultBookDepth = 100 : System.Int32
+    DefaultMarginInit : System.Decimal static
+    DefaultMarginMaint : System.Decimal static
+    DefaultRecvWindowMs = 5000 : System.Int32
+    EnvApiKey = BINANCE_API_KEY : System.String
+    EnvApiSecret = BINANCE_API_SECRET : System.String
+    ErrorInvalidSymbol = -1121 : System.Int32
+    FundingPage = 1000 : System.Int32
+    FuturesKlinePage = 1500 : System.Int32
+    HttpBase(Bytex.Adapters.Binance.IBinanceSettings s) -> System.String
+    Interval(Bytex.Core.Model.Data.SamplingRule spec) -> System.String
+    IsFutures(Bytex.Adapters.Binance.BinanceAccountType type) -> System.Boolean
+    IsNoSuchInstrument(Bytex.Live.Network.VenueHttpException failure) -> System.Boolean
+    KlinePage(Bytex.Adapters.Binance.BinanceAccountType type) -> System.Int32
+    LeverageBracketPath(Bytex.Adapters.Binance.BinanceAccountType type) -> System.String
+    LeverageBracketWeight = 1 : System.Int32
+    LeverageIsWholeNumber = True : System.Boolean
+    LeveragePath(Bytex.Adapters.Binance.BinanceAccountType type) -> System.String
+    ListenKeyKeepAlive : System.TimeSpan static
+    ListenKeyPath(Bytex.Adapters.Binance.BinanceAccountType type) -> System.String
+    MarginAssetField = marginAsset : System.String
+    MarginPercentToFraction : System.Decimal static
+    MaxBookDepth = 1000 : System.Int32
+    MaxCallbackRate : System.Decimal static
+    MaxClientOrderIdLength = 36 : System.Int32
+    MinCallbackRate : System.Decimal static
+    PerpSuffix = -PERP : System.String
+    PerpetualContractType = PERPETUAL : System.String
+    PositionRiskPath(Bytex.Adapters.Binance.BinanceAccountType type) -> System.String
+    RequestWeightPerMinute = 1100 : System.Int32
+    SpotHttpBase = https://api.binance.com : System.String
+    SpotKlinePage = 1000 : System.Int32
+    SpotMakerFee : System.Decimal static
+    SpotTakerFee : System.Decimal static
+    SpotWsBase = wss://stream.binance.com:9443 : System.String
+    StatusFields : System.Collections.Generic.IReadOnlyList<System.String> static
+    StatusTrading = TRADING : System.String
+    TimePath(Bytex.Adapters.Binance.BinanceAccountType type) -> System.String
+    ToMarketKey(System.String rawSymbol, Bytex.Adapters.Binance.BinanceAccountType type, System.String contractType = PERPETUAL) -> Bytex.Core.Model.Identifiers.MarketKey
+    ToRawSymbol(Bytex.Core.Model.Identifiers.MarketKey id) -> System.String
+    TradePage = 1000 : System.Int32
+    UsdMFuturesHttpBase = https://fapi.binance.com : System.String
+    UsdMFuturesMakerFee : System.Decimal static
+    UsdMFuturesTakerFee : System.Decimal static
+    UsdMFuturesWsBase = wss://fstream.binance.com : System.String
+    UserTradesPath(Bytex.Adapters.Binance.BinanceAccountType type) -> System.String
+    Venue : Bytex.Core.Model.Identifiers.Venue static
+    WsBase(Bytex.Adapters.Binance.IBinanceSettings s) -> System.String
+class Bytex.Adapters.Binance.BinanceVenue+Weights
+    Account = 20 : System.Int32
+    AllOrders = 10 : System.Int32
+    BookSnapshot = 5 : System.Int32
+    ExchangeInfo = 20 : System.Int32
+    FuturesBalance = 5 : System.Int32
+    FuturesPositionRisk = 5 : System.Int32
+    Klines = 2 : System.Int32
+    OpenOrdersAllSymbols = 40 : System.Int32
+    OpenOrdersOneSymbol = 3 : System.Int32
+    Order = 2 : System.Int32
+    OrderQuery = 10 : System.Int32
+    Trades = 2 : System.Int32
+interface Bytex.Adapters.Binance.IBinanceSettings
+    AccountType : Bytex.Adapters.Binance.BinanceAccountType { get; }
+    ApiKey : System.String { get; }
+    ApiSecret : System.String { get; }
+    BaseUrlHttp : System.String { get; }
+    BaseUrlWs : System.String { get; }
+class Bytex.Adapters.Binance.InstrumentData : Bytex.Core.Model.Data.IData, System.IEquatable<Bytex.Adapters.Binance.InstrumentData>
+    .ctor(Bytex.Core.Model.Instruments.Instrument Instrument)
+    CreatedTime : Bytex.Core.Model.Primitives.UnixNanos { get; }
+    Deconstruct(Bytex.Core.Model.Instruments.Instrument& Instrument) -> System.Void
+    Equals(Bytex.Adapters.Binance.InstrumentData other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    EventTime : Bytex.Core.Model.Primitives.UnixNanos { get; }
+    GetHashCode() -> System.Int32
+    Instrument : Bytex.Core.Model.Instruments.Instrument { get; init; }
+    MarketKey : System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> { get; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Binance.InstrumentData left, Bytex.Adapters.Binance.InstrumentData right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Binance.InstrumentData left, Bytex.Adapters.Binance.InstrumentData right) -> System.Boolean

@@ -1,0 +1,265 @@
+class Bytex.Indicators.AroonOscillator : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 25)
+    AroonDown : System.Decimal { get; }
+    AroonUp : System.Decimal { get; }
+    DefaultPeriod = 25 : System.Int32
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(System.Decimal high, System.Decimal low) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.AverageDirectionalIndex : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 14)
+    DefaultPeriod = 14 : System.Int32
+    MinusDi : System.Decimal { get; }
+    PlusDi : System.Decimal { get; }
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(System.Decimal high, System.Decimal low, System.Decimal close) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.AverageTrueRange : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 14)
+    DefaultPeriod = 14 : System.Int32
+    Period : System.Int32 { get; }
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(System.Decimal high, System.Decimal low, System.Decimal close) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.BollingerBands : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 20, System.Decimal k = 2, Bytex.Core.Model.PriceType priceType = 4)
+    DefaultBandWidth : System.Decimal static
+    DefaultPeriod = 20 : System.Int32
+    Lower : System.Decimal { get; }
+    Middle : System.Decimal { get; }
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Upper : System.Decimal { get; }
+    Width : System.Decimal { get; }
+class Bytex.Indicators.BookImbalance : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator, Bytex.Core.Indicators.IOrderBookIndicator
+    .ctor(System.Int32 levels = 5)
+    AskSize : System.Decimal { get; }
+    BidSize : System.Decimal { get; }
+    DefaultLevels = 5 : System.Int32
+    Levels : System.Int32 { get; }
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(Bytex.Core.Model.Data.OrderBook book) -> System.Void
+    Update(Bytex.Core.Model.Data.QuoteTick tick) -> System.Void
+    Update(Bytex.Core.Model.Data.TradeTick tick) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.BuiltinIndicatorFactory : Bytex.Core.Indicators.IIndicatorFactory
+    .ctor()
+    Create(System.String name, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> parameters) -> Bytex.Core.Indicators.IIndicator
+    Names : System.Collections.Generic.IReadOnlyList<System.String> { get; }
+class Bytex.Indicators.ChandeMomentumOscillator : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 14, Bytex.Core.Model.PriceType priceType = 4)
+    DefaultPeriod = 14 : System.Int32
+    Period : System.Int32 { get; }
+    Reset() -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.CommodityChannelIndex : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 20)
+    Constant : System.Decimal static
+    DefaultPeriod = 20 : System.Int32
+    Period : System.Int32 { get; }
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.DecimalMath
+    Sqrt(System.Decimal value) -> System.Decimal
+class Bytex.Indicators.DonchianChannel : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 20, System.Boolean excludeCurrent = False)
+    DefaultPeriod = 20 : System.Int32
+    Lower : System.Decimal { get; }
+    Middle : System.Decimal { get; }
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(Bytex.Core.Model.Data.QuoteTick tick) -> System.Void
+    Update(System.Decimal high, System.Decimal low) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Upper : System.Decimal { get; }
+class Bytex.Indicators.DoubleExponentialMovingAverage : Bytex.Indicators.MovingAverage, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period, Bytex.Core.Model.PriceType priceType = 4)
+    Reset() -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+class Bytex.Indicators.ExponentialMovingAverage : Bytex.Indicators.MovingAverage, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period, Bytex.Core.Model.PriceType priceType = 4)
+    Alpha : System.Decimal { get; }
+    UpdateRaw(System.Decimal value) -> System.Void
+class Bytex.Indicators.HullMovingAverage : Bytex.Indicators.MovingAverage, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period, Bytex.Core.Model.PriceType priceType = 4)
+    Reset() -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+class Bytex.Indicators.Ichimoku : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 conversionPeriod = 9, System.Int32 basePeriod = 26, System.Int32 spanBPeriod = 52, System.Nullable<System.Int32> displacement = null)
+    BaseLine : System.Decimal { get; }
+    ChikouReference : System.Decimal { get; }
+    CloudBottom : System.Decimal { get; }
+    CloudIsBullish : System.Boolean { get; }
+    CloudTop : System.Decimal { get; }
+    ConversionLine : System.Decimal { get; }
+    DefaultBasePeriod = 26 : System.Int32
+    DefaultConversionPeriod = 9 : System.Int32
+    DefaultSpanBPeriod = 52 : System.Int32
+    Displacement : System.Int32 { get; }
+    Reset() -> System.Void
+    SpanAAhead : System.Decimal { get; }
+    SpanBAhead : System.Decimal { get; }
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(Bytex.Core.Model.Data.QuoteTick tick) -> System.Void
+    Update(Bytex.Core.Model.Data.TradeTick tick) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+class Bytex.Indicators.Indicator : Bytex.Core.Indicators.IIndicator
+    .ctor(System.String name, Bytex.Core.Model.PriceType priceType = 4)
+    HasInputs : System.Boolean { get; set; }
+    IsInitialized : System.Boolean { get; set; }
+    Name : System.String { get; }
+    PriceType : Bytex.Core.Model.PriceType { get; }
+    Reset() -> System.Void
+    ToString() -> System.String
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(Bytex.Core.Model.Data.QuoteTick tick) -> System.Void
+    Update(Bytex.Core.Model.Data.TradeTick tick) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+class Bytex.Indicators.KeltnerChannel : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 20, System.Decimal k = 2, System.Int32 atrPeriod = 10)
+    DefaultAtrPeriod = 10 : System.Int32
+    DefaultBandWidth : System.Decimal static
+    DefaultPeriod = 20 : System.Int32
+    Lower : System.Decimal { get; }
+    Middle : System.Decimal { get; }
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Upper : System.Decimal { get; }
+class Bytex.Indicators.LinearRegression : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 20, Bytex.Core.Model.PriceType priceType = 4)
+    DefaultPeriod = 20 : System.Int32
+    Intercept : System.Decimal { get; }
+    Period : System.Int32 { get; }
+    RSquared : System.Decimal { get; }
+    Reset() -> System.Void
+    Slope : System.Decimal { get; }
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.MoneyFlowIndex : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 14)
+    DefaultPeriod = 14 : System.Int32
+    Period : System.Int32 { get; }
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(Bytex.Core.Model.Data.QuoteTick tick) -> System.Void
+    Update(Bytex.Core.Model.Data.TradeTick tick) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.MovingAverage : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.String name, System.Int32 period, Bytex.Core.Model.PriceType priceType)
+    Count : System.Int32 { get; set; }
+    DefaultPeriod = 20 : System.Int32
+    Period : System.Int32 { get; }
+    Reset() -> System.Void
+    Value : System.Decimal { get; set; }
+class Bytex.Indicators.MovingAverageConvergenceDivergence : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 fastPeriod = 12, System.Int32 slowPeriod = 26, System.Int32 signalPeriod = 9, Bytex.Core.Model.PriceType priceType = 4)
+    DefaultFastPeriod = 12 : System.Int32
+    DefaultSignalPeriod = 9 : System.Int32
+    DefaultSlowPeriod = 26 : System.Int32
+    Histogram : System.Decimal { get; }
+    Reset() -> System.Void
+    Signal : System.Decimal { get; }
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.OnBalanceVolume : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor()
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(Bytex.Core.Model.Data.TradeTick tick) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.ParabolicSar : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Decimal step = 0.02, System.Decimal maximum = 0.2)
+    DefaultMaximum : System.Decimal static
+    DefaultStep : System.Decimal static
+    Direction : System.Int32 { get; }
+    Flipped : System.Boolean { get; }
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(Bytex.Core.Model.Data.QuoteTick tick) -> System.Void
+    Update(Bytex.Core.Model.Data.TradeTick tick) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.RateOfChange : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period, Bytex.Core.Model.PriceType priceType = 4)
+    DefaultPeriod = 10 : System.Int32
+    Reset() -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.RelativeStrengthIndex : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period, Bytex.Core.Model.PriceType priceType = 4)
+    DefaultPeriod = 14 : System.Int32
+    Period : System.Int32 { get; }
+    Reset() -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.RollingWindow
+    .ctor(System.Int32 capacity)
+    Add(System.Decimal value) -> System.Void
+    Average : System.Decimal { get; }
+    Capacity : System.Int32 { get; }
+    Clear() -> System.Void
+    Count : System.Int32 { get; }
+    IsFull : System.Boolean { get; }
+    Item : System.Decimal { get; }
+    Latest : System.Decimal { get; }
+    Max() -> System.Decimal
+    Min() -> System.Decimal
+    Oldest : System.Decimal { get; }
+    StandardDeviation() -> System.Decimal
+    Sum : System.Decimal { get; }
+class Bytex.Indicators.SimpleMovingAverage : Bytex.Indicators.MovingAverage, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period, Bytex.Core.Model.PriceType priceType = 4)
+    Reset() -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+class Bytex.Indicators.Stochastics : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 kPeriod = 14, System.Int32 dPeriod = 3)
+    DefaultDPeriod = 3 : System.Int32
+    DefaultKPeriod = 14 : System.Int32
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(System.Decimal high, System.Decimal low, System.Decimal close) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    ValueD : System.Decimal { get; }
+    ValueK : System.Decimal { get; }
+class Bytex.Indicators.Supertrend : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period = 10, System.Decimal multiplier = 3)
+    DefaultMultiplier : System.Decimal static
+    DefaultPeriod = 10 : System.Int32
+    Direction : System.Int32 { get; }
+    Flipped : System.Boolean { get; }
+    Lower : System.Decimal { get; }
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(Bytex.Core.Model.Data.QuoteTick tick) -> System.Void
+    Update(Bytex.Core.Model.Data.TradeTick tick) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Upper : System.Decimal { get; }
+    Value : System.Decimal { get; }
+class Bytex.Indicators.VolumeWeightedAveragePrice : Bytex.Indicators.Indicator, Bytex.Core.Indicators.IIndicator
+    .ctor()
+    Reset() -> System.Void
+    Update(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    Update(Bytex.Core.Model.Data.QuoteTick tick) -> System.Void
+    Update(Bytex.Core.Model.Data.TradeTick tick) -> System.Void
+    UpdateRaw(System.Decimal price, System.Decimal volume, System.DateOnly day) -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void
+    Value : System.Decimal { get; }
+class Bytex.Indicators.WeightedMovingAverage : Bytex.Indicators.MovingAverage, Bytex.Core.Indicators.IIndicator
+    .ctor(System.Int32 period, Bytex.Core.Model.PriceType priceType = 4)
+    Reset() -> System.Void
+    UpdateRaw(System.Decimal value) -> System.Void

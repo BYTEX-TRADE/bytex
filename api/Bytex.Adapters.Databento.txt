@@ -1,0 +1,37 @@
+class Bytex.Adapters.Databento.DatabentoDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Databento.DatabentoDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    EnvApiKey = DATABENTO_API_KEY : System.String
+    LoadBarsAsync(Bytex.Core.Model.Data.CandleSeries candleSeries, System.String symbol, Bytex.Core.Model.Primitives.UnixNanos start, Bytex.Core.Model.Primitives.UnixNanos end, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    LoadQuotesAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.String symbol, Bytex.Core.Model.Primitives.UnixNanos start, Bytex.Core.Model.Primitives.UnixNanos end, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.QuoteTick>>
+    LoadTradesAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.String symbol, Bytex.Core.Model.Primitives.UnixNanos start, Bytex.Core.Model.Primitives.UnixNanos end, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.TradeTick>>
+    PriceScale : System.Decimal static
+    SchemaFor(Bytex.Core.Model.Data.CandleSeries candleSeries) -> System.String
+class Bytex.Adapters.Databento.DatabentoDataClientConfig : Bytex.Core.Adapters.DataClientConfig, System.IEquatable<Bytex.Adapters.Databento.DatabentoDataClientConfig>, System.IEquatable<Bytex.Core.Adapters.DataClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    BaseUrl : System.String { get; init; }
+    Dataset : System.String { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Databento.DatabentoDataClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.DataClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    SymbolType : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Databento.DatabentoDataClientConfig left, Bytex.Adapters.Databento.DatabentoDataClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Databento.DatabentoDataClientConfig left, Bytex.Adapters.Databento.DatabentoDataClientConfig right) -> System.Boolean
+class Bytex.Adapters.Databento.DatabentoDataClientFactory : Bytex.Core.Adapters.IDataClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.DataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IDataClient
+    Name : System.String { get; }
+class Bytex.Adapters.Databento.DatabentoHistory
+    FetchBarsAsync(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.String symbol, System.String dataset, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Nullable<System.Int32> limit = null, System.String apiKey = null, System.String baseUrl = https://hist.databento.com, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+class Bytex.Adapters.Databento.DatabentoPlugin : Bytex.Core.Plugins.IPlugin
+    .ctor()
+    Id : System.String { get; }
+    Register(Bytex.Core.Plugins.IPluginRegistry registry) -> System.Void
+    Version : System.String { get; }

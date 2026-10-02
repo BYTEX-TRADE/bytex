@@ -1,0 +1,220 @@
+class Bytex.Adapters.Bitget.BitgetApiException : System.Exception, System.Runtime.Serialization.ISerializable
+    .ctor(System.String code, System.String message, System.Int32 httpStatus)
+    Code : System.String { get; }
+    HttpStatus : System.Int32 { get; }
+    Msg : System.String { get; }
+class Bytex.Adapters.Bitget.BitgetCredentials : System.IEquatable<Bytex.Adapters.Bitget.BitgetCredentials>
+    .ctor(System.String Key, System.String Secret, System.String Passphrase)
+    Deconstruct(System.String& Key, System.String& Secret, System.String& Passphrase) -> System.Void
+    Equals(Bytex.Adapters.Bitget.BitgetCredentials other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Key : System.String { get; init; }
+    Passphrase : System.String { get; init; }
+    Secret : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Bitget.BitgetCredentials left, Bytex.Adapters.Bitget.BitgetCredentials right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Bitget.BitgetCredentials left, Bytex.Adapters.Bitget.BitgetCredentials right) -> System.Boolean
+class Bytex.Adapters.Bitget.BitgetDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Bitget.BitgetDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Instruments : Bytex.Adapters.Bitget.BitgetInstrumentProvider { get; }
+    OnDispose() -> System.Void
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubscribeAsync(Bytex.Core.Model.Commands.SubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    UnsubscribeAsync(Bytex.Core.Model.Commands.UnsubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Bitget.BitgetDataClientConfig : Bytex.Core.Adapters.DataClientConfig, Bytex.Adapters.Bitget.IBitgetSettings, System.IEquatable<Bytex.Adapters.Bitget.BitgetDataClientConfig>, System.IEquatable<Bytex.Core.Adapters.DataClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    ApiPassphrase : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Bitget.BitgetDataClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.DataClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ProductType : Bytex.Adapters.Bitget.BitgetProductType { get; init; }
+    ToString() -> System.String
+    TradingMode : Bytex.Adapters.Bitget.BitgetTradingMode { get; init; }
+    op_Equality(Bytex.Adapters.Bitget.BitgetDataClientConfig left, Bytex.Adapters.Bitget.BitgetDataClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Bitget.BitgetDataClientConfig left, Bytex.Adapters.Bitget.BitgetDataClientConfig right) -> System.Boolean
+class Bytex.Adapters.Bitget.BitgetDataClientFactory : Bytex.Core.Adapters.IDataClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.DataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IDataClient
+    Name : System.String { get; }
+class Bytex.Adapters.Bitget.BitgetExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Bitget.BitgetExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    CancelAllOrdersAsync(Bytex.Core.Model.Commands.CancelAllOrders command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    GenerateFillReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.FillReport>>
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    GenerateOrderStatusReportAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId> clientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.OrderStatusReport>
+    GenerateOrderStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Boolean openOnly, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.OrderStatusReport>>
+    GeneratePositionStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.PositionStatusReport>>
+    Instruments : Bytex.Adapters.Bitget.BitgetInstrumentProvider { get; }
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    OnDispose() -> System.Void
+    ReplacementSuffix = -R : System.String
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Bitget.BitgetExecutionClientConfig : Bytex.Core.Adapters.ExecutionClientConfig, Bytex.Adapters.Bitget.IBitgetSettings, System.IEquatable<Bytex.Adapters.Bitget.BitgetExecutionClientConfig>, System.IEquatable<Bytex.Core.Adapters.ExecutionClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    ApiPassphrase : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Bitget.BitgetExecutionClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.ExecutionClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    MarginMode : Bytex.Adapters.Bitget.BitgetMarginMode { get; init; }
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ProductType : Bytex.Adapters.Bitget.BitgetProductType { get; init; }
+    ToString() -> System.String
+    TradingMode : Bytex.Adapters.Bitget.BitgetTradingMode { get; init; }
+    op_Equality(Bytex.Adapters.Bitget.BitgetExecutionClientConfig left, Bytex.Adapters.Bitget.BitgetExecutionClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Bitget.BitgetExecutionClientConfig left, Bytex.Adapters.Bitget.BitgetExecutionClientConfig right) -> System.Boolean
+class Bytex.Adapters.Bitget.BitgetExecutionClientFactory : Bytex.Core.Adapters.IExecutionClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.ExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IExecutionClient
+    Name : System.String { get; }
+class Bytex.Adapters.Bitget.BitgetHistory
+    FetchBarsAsync(Bytex.Adapters.Bitget.BitgetHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.DateTimeOffset start, System.DateTimeOffset end, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchBarsAsync(Bytex.Adapters.Bitget.BitgetHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, Bytex.Core.Model.Primitives.UnixNanos now, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchFundingRatesAsync(Bytex.Adapters.Bitget.BitgetHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.DateTimeOffset start, System.Nullable<System.DateTimeOffset> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+    FetchFundingRatesAsync(Bytex.Adapters.Bitget.BitgetHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<System.Int64> startMs, System.Nullable<System.Int64> endMs, System.Nullable<System.Int32> limit, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+    FundingHistoryPath = /api/v2/mix/market/history-fund-rate : System.String
+    FuturesHistoryCandlesPath = /api/v2/mix/market/history-candles : System.String
+    SpotHistoryCandlesPath = /api/v2/spot/market/history-candles : System.String
+class Bytex.Adapters.Bitget.BitgetHttp : System.IDisposable
+    .ctor(Bytex.Adapters.Bitget.IBitgetSettings settings, Microsoft.Extensions.Logging.ILogger logger = null, System.Boolean requireCredentials = False, System.String brokerId = null)
+    Dispose() -> System.Void
+    GetPublicAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    GetSignedAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    HasCredentials : System.Boolean { get; }
+    Market : System.String { get; }
+    MeasureClockAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    NowSeconds() -> System.Int64
+    PostSignedAsync(System.String path, System.Object body, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    ProductType : Bytex.Adapters.Bitget.BitgetProductType { get; }
+    Query(System.ValueTuple<System.String, System.String>[] pairs) -> System.Collections.Generic.Dictionary<System.String, System.String>
+    SyncClockForStreamAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ToMarketKey(System.String rawSymbol) -> Bytex.Core.Model.Identifiers.MarketKey
+    ToRawSymbol(Bytex.Core.Model.Identifiers.MarketKey id) -> System.String
+    TradingMode : Bytex.Adapters.Bitget.BitgetTradingMode { get; }
+class Bytex.Adapters.Bitget.BitgetInstrumentProvider : Bytex.Core.Adapters.InstrumentProviderBase, Bytex.Core.Adapters.IInstrumentProvider
+    .ctor(Bytex.Adapters.Bitget.BitgetHttp http, Bytex.Core.Adapters.InstrumentProviderConfig config = null, Microsoft.Extensions.Logging.ILogger logger = null)
+    ContractsPath = /api/v2/mix/market/contracts : System.String
+    FetchPositionTiersAsync(Bytex.Adapters.Bitget.BitgetHttp http, System.String rawSymbol, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Adapters.Bitget.BitgetPositionTier>>
+    ListAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Adapters.InstrumentListing>>
+    LoadAllAsync(System.Threading.CancellationToken ct, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> filters = null) -> System.Threading.Tasks.Task
+    LoadAsync(Bytex.Core.Model.Identifiers.MarketKey id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    MaxLeverageInfo = maxLeverage : System.String
+    PositionTiersPath = /api/v2/mix/market/query-position-lever : System.String
+    ProductType : Bytex.Adapters.Bitget.BitgetProductType { get; }
+    SpotSymbolsPath = /api/v2/spot/public/symbols : System.String
+enum Bytex.Adapters.Bitget.BitgetMarginMode : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Crossed = 0 : Bytex.Adapters.Bitget.BitgetMarginMode
+    Isolated = 1 : Bytex.Adapters.Bitget.BitgetMarginMode
+    value__ : System.Int32
+class Bytex.Adapters.Bitget.BitgetPlugin : Bytex.Core.Adapters.IVenuePlugin, Bytex.Core.Plugins.IPlugin
+    .ctor()
+    Describe() -> Bytex.Core.Adapters.VenueDescriptor
+    Id : System.String { get; }
+    Register(Bytex.Core.Plugins.IPluginRegistry registry) -> System.Void
+    Version : System.String { get; }
+class Bytex.Adapters.Bitget.BitgetPositionTier : System.IEquatable<Bytex.Adapters.Bitget.BitgetPositionTier>
+    .ctor(System.Int32 Level, System.Decimal StartUnit, System.Decimal EndUnit, System.Decimal Leverage, System.Decimal KeepMarginRate)
+    Deconstruct(System.Int32& Level, System.Decimal& StartUnit, System.Decimal& EndUnit, System.Decimal& Leverage, System.Decimal& KeepMarginRate) -> System.Void
+    EndUnit : System.Decimal { get; init; }
+    Equals(Bytex.Adapters.Bitget.BitgetPositionTier other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    KeepMarginRate : System.Decimal { get; init; }
+    Level : System.Int32 { get; init; }
+    Leverage : System.Decimal { get; init; }
+    StartUnit : System.Decimal { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Bitget.BitgetPositionTier left, Bytex.Adapters.Bitget.BitgetPositionTier right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Bitget.BitgetPositionTier left, Bytex.Adapters.Bitget.BitgetPositionTier right) -> System.Boolean
+enum Bytex.Adapters.Bitget.BitgetProductType : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Spot = 0 : Bytex.Adapters.Bitget.BitgetProductType
+    UsdcFutures = 2 : Bytex.Adapters.Bitget.BitgetProductType
+    UsdtFutures = 1 : Bytex.Adapters.Bitget.BitgetProductType
+    value__ : System.Int32
+enum Bytex.Adapters.Bitget.BitgetTradingMode : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Demo = 1 : Bytex.Adapters.Bitget.BitgetTradingMode
+    Live = 0 : Bytex.Adapters.Bitget.BitgetTradingMode
+    value__ : System.Int32
+class Bytex.Adapters.Bitget.BitgetVenue
+    ApiKeyHeader = ACCESS-KEY : System.String
+    BrokerIdHeader = X-CHANNEL-API-CODE : System.String
+    ContractNormal = normal : System.String
+    Credentials(Bytex.Adapters.Bitget.IBitgetSettings s) -> Bytex.Adapters.Bitget.BitgetCredentials
+    DefaultHttpBase = https://api.bitget.com : System.String
+    DefaultWsBase = wss://ws.bitget.com : System.String
+    DemoPrefix = S : System.String
+    EnvApiKey = BITGET_API_KEY : System.String
+    EnvApiPassphrase = BITGET_API_PASSPHRASE : System.String
+    EnvApiSecret = BITGET_API_SECRET : System.String
+    ErrorApiKeyUnknown = 40037 : System.String
+    ErrorNoApiKey = 40006 : System.String
+    ErrorsThatMeanNoSuchInstrument : System.Collections.Generic.IReadOnlySet<System.String> static
+    FirstPage = 1 : System.Int32
+    FundingPage = 100 : System.Int32
+    HistoryCandlePage = 200 : System.Int32
+    HttpBase(Bytex.Adapters.Bitget.IBitgetSettings s) -> System.String
+    IsFutures(Bytex.Adapters.Bitget.IBitgetSettings s) -> System.Boolean
+    LargeBookDepth = 15 : System.Int32
+    LeveragePath = /api/v2/mix/account/set-leverage : System.String
+    Locale = en-US : System.String
+    LocaleHeader = locale : System.String
+    Market(Bytex.Adapters.Bitget.IBitgetSettings s) -> System.String
+    MaxFundingPages = 250 : System.Int32
+    Ok = 00000 : System.String
+    OptionalCredentials(Bytex.Adapters.Bitget.IBitgetSettings s) -> Bytex.Adapters.Bitget.BitgetCredentials
+    PassphraseHeader = ACCESS-PASSPHRASE : System.String
+    PerpSuffix = -PERP : System.String
+    PerpetualSymbolType = perpetual : System.String
+    PingInterval : System.TimeSpan static
+    PingMessage = ping : System.String
+    PongMessage = pong : System.String
+    RecentCandlePage = 1000 : System.Int32
+    RequestWindow : System.TimeSpan static
+    RequestsPerWindow = 10 : System.Int32
+    RestGranularity(Bytex.Core.Model.Data.SamplingRule spec, Bytex.Adapters.Bitget.BitgetProductType productType) -> System.String
+    SignatureHeader = ACCESS-SIGN : System.String
+    SmallBookDepth = 5 : System.Int32
+    SpotInstType = SPOT : System.String
+    SpotOnline = online : System.String
+    StreamGranularity(Bytex.Core.Model.Data.SamplingRule spec) -> System.String
+    TierRequestConcurrency = 8 : System.Int32
+    TimePath = /api/v2/public/time : System.String
+    TimestampHeader = ACCESS-TIMESTAMP : System.String
+    ToMarketKey(System.String rawSymbol, Bytex.Adapters.Bitget.BitgetProductType productType, Bytex.Adapters.Bitget.BitgetTradingMode mode = 0) -> Bytex.Core.Model.Identifiers.MarketKey
+    ToRawSymbol(Bytex.Core.Model.Identifiers.MarketKey id, Bytex.Adapters.Bitget.BitgetProductType productType, Bytex.Adapters.Bitget.BitgetTradingMode mode = 0) -> System.String
+    UsdcContractSuffix = PERP : System.String
+    UsdcQuote = USDC : System.String
+    UsdtQuote = USDT : System.String
+    Venue : Bytex.Core.Model.Identifiers.Venue static
+    WsPrivate(Bytex.Adapters.Bitget.IBitgetSettings s) -> System.String
+    WsPrivatePath = /v2/ws/private : System.String
+    WsPublic(Bytex.Adapters.Bitget.IBitgetSettings s) -> System.String
+    WsPublicPath = /v2/ws/public : System.String
+interface Bytex.Adapters.Bitget.IBitgetSettings
+    ApiKey : System.String { get; }
+    ApiPassphrase : System.String { get; }
+    ApiSecret : System.String { get; }
+    BaseUrlHttp : System.String { get; }
+    BaseUrlWs : System.String { get; }
+    ProductType : Bytex.Adapters.Bitget.BitgetProductType { get; }
+    TradingMode : Bytex.Adapters.Bitget.BitgetTradingMode { get; }

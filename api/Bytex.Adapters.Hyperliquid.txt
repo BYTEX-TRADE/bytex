@@ -1,0 +1,314 @@
+class Bytex.Adapters.Hyperliquid.HyperliquidAction : System.IEquatable<Bytex.Adapters.Hyperliquid.HyperliquidAction>
+    Equals(Bytex.Adapters.Hyperliquid.HyperliquidAction other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Json : System.String { get; }
+    Packed : System.Byte[] { get; }
+    ToString() -> System.String
+    Type : System.String { get; }
+    op_Equality(Bytex.Adapters.Hyperliquid.HyperliquidAction left, Bytex.Adapters.Hyperliquid.HyperliquidAction right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Hyperliquid.HyperliquidAction left, Bytex.Adapters.Hyperliquid.HyperliquidAction right) -> System.Boolean
+class Bytex.Adapters.Hyperliquid.HyperliquidActions
+    Alo = Alo : System.String
+    Cancel(System.Int32 asset, System.UInt64 orderId) -> Bytex.Adapters.Hyperliquid.HyperliquidAction
+    CancelByCloid(System.Int32 asset, System.String cloid) -> Bytex.Adapters.Hyperliquid.HyperliquidAction
+    Gtc = Gtc : System.String
+    Ioc = Ioc : System.String
+    Modify(System.UInt64 orderId, Bytex.Adapters.Hyperliquid.HyperliquidOrderWire order) -> Bytex.Adapters.Hyperliquid.HyperliquidAction
+    NoGrouping = na : System.String
+    Order(System.Collections.Generic.IEnumerable<Bytex.Adapters.Hyperliquid.HyperliquidOrderWire> orders) -> Bytex.Adapters.Hyperliquid.HyperliquidAction
+    UpdateLeverage(System.Int32 asset, System.Boolean isCross, System.Int32 leverage) -> Bytex.Adapters.Hyperliquid.HyperliquidAction
+class Bytex.Adapters.Hyperliquid.HyperliquidApiException : System.Exception, System.Runtime.Serialization.ISerializable
+    .ctor(System.String message, System.Int32 httpStatus, System.Exception inner = null)
+    Detail : System.String { get; }
+    HttpStatus : System.Int32 { get; }
+class Bytex.Adapters.Hyperliquid.HyperliquidAsset : System.IEquatable<Bytex.Adapters.Hyperliquid.HyperliquidAsset>
+    .ctor()
+    Coin : System.String { get; init; }
+    Equals(Bytex.Adapters.Hyperliquid.HyperliquidAsset other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Index : System.Int32 { get; init; }
+    IsDelisted : System.Boolean { get; init; }
+    IsolatedOnly : System.Boolean { get; init; }
+    MaxLeverage : System.Int32 { get; init; }
+    Of(Bytex.Core.Model.Instruments.Instrument instrument) -> Bytex.Adapters.Hyperliquid.HyperliquidAsset
+    PriceDecimals : System.Int32 { get; }
+    PriceIncrement : System.Decimal { get; }
+    RoundPrice(System.Decimal price) -> System.Decimal
+    SizeDecimals : System.Int32 { get; init; }
+    SizeIncrement : System.Decimal { get; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Hyperliquid.HyperliquidAsset left, Bytex.Adapters.Hyperliquid.HyperliquidAsset right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Hyperliquid.HyperliquidAsset left, Bytex.Adapters.Hyperliquid.HyperliquidAsset right) -> System.Boolean
+class Bytex.Adapters.Hyperliquid.HyperliquidChannels
+    ActiveAssetCtx = activeAssetCtx : System.String
+    Bbo = bbo : System.String
+    BuyAggressor = B : System.String
+    CanceledMarker = anceled : System.String
+    Candle = candle : System.String
+    CandleClose = c : System.String
+    CandleCoin = s : System.String
+    CandleHigh = h : System.String
+    CandleInterval = i : System.String
+    CandleLow = l : System.String
+    CandleOpen = o : System.String
+    CandleOpenTime = t : System.String
+    CandleVolume = v : System.String
+    ChannelField = channel : System.String
+    Cloid = cloid : System.String
+    Coin = coin : System.String
+    Context = ctx : System.String
+    Crossed = crossed : System.String
+    DataField = data : System.String
+    Error = error : System.String
+    Fee = fee : System.String
+    FeeToken = feeToken : System.String
+    Fills = fills : System.String
+    Funding = funding : System.String
+    L2Book = l2Book : System.String
+    Levels = levels : System.String
+    MarkPrice = markPx : System.String
+    MaxTrackedUsers = 15 : System.Int32
+    Oid = oid : System.String
+    OraclePrice = oraclePx : System.String
+    Order = order : System.String
+    OrderUpdates = orderUpdates : System.String
+    Price = px : System.String
+    PrivateSubscriptions(System.String account) -> System.Collections.Generic.IEnumerable<System.String>
+    Side = side : System.String
+    Size = sz : System.String
+    Status = status : System.String
+    StatusFilled = filled : System.String
+    StatusOpen = open : System.String
+    StatusRejected = rejected : System.String
+    StatusTimestamp = statusTimestamp : System.String
+    StatusTriggered = triggered : System.String
+    Subscribe(System.String channel, System.String coin, System.String interval, System.Boolean subscribe = True) -> System.String
+    SubscriptionResponse = subscriptionResponse : System.String
+    Time = time : System.String
+    Timestamp = timestamp : System.String
+    TradeId = tid : System.String
+    Trades = trades : System.String
+    User(System.String channel, System.String account, System.Boolean subscribe = True) -> System.String
+    UserEvents = userEvents : System.String
+    UserEventsReply = user : System.String
+class Bytex.Adapters.Hyperliquid.HyperliquidCredentials : System.IEquatable<Bytex.Adapters.Hyperliquid.HyperliquidCredentials>
+    .ctor(System.Byte[] PrivateKey, System.Byte[] AccountAddress)
+    Account : System.String { get; }
+    AccountAddress : System.Byte[] { get; init; }
+    CanSign : System.Boolean { get; }
+    Deconstruct(System.Byte[]& PrivateKey, System.Byte[]& AccountAddress) -> System.Void
+    Equals(Bytex.Adapters.Hyperliquid.HyperliquidCredentials other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrivateKey : System.Byte[] { get; init; }
+    Signer : System.String { get; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Hyperliquid.HyperliquidCredentials left, Bytex.Adapters.Hyperliquid.HyperliquidCredentials right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Hyperliquid.HyperliquidCredentials left, Bytex.Adapters.Hyperliquid.HyperliquidCredentials right) -> System.Boolean
+class Bytex.Adapters.Hyperliquid.HyperliquidDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Hyperliquid.HyperliquidDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Instruments : Bytex.Adapters.Hyperliquid.HyperliquidInstrumentProvider { get; }
+    OnDispose() -> System.Void
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubscribeAsync(Bytex.Core.Model.Commands.SubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    UnsubscribeAsync(Bytex.Core.Model.Commands.UnsubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Hyperliquid.HyperliquidDataClientConfig : Bytex.Core.Adapters.DataClientConfig, Bytex.Adapters.Hyperliquid.IHyperliquidSettings, System.IEquatable<Bytex.Adapters.Hyperliquid.HyperliquidDataClientConfig>, System.IEquatable<Bytex.Core.Adapters.DataClientConfig>
+    .ctor()
+    AccountAddress : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Hyperliquid.HyperliquidDataClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.DataClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    PrivateKey : System.String { get; init; }
+    Testnet : System.Nullable<System.Boolean> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Hyperliquid.HyperliquidDataClientConfig left, Bytex.Adapters.Hyperliquid.HyperliquidDataClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Hyperliquid.HyperliquidDataClientConfig left, Bytex.Adapters.Hyperliquid.HyperliquidDataClientConfig right) -> System.Boolean
+class Bytex.Adapters.Hyperliquid.HyperliquidDataClientFactory : Bytex.Core.Adapters.IDataClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.DataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IDataClient
+    Name : System.String { get; }
+class Bytex.Adapters.Hyperliquid.HyperliquidExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Hyperliquid.HyperliquidExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    GenerateFillReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.FillReport>>
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    GenerateOrderStatusReportAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId> clientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.OrderStatusReport>
+    GenerateOrderStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Boolean openOnly, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.OrderStatusReport>>
+    GeneratePositionStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.PositionStatusReport>>
+    Instruments : Bytex.Adapters.Hyperliquid.HyperliquidInstrumentProvider { get; }
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    OnDispose() -> System.Void
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Hyperliquid.HyperliquidExecutionClientConfig : Bytex.Core.Adapters.ExecutionClientConfig, Bytex.Adapters.Hyperliquid.IHyperliquidSettings, System.IEquatable<Bytex.Adapters.Hyperliquid.HyperliquidExecutionClientConfig>, System.IEquatable<Bytex.Core.Adapters.ExecutionClientConfig>
+    .ctor()
+    AccountAddress : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    CrossMargin : System.Boolean { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Hyperliquid.HyperliquidExecutionClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.ExecutionClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    PrivateKey : System.String { get; init; }
+    Testnet : System.Nullable<System.Boolean> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Hyperliquid.HyperliquidExecutionClientConfig left, Bytex.Adapters.Hyperliquid.HyperliquidExecutionClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Hyperliquid.HyperliquidExecutionClientConfig left, Bytex.Adapters.Hyperliquid.HyperliquidExecutionClientConfig right) -> System.Boolean
+class Bytex.Adapters.Hyperliquid.HyperliquidExecutionClientFactory : Bytex.Core.Adapters.IExecutionClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.ExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IExecutionClient
+    Name : System.String { get; }
+class Bytex.Adapters.Hyperliquid.HyperliquidHistory
+    FetchBarsAsync(Bytex.Adapters.Hyperliquid.HyperliquidHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.DateTimeOffset start, System.DateTimeOffset end, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchBarsAsync(Bytex.Adapters.Hyperliquid.HyperliquidHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, Bytex.Core.Model.Primitives.UnixNanos now, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchFundingRatesAsync(Bytex.Adapters.Hyperliquid.HyperliquidHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.DateTimeOffset start, System.Nullable<System.DateTimeOffset> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+    FetchFundingRatesAsync(Bytex.Adapters.Hyperliquid.HyperliquidHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<System.Int64> startMs, System.Nullable<System.Int64> endMs, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+class Bytex.Adapters.Hyperliquid.HyperliquidHttp : System.IDisposable
+    .ctor(Bytex.Adapters.Hyperliquid.IHyperliquidSettings settings, Microsoft.Extensions.Logging.ILogger logger = null, System.Boolean requireCredentials = False)
+    Credentials : Bytex.Adapters.Hyperliquid.HyperliquidCredentials { get; }
+    Dispose() -> System.Void
+    ExchangeAsync(Bytex.Adapters.Hyperliquid.HyperliquidAction action, System.Int64 nonce, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    ExchangeBody(Bytex.Adapters.Hyperliquid.HyperliquidAction action, System.Int64 nonce, Bytex.Adapters.Hyperliquid.HyperliquidSignature signature) -> System.String
+    InfoAsync(System.String type, System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object> fields = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    InfoBody(System.String type, System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object> fields) -> System.String
+    IsMainnet : System.Boolean { get; }
+    Log : Microsoft.Extensions.Logging.ILogger { get; }
+    NextNonce() -> System.Int64
+class Bytex.Adapters.Hyperliquid.HyperliquidInstrumentProvider : Bytex.Core.Adapters.InstrumentProviderBase, Bytex.Core.Adapters.IInstrumentProvider
+    .ctor(Bytex.Adapters.Hyperliquid.HyperliquidHttp http, Bytex.Core.Adapters.InstrumentProviderConfig config = null, Microsoft.Extensions.Logging.ILogger logger = null)
+    LoadAllAsync(System.Threading.CancellationToken ct, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> filters = null) -> System.Threading.Tasks.Task
+    LoadAsync(Bytex.Core.Model.Identifiers.MarketKey id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Hyperliquid.HyperliquidOrderWire : System.IEquatable<Bytex.Adapters.Hyperliquid.HyperliquidOrderWire>
+    .ctor()
+    Asset : System.Int32 { get; init; }
+    Cloid : System.String { get; init; }
+    Equals(Bytex.Adapters.Hyperliquid.HyperliquidOrderWire other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    IsBuy : System.Boolean { get; init; }
+    Price : System.String { get; init; }
+    ReduceOnly : System.Boolean { get; init; }
+    Size : System.String { get; init; }
+    TimeInForce : System.String { get; init; }
+    ToString() -> System.String
+    TriggerIsMarket : System.Boolean { get; init; }
+    TriggerIsTakeProfit : System.Boolean { get; init; }
+    TriggerPrice : System.String { get; init; }
+    op_Equality(Bytex.Adapters.Hyperliquid.HyperliquidOrderWire left, Bytex.Adapters.Hyperliquid.HyperliquidOrderWire right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Hyperliquid.HyperliquidOrderWire left, Bytex.Adapters.Hyperliquid.HyperliquidOrderWire right) -> System.Boolean
+class Bytex.Adapters.Hyperliquid.HyperliquidPlugin : Bytex.Core.Adapters.IVenuePlugin, Bytex.Core.Plugins.IPlugin
+    .ctor()
+    Describe() -> Bytex.Core.Adapters.VenueDescriptor
+    Id : System.String { get; }
+    Register(Bytex.Core.Plugins.IPluginRegistry registry) -> System.Void
+    Version : System.String { get; }
+class Bytex.Adapters.Hyperliquid.HyperliquidReads
+    CandleSnapshot = candleSnapshot : System.String
+    ClearinghouseState = clearinghouseState : System.String
+    Coin = coin : System.String
+    EndTime = endTime : System.String
+    FrontendOpenOrders = frontendOpenOrders : System.String
+    FundingHistory = fundingHistory : System.String
+    Interval = interval : System.String
+    IsDelisted = isDelisted : System.String
+    L2Book = l2Book : System.String
+    MaxLeverage = maxLeverage : System.String
+    Meta = meta : System.String
+    MetaAndAssetCtxs = metaAndAssetCtxs : System.String
+    Name = name : System.String
+    OnlyIsolated = onlyIsolated : System.String
+    OrderStatus = orderStatus : System.String
+    Request = req : System.String
+    SizeDecimals = szDecimals : System.String
+    StartTime = startTime : System.String
+    Universe = universe : System.String
+    User = user : System.String
+    UserFees = userFees : System.String
+    UserFills = userFills : System.String
+class Bytex.Adapters.Hyperliquid.HyperliquidSignature : System.IEquatable<Bytex.Adapters.Hyperliquid.HyperliquidSignature>
+    .ctor(System.String R, System.String S, System.Int32 V)
+    Deconstruct(System.String& R, System.String& S, System.Int32& V) -> System.Void
+    Equals(Bytex.Adapters.Hyperliquid.HyperliquidSignature other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    R : System.String { get; init; }
+    S : System.String { get; init; }
+    ToString() -> System.String
+    V : System.Int32 { get; init; }
+    op_Equality(Bytex.Adapters.Hyperliquid.HyperliquidSignature left, Bytex.Adapters.Hyperliquid.HyperliquidSignature right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Hyperliquid.HyperliquidSignature left, Bytex.Adapters.Hyperliquid.HyperliquidSignature right) -> System.Boolean
+class Bytex.Adapters.Hyperliquid.HyperliquidSigner
+    ChainId = 1337 : System.Int64
+    ConnectionId(System.Byte[] packedAction, System.Int64 nonce, System.ReadOnlySpan<System.Byte> vaultAddress) -> System.Byte[]
+    Digest(System.Byte[] packedAction, System.Int64 nonce, System.ReadOnlySpan<System.Byte> vaultAddress, System.Boolean mainnet) -> System.Byte[]
+    DomainName = Exchange : System.String
+    DomainTypeSignature = EIP712Domain(string name,string version,uint256 chainId,address verifyingContract) : System.String
+    DomainVersion = 1 : System.String
+    Hash(System.ReadOnlySpan<System.Byte> data) -> System.Byte[]
+    MainnetSource = a : System.String
+    PrimaryTypeSignature = Agent(string source,bytes32 connectionId) : System.String
+    Sign(System.Byte[] packedAction, System.Int64 nonce, System.ReadOnlySpan<System.Byte> vaultAddress, System.Boolean mainnet, System.ReadOnlySpan<System.Byte> privateKey) -> Bytex.Adapters.Hyperliquid.HyperliquidSignature
+    TestnetSource = b : System.String
+class Bytex.Adapters.Hyperliquid.HyperliquidVenue
+    AddressBytes(System.String address) -> System.Byte[]
+    AssetIndexInfo = hyperliquidAssetIndex : System.String
+    BaseMakerFee : System.Decimal static
+    BaseTakerFee : System.Decimal static
+    BookDepth = 20 : System.Int32
+    CandleRetention = 5000 : System.Int32
+    CloidBytes = 16 : System.Int32
+    CloidFor(Bytex.Core.Model.Identifiers.ClientOrderId clientOrderId) -> System.String
+    Credentials(Bytex.Adapters.Hyperliquid.IHyperliquidSettings settings) -> Bytex.Adapters.Hyperliquid.HyperliquidCredentials
+    DefaultHttpBase = https://api.hyperliquid.xyz : System.String
+    DefaultWsBase = wss://api.hyperliquid.xyz : System.String
+    EnvAccountAddress = HYPERLIQUID_ACCOUNT_ADDRESS : System.String
+    EnvPrivateKey = HYPERLIQUID_PRIVATE_KEY : System.String
+    ExchangePath = /exchange : System.String
+    FundingIntervalHours = 1 : System.Int32
+    FundingPage = 500 : System.Int32
+    HttpBase(Bytex.Adapters.Hyperliquid.IHyperliquidSettings settings) -> System.String
+    InfoPath = /info : System.String
+    Interval(Bytex.Core.Model.Data.SamplingRule spec) -> System.String
+    IsMainnet(Bytex.Adapters.Hyperliquid.IHyperliquidSettings settings) -> System.Boolean
+    MaintenanceMarginFraction = 2 : System.Int32
+    MarketOrderSlippage : System.Decimal static
+    MaxLeverageInfo = hyperliquidMaxLeverage : System.String
+    MaxPriceDecimals = 6 : System.Int32
+    MaxPriceSignificantFigures = 5 : System.Int32
+    OptionalCredentials(Bytex.Adapters.Hyperliquid.IHyperliquidSettings settings) -> Bytex.Adapters.Hyperliquid.HyperliquidCredentials
+    PerpSuffix = -PERP : System.String
+    PingInterval : System.TimeSpan static
+    PingMessage = {"method":"ping"} : System.String
+    QuoteCurrency = USDC : System.String
+    QuoteCurrencyPrecision = 8 : System.Int32
+    RecognisedHost(Bytex.Adapters.Hyperliquid.IHyperliquidSettings settings) -> System.Boolean
+    RequestWindow : System.TimeSpan static
+    RequestsPerWindow = 20 : System.Int32
+    SizeDecimalsInfo = hyperliquidSizeDecimals : System.String
+    TestnetHost = api.hyperliquid-testnet.xyz : System.String
+    ToCoin(Bytex.Core.Model.Identifiers.MarketKey id) -> System.String
+    ToMarketKey(System.String coin) -> Bytex.Core.Model.Identifiers.MarketKey
+    Venue : Bytex.Core.Model.Identifiers.Venue static
+    WsBase(Bytex.Adapters.Hyperliquid.IHyperliquidSettings settings) -> System.String
+    WsPath = /ws : System.String
+interface Bytex.Adapters.Hyperliquid.IHyperliquidSettings
+    AccountAddress : System.String { get; }
+    BaseUrlHttp : System.String { get; }
+    BaseUrlWs : System.String { get; }
+    PrivateKey : System.String { get; }
+    Testnet : System.Nullable<System.Boolean> { get; }

@@ -1,0 +1,53 @@
+{
+  "tradingRuntime": {
+    "moduleHostId": "SANDBOX-001",
+    "environment": "sandbox",
+    "loadState": false,
+    "saveState": false
+  },
+  "dataClients": [
+    {
+      "factory": "KUCOIN",
+      "clientId": "KUCOIN",
+      "config": {
+        "instrumentProvider": {
+          "loadIds": [
+            "bx-market:v2/KUCOIN/BTC-USDT"
+          ]
+        }
+      }
+    }
+  ],
+  "executionClients": [
+    {
+      "factory": "SANDBOX",
+      "clientId": "KUCOIN-SANDBOX",
+      "config": {
+        "venue": "KUCOIN",
+        "accountType": "cash",
+        "startingBalances": [
+          "100000 USDT",
+          "1 BTC"
+        ]
+      }
+    }
+  ],
+  "strategies": [
+    {
+      "providerId": "bytex.importable",
+      "name": "Bytex.Examples.Strategies.EmaCross",
+      "payload": {
+        "strategyId": "EmaCross-001",
+        "marketKey": "bx-market:v2/KUCOIN/BTC-USDT",
+        "candleSeries": "bx-candle:v2/KUCOIN/BTC-USDT/minute/1/last/computed",
+        "fastPeriod": 5,
+        "slowPeriod": 13,
+        "tradeSize": 0.01
+      }
+    }
+  ],
+  "reconcileOnStart": false,
+  "cancelOrdersOnStop": true,
+  "closePositionsOnStop": false,
+  "heartbeatInterval": "00:01:00"
+}

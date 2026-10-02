@@ -1,0 +1,36 @@
+class Bytex.Persistence.Postgres.PostgresCacheConfig : System.IEquatable<Bytex.Persistence.Postgres.PostgresCacheConfig>
+    .ctor()
+    ConnectionString : System.String { get; init; }
+    CreateSchema : System.Boolean { get; init; }
+    Equals(Bytex.Persistence.Postgres.PostgresCacheConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    KeyPrefix : System.String { get; init; }
+    ModuleHostId : System.String { get; init; }
+    TablePrefix : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Persistence.Postgres.PostgresCacheConfig left, Bytex.Persistence.Postgres.PostgresCacheConfig right) -> System.Boolean
+    op_Inequality(Bytex.Persistence.Postgres.PostgresCacheConfig left, Bytex.Persistence.Postgres.PostgresCacheConfig right) -> System.Boolean
+class Bytex.Persistence.Postgres.PostgresCacheDatabase : Bytex.Core.Caching.ICacheDatabase, System.IDisposable
+    .ctor(Bytex.Persistence.Postgres.PostgresCacheConfig config, Microsoft.Extensions.Logging.ILoggerFactory loggerFactory = null)
+    Add(System.String key, System.Byte[] value) -> System.Void
+    AddAccount(Bytex.Core.Model.Accounts.Account account) -> System.Void
+    AddCurrency(Bytex.Core.Model.Primitives.Currency currency) -> System.Void
+    AddInstrument(Bytex.Core.Model.Instruments.Instrument instrument) -> System.Void
+    AddOrder(Bytex.Core.Model.Orders.Order order) -> System.Void
+    AddOrderList(Bytex.Core.Model.Orders.OrderList list) -> System.Void
+    AddPosition(Bytex.Core.Model.Positions.Position position) -> System.Void
+    Dispose() -> System.Void
+    Flush() -> System.Void
+    Get(System.String key) -> System.Byte[]
+    LoadAccounts() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Accounts.Account>
+    LoadCurrencies() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Primitives.Currency>
+    LoadInstruments() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Instruments.Instrument>
+    LoadOrderLists(System.Collections.Generic.IReadOnlyDictionary<Bytex.Core.Model.Identifiers.ClientOrderId, Bytex.Core.Model.Orders.Order> orders) -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Orders.OrderList>
+    LoadOrders() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Orders.Order>
+    LoadPositions(System.Collections.Generic.IReadOnlyDictionary<Bytex.Core.Model.Identifiers.MarketKey, Bytex.Core.Model.Instruments.Instrument> instruments) -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Positions.Position>
+    LoadRuntimeModuleState(Bytex.Core.Model.Identifiers.RuntimeModuleId runtimeModuleId) -> System.Collections.Generic.IDictionary<System.String, System.Byte[]>
+    SaveRuntimeModuleState(Bytex.Core.Model.Identifiers.RuntimeModuleId runtimeModuleId, System.Collections.Generic.IDictionary<System.String, System.Byte[]> state) -> System.Void
+    UpdateAccount(Bytex.Core.Model.Accounts.Account account) -> System.Void
+    UpdateOrder(Bytex.Core.Model.Orders.Order order) -> System.Void
+    UpdatePosition(Bytex.Core.Model.Positions.Position position) -> System.Void

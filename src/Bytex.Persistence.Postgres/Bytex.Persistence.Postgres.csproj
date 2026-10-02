@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>PostgreSQL-backed state persistence for the BYTEX trading engine.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bytex.Core\Bytex.Core.csproj" />
+    <ProjectReference Include="..\Bytex.Data\Bytex.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Bytex.Live.Tests" />
+  </ItemGroup>
+
+  <!--
+    The key layout, the indexes and the rebuilding of orders are the same rule this engine applies to every backing
+    store, shared as SOURCE rather than as a library. A copy of it here would be a second copy to keep right.
+  -->
+  <ItemGroup>
+    <Compile Include="..\Bytex.Persistence.Shared\**\*.cs" LinkBase="Shared" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

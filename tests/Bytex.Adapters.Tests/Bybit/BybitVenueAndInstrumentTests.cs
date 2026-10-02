@@ -1,0 +1,265 @@
+using Bytex.Adapters.Bybit;
+using Bytex.Adapters.Tests.Fixtures;
+using Bytex.Adapters.Tests.Support;
+using Bytex.Core.Model;
+using Bytex.Core.Model.Data;
+using Bytex.Core.Model.Identifiers;
+using Bytex.Core.Model.Instruments;
+using Bytex.Core.Model.Primitives;
+
+namespace Bytex.Adapters.Tests.Bybit;
+
+// Why: hosts, stream routes, symbol naming and instrument increments decide where Bybit orders go and how they
+// are rounded. Expected values come from the Bybit V5 documentation and docs/integrations/bybit.md.
+public sealed class BybitVenueAndInstrumentTests
+{
+    [Theory]
+    [InlineData("https://api.bybit.com")]
+    public void Rest_base_url_is_the_same_for_every_product(string expected)
+    {
+        Assert.Equal(expected, BybitVenue.HttpBase(new BybitDataClientConfig { ProductType = BybitProductType.Spot }));
+        Assert.Equal(expected, BybitVenue.HttpBase(new BybitDataClientConfig { ProductType = BybitProductType.Linear }));
+    }
+
+    [Theory]
+    [InlineData(BybitProductType.Spot, "wss://stream.bybit.com/v5/public/spot")]
+    [InlineData(BybitProductType.Linear, "wss://stream.bybit.com/v5/public/linear")]
+    public void Public_stream_route_carries_the_product_category(BybitProductType type, string expected)
+    {
+        Assert.Equal(expected, BybitVenue.WsPublic(new BybitDataClientConfig { ProductType = type }));
+    }
+
+    [Theory]
+    [InlineData("wss://stream.bybit.com/v5/private")]
+    public void Private_stream_route_is_shared_by_all_products(string expected)
+    {
+        Assert.Equal(expected, BybitVenue.WsPrivate(new BybitExecutionClientConfig { ProductType = BybitProductType.Linear }));
+    }
+
+    [Fact]
+    public void Explicit_base_urls_keep_the_v5_routes()
+    {
+        BybitDataClientConfig config = new() { ProductType = BybitProductType.Linear, BaseUrlHttp = "http://127.0.0.1:9", BaseUrlWs = "ws://127.0.0.1:9" };
+
+        Assert.Equal("http://127.0.0.1:9", BybitVenue.HttpBase(config));
+        Assert.Equal("ws://127.0.0.1:9/v5/public/linear", BybitVenue.WsPublic(config));
+        Assert.Equal("ws://127.0.0.1:9/v5/private", BybitVenue.WsPrivate(config));
+    }
+
+    [Theory]
+    [InlineData("BTCUSDT", BybitProductType.Spot, "bx-market:v2/BYBIT/BTCUSDT")]
+    [InlineData("BTCUSDT", BybitProductType.Linear, "bx-market:v2/BYBIT/BTCUSDT-PERP")]
+    [InlineData("1000PEPEUSDT", BybitProductType.Linear, "bx-market:v2/BYBIT/1000PEPEUSDT-PERP")]
+    [InlineData("BTCUSDT-26SEP25", BybitProductType.Linear, "bx-market:v2/BYBIT/BTCUSDT-26SEP25")]
+    [InlineData("BTC-26SEP25", BybitProductType.Linear, "bx-market:v2/BYBIT/BTC-26SEP25")]
+    [InlineData("ETHPERP", BybitProductType.Linear, "bx-market:v2/BYBIT/ETHPERP-PERP")] // USDC perpetuals are literally named "...PERP" at the venue
+    public void Instrument_ids_distinguish_spot_from_linear_and_round_trip_to_the_raw_symbol(string raw, BybitProductType type, string expected)
+    {
+        MarketKey id = BybitVenue.ToMarketKey(raw, type);
+
+        Assert.Equal(expected, id.ToString());
+        Assert.Equal(raw, BybitVenue.ToRawSymbol(id));
+    }
+
+    [Theory]
+    [InlineData(1, SamplingMethod.Minute, "1")]
+    [InlineData(3, SamplingMethod.Minute, "3")]
+    [InlineData(5, SamplingMethod.Minute, "5")]
+    [InlineData(15, SamplingMethod.Minute, "15")]
+    [InlineData(30, SamplingMethod.Minute, "30")]
+    [InlineData(1, SamplingMethod.Hour, "60")]
+    [InlineData(2, SamplingMethod.Hour, "120")]
+    [InlineData(4, SamplingMethod.Hour, "240")]
+    [InlineData(6, SamplingMethod.Hour, "360")]
+    [InlineData(12, SamplingMethod.Hour, "720")]
+    [InlineData(1, SamplingMethod.Day, "D")]
+    [InlineData(1, SamplingMethod.Week, "W")]
+    [InlineData(1, SamplingMethod.Month, "M")]
+    public void Every_documented_kline_interval_maps_to_its_bybit_code(int step, SamplingMethod aggregation, string expected)
+    {
+        Assert.Equal(expected, BybitVenue.Interval(new SamplingRule(step, aggregation, PriceType.Last)));
+    }
+
+    [Theory]
+    [InlineData(1, SamplingMethod.Second)]
+    [InlineData(8, SamplingMethod.Hour)]
+    [InlineData(3, SamplingMethod.Day)]
+    public void Intervals_bybit_does_not_offer_are_refused(int step, SamplingMethod aggregation)
+    {
+        Assert.Throws<NotSupportedException>(() => BybitVenue.Interval(new SamplingRule(step, aggregation, PriceType.Last)));
+    }
+
+    [Fact]
+    public void The_plugin_registers_both_factories_under_the_name_BYBIT_and_the_documented_json_config_binds()
+    {
+        Core.Plugins.PluginRegistry registry = new();
+        registry.AddPlugin(new BybitPlugin());
+        string json = """
+            { "productType": "linear", "apiKey": null, "apiSecret": null,
+              "instrumentProvider": { "loadIds": ["bx-market:v2/BYBIT/BTCUSDT-PERP"] }, "defaultTriggerType": "markPrice", "recvWindowMs": 8000 }
+            """;
+
+        BybitExecutionClientConfig config = (BybitExecutionClientConfig)System.Text.Json.JsonSerializer.Deserialize(json, registry.ExecutionClientFactories["BYBIT"].ConfigType, Core.Serialization.BytexJson.Options)!;
+
+        Assert.IsType<BybitDataClientFactory>(registry.DataClientFactories["BYBIT"]);
+        Assert.Equal(BybitProductType.Linear, config.ProductType);
+        Assert.Equal(TriggerType.MarkPrice, config.DefaultTriggerType);
+        Assert.Equal(8000, config.RecvWindowMs);
+        Assert.Equal([MarketKey.Parse("bx-market:v2/BYBIT/BTCUSDT-PERP")], config.InstrumentProvider.LoadIds);
+    }
+
+    // ----- instruments-info -----
+
+    private static BybitHttp Http(LoopbackServer server, BybitProductType type) => new(new BybitDataClientConfig { ProductType = type, BaseUrlHttp = server.HttpBase });
+
+    [Fact]
+    public async Task A_spot_instrument_takes_its_size_step_from_basePrecision_and_skips_closed_symbols()
+    {
+        await using LoopbackServer server = new(new Routes().On("GET", "/v5/market/instruments-info", BybitPayloads.SpotInstruments).Handle);
+        using BybitHttp http = Http(server, BybitProductType.Spot);
+        BybitInstrumentProvider provider = new(http, BybitProductType.Spot);
+
+        await provider.LoadAllAsync(CancellationToken.None);
+
+        CurrencyPair btc = Assert.IsType<CurrencyPair>(Assert.Single(provider.GetAll()));
+        Assert.Equal("bx-market:v2/BYBIT/BTCUSDT", btc.Id.ToString());
+        Assert.Equal("BTCUSDT", btc.RawSymbol.Value);
+        Assert.Equal(InstrumentClass.Spot, btc.InstrumentClass);
+        Assert.Equal("BTC", btc.BaseCurrency.Code);
+        Assert.Equal("USDT", btc.QuoteCurrency.Code);
+        Assert.Equal(new Price(0.01m, 2), btc.PriceIncrement);
+        Assert.Equal(new Quantity(0.000001m, 6), btc.SizeIncrement);
+        Assert.Equal(new Quantity(0.000048m, 6), btc.MinQuantity);
+        Assert.Equal(0.001m, btc.MakerFee);
+        Assert.Equal(0.001m, btc.TakerFee);
+        Assert.Equal("spot", Assert.Single(server.Requests).Query("category"));
+    }
+
+    [Fact]
+    public async Task A_spot_instrument_takes_its_minimum_notional_from_minOrderAmt()
+    {
+        await using LoopbackServer server = new(new Routes().On("GET", "/v5/market/instruments-info", BybitPayloads.SpotInstruments).Handle);
+        using BybitHttp http = Http(server, BybitProductType.Spot);
+        BybitInstrumentProvider provider = new(http, BybitProductType.Spot);
+
+        await provider.LoadAllAsync(CancellationToken.None);
+
+        Assert.Equal(new Money(1m, Currencies.USDT), provider.Find(MarketKey.Parse("bx-market:v2/BYBIT/BTCUSDT"))!.MinNotional);
+    }
+
+    [Fact]
+    public async Task Linear_instruments_are_read_across_cursor_pages_until_the_cursor_is_empty()
+    {
+        await using LoopbackServer server = new(new Routes()
+            .On("GET", "/v5/market/instruments-info", r => StubResponse.Json(r.Query("cursor") is null ? BybitPayloads.LinearInstrumentsPage1 : BybitPayloads.LinearInstrumentsPage2)).Handle);
+        using BybitHttp http = Http(server, BybitProductType.Linear);
+        BybitInstrumentProvider provider = new(http, BybitProductType.Linear);
+
+        await provider.LoadAllAsync(CancellationToken.None);
+
+        Assert.Equal(2, provider.Count);
+
+        // Counted per route, because loading a category now also asks once what the venue requires per symbol.
+        // Pinning the total would make this test fail for the next thing the provider legitimately needs.
+        IReadOnlyList<RecordedRequest> pages = server.RequestsTo("/v5/market/instruments-info");
+        Assert.Equal(2, pages.Count);
+        Assert.Equal("linear", pages[0].Query("category"));
+        Assert.Equal("cursor-page-2", pages[1].Query("cursor"));
+        Assert.Single(server.RequestsTo(BybitVenue.RiskLimitPath));
+    }
+
+    [Fact]
+    public async Task A_linear_perpetual_gets_the_PERP_suffix_qtyStep_settle_coin_and_derivative_fees()
+    {
+        await using LoopbackServer server = new(new Routes()
+            .On("GET", "/v5/market/instruments-info", BybitPayloads.LinearInstrumentsPage1.Replace("cursor-page-2", string.Empty, StringComparison.Ordinal))
+            .On("GET", BybitVenue.RiskLimitPath, BybitPayloads.LinearRiskLimits)
+            .Handle);
+        using BybitHttp http = Http(server, BybitProductType.Linear);
+        BybitInstrumentProvider provider = new(http, BybitProductType.Linear);
+
+        await provider.LoadAsync(MarketKey.Parse("bx-market:v2/BYBIT/BTCUSDT-PERP"), CancellationToken.None);
+
+        CryptoPerpetual perp = Assert.IsType<CryptoPerpetual>(provider.Find(MarketKey.Parse("bx-market:v2/BYBIT/BTCUSDT-PERP")));
+        Assert.Equal("BTCUSDT", Assert.Single(server.RequestsTo("/v5/market/instruments-info")).Query("symbol"));
+
+        // R4.12: what the venue requires, not what the adapter assumed. These were 0.05 and 0.025 for every
+        // contract - the initial figure 7.6 times this one - and because InitialMarginRate takes the LARGER of
+        // 1/leverage and the instrument's margin, that made the wrong number a floor: everything above 20x
+        // silently cost the margin of 20x. The tier matters too, and the payload carries a second one to prove the
+        // lowest is chosen rather than the first row taken.
+        Assert.Equal(0.0066m, perp.MarginInit);
+        Assert.Equal(0.0033m, perp.MarginMaint);
+
+        // And the ceiling the venue grants, which nothing knew existed. It comes from the instruments response
+        // rather than the risk limits, so it costs no extra request.
+        Assert.Equal(100m, perp.MaxLeverage);
+        Assert.Equal(InstrumentClass.Swap, perp.InstrumentClass);
+        Assert.Equal("USDT", perp.SettlementCurrency.Code);
+        Assert.Equal(new Price(0.1m, 1), perp.PriceIncrement);
+        Assert.Equal(new Quantity(0.001m, 3), perp.SizeIncrement);
+        Assert.Equal(new Quantity(0.001m, 3), perp.MinQuantity);
+        Assert.Equal(new Quantity(100m, 3), perp.MaxQuantity);
+        Assert.Equal(new Money(5m, Currencies.USDT), perp.MinNotional);
+        Assert.Equal(new Price(0.1m, 1), perp.MinPrice);
+        Assert.Equal(new Price(199_999.8m, 1), perp.MaxPrice);
+        Assert.Equal(0.0002m, perp.MakerFee);
+        Assert.Equal(0.00055m, perp.TakerFee);
+    }
+
+    [Fact]
+    public async Task A_dated_linear_contract_is_a_future_with_launch_and_delivery_times()
+    {
+        await using LoopbackServer server = new(new Routes().On("GET", "/v5/market/instruments-info", BybitPayloads.LinearInstrumentsPage2).Handle);
+        using BybitHttp http = Http(server, BybitProductType.Linear);
+        BybitInstrumentProvider provider = new(http, BybitProductType.Linear);
+
+        await provider.LoadAllAsync(CancellationToken.None);
+
+        CryptoFuture future = Assert.IsType<CryptoFuture>(Assert.Single(provider.GetAll()));
+        Assert.Equal("BTCUSDT-26SEP25", future.RawSymbol.Value);
+        Assert.Equal(InstrumentClass.Future, future.InstrumentClass);
+        Assert.Equal(new DateTimeOffset(2025, 3, 21, 8, 0, 0, TimeSpan.Zero), future.Activation.ToDateTimeOffset());
+        Assert.Equal(new DateTimeOffset(2025, 9, 26, 8, 0, 0, TimeSpan.Zero), future.Expiration.ToDateTimeOffset());
+        Assert.Equal(new Price(0.5m, 1), future.PriceIncrement);
+    }
+
+    [Fact]
+    public async Task A_dated_linear_contract_is_not_named_as_a_perpetual()
+    {
+        await using LoopbackServer server = new(new Routes().On("GET", "/v5/market/instruments-info", BybitPayloads.LinearInstrumentsPage2).Handle);
+        using BybitHttp http = Http(server, BybitProductType.Linear);
+        BybitInstrumentProvider provider = new(http, BybitProductType.Linear);
+
+        await provider.LoadAllAsync(CancellationToken.None);
+
+        Assert.Equal("bx-market:v2/BYBIT/BTCUSDT-26SEP25", Assert.Single(provider.GetAll()).Id.ToString());
+    }
+
+    [Fact]
+    public async Task A_venue_error_envelope_surfaces_as_a_BybitApiException_with_code_and_message()
+    {
+        await using LoopbackServer server = new(_ => StubResponse.Json(BybitPayloads.Error(10001, "params error: category invalid")));
+        using BybitHttp http = Http(server, BybitProductType.Spot);
+        BybitInstrumentProvider provider = new(http, BybitProductType.Spot);
+
+        BybitApiException error = await Assert.ThrowsAsync<BybitApiException>(() => provider.LoadAllAsync(CancellationToken.None));
+
+        Assert.Equal(10001, error.Code);
+        Assert.Equal("params error: category invalid", error.RetMsg);
+    }
+
+    [Fact]
+    public async Task A_linear_instrument_still_takes_its_minimum_notional_from_minNotionalValue()
+    {
+        await using LoopbackServer server = new(new Routes()
+            .On("GET", "/v5/market/instruments-info", BybitPayloads.LinearInstrumentsPage1.Replace("cursor-page-2", string.Empty, StringComparison.Ordinal)).Handle);
+        using BybitHttp http = Http(server, BybitProductType.Linear);
+        BybitInstrumentProvider provider = new(http, BybitProductType.Linear);
+
+        await provider.LoadAllAsync(CancellationToken.None);
+
+        // Spot reports minOrderAmt and the derivative categories minNotionalValue; reading one must not lose the other.
+        Assert.Equal(new Money(5m, Currencies.USDT), provider.Find(MarketKey.Parse("bx-market:v2/BYBIT/BTCUSDT-PERP"))!.MinNotional);
+    }
+}

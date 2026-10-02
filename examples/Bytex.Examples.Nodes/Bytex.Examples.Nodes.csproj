@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- A plugin is a library: a host loads it from a directory with the plugins option. -->
+    <IsPackable>false</IsPackable>
+    <Description>A worked example of node types supplied by a plugin (R13.8).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The document that uses these nodes travels with them, so a host can run the example without a file path. -->
+    <EmbeddedResource Include="Documents\first-wide-bar.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Bytex.Core\Bytex.Core.csproj" />
+    <ProjectReference Include="..\..\src\Bytex.Documents\Bytex.Documents.csproj" />
+  </ItemGroup>
+
+</Project>

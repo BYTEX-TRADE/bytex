@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <!-- A benchmark is measured, not shipped: the analysers that keep the libraries tidy would only get in the way. -->
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Bytex.Core\Bytex.Core.csproj" />
+    <ProjectReference Include="..\..\src\Bytex.Data\Bytex.Data.csproj" />
+    <ProjectReference Include="..\..\src\Bytex.Indicators\Bytex.Indicators.csproj" />
+    <ProjectReference Include="..\..\src\Bytex.Backtest\Bytex.Backtest.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,562 @@
+using System.Globalization;
+using System.Text.Json;
+using Bytex.Core.Adapters;
+using Bytex.Core.Model;
+using Bytex.Core.Model.Commands;
+using Bytex.Core.Model.Data;
+using Bytex.Core.Model.Identifiers;
+using Bytex.Core.Model.Instruments;
+using Bytex.Core.Model.Primitives;
+using Bytex.Live.Network;
+using Microsoft.Extensions.Logging;
+
+namespace Bytex.Adapters.Binance;
+
+/// <summary>
+/// Market data from a Binance spot, USDⓈ-margined or coin-margined market: streaming quotes, trades, bars, book
+/// deltas, mark prices, and historical requests.
+/// </summary>
+public sealed class BinanceDataClient : DataClientBase
+{
+    private readonly BinanceDataClientConfig _config;
+    private readonly BinanceHttp _http;
+    private readonly BinanceInstrumentProvider _instruments;
+    private readonly HashSet<string> _streams = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, CandleSeries> _klineStreams = new(StringComparer.Ordinal);
+    private WebSocketClient? _ws;
+    private WebSocketClient? _wsMarket;
+    private int _requestId;
+
+    public BinanceDataClient(ClientId clientId, BinanceDataClientConfig config, TradingRuntimeServices services)
+        : base(clientId, BinanceVenue.Venue, services)
+    {
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _http = new BinanceHttp(config, Log);
+        _instruments = new BinanceInstrumentProvider(_http, config.AccountType, config.InstrumentProvider, Log);
+    }
+
+    public BinanceInstrumentProvider Instruments => _instruments;
+
+    public override async Task ConnectAsync(CancellationToken ct)
+    {
+        await _instruments.InitializeAsync(ct).ConfigureAwait(false);
+        foreach (Instrument instrument in _instruments.GetAll())
+        {
+            HandleInstrument(instrument);
+        }
+
+        // USDⓈ-M futures serve market data on two routes: /public carries book tickers, trades and depth; /market carries
+        // klines, mark prices and aggregated trades. The unrouted path still accepts a subscription to the latter but never
+        // delivers it. Spot has a single route.
+        //
+        // So does the coin-margined family, and that was measured rather than taken from its sibling. Its unrouted
+        // /stream was subscribed to all six stream kinds this client uses - book ticker, trade, aggTrade, kline,
+        // mark price and depth - three times for twenty-five seconds each on 2026-09-25, and all six delivered on
+        // every run. Splitting it anyway would open a second socket for nothing, and a second socket is a second
+        // thing that can drop and leave a healthy client marked disconnected.
+        bool split = _config.AccountType == BinanceAccountType.UsdMFutures;
+        string wsBase = BinanceVenue.WsBase(_config);
+        _ws = CreateSocket(wsBase + (split ? "/public/stream" : "/stream"), market: false);
+        await _ws.ConnectAsync(ct).ConfigureAwait(false);
+        if (split)
+        {
+            _wsMarket = CreateSocket(wsBase + "/market/stream", market: true);
+            await _wsMarket.ConnectAsync(ct).ConfigureAwait(false);
+        }
+
+        NotifyConnected();
+    }
+
+    private WebSocketClient CreateSocket(string url, bool market) => new(new WebSocketClientConfig { Url = new Uri(url) }, Log)
+    {
+        OnText = HandleMessageAsync,
+        OnConnected = isReconnect =>
+        {
+            List<string> streams = _streams.Where(s => IsMarketStream(s) == market).ToList();
+            if (isReconnect && streams.Count > 0)
+            {
+                SendSubscribe(streams);
+            }
+
+            // A drop marks the client disconnected; the socket then reconnects by itself, and without this the client would
+            // stay marked disconnected for the rest of its life while data flows. On futures both routes have to be up.
+            if (isReconnect && _ws is { IsConnected: true } && (_wsMarket is null || _wsMarket.IsConnected))
+            {
+                NotifyConnected();
+            }
+
+            return Task.CompletedTask;
+        },
+        OnDisconnected = reason =>
+        {
+            NotifyDisconnected(reason);
+            return Task.CompletedTask;
+        },
+    };
+
+    private bool IsMarketStream(string stream) =>
+        _wsMarket is not null && (stream.Contains("@kline_", StringComparison.Ordinal) || stream.Contains("@markPrice", StringComparison.Ordinal) || stream.Contains("@aggTrade", StringComparison.Ordinal));
+
+    public override async Task DisconnectAsync(CancellationToken ct)
+    {
+        if (_ws is not null)
+        {
+            await _ws.DisposeAsync().ConfigureAwait(false);
+            _ws = null;
+        }
+
+        if (_wsMarket is not null)
+        {
+            await _wsMarket.DisposeAsync().ConfigureAwait(false);
+            _wsMarket = null;
+        }
+
+        NotifyDisconnected("disconnect requested");
+    }
+
+    protected override void OnDispose()
+    {
+        _ws?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        _wsMarket?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        _http.Dispose();
+    }
+
+    // ----- Subscriptions -----
+
+    public override async Task SubscribeAsync(SubscribeCommand command, CancellationToken ct)
+    {
+        switch (command)
+        {
+            case SubscribeInstruments:
+                foreach (Instrument instrument in _instruments.GetAll())
+                {
+                    HandleInstrument(instrument);
+                }
+
+                return;
+            case SubscribeInstrument si:
+                if (_instruments.Find(si.MarketKey) is null)
+                {
+                    await _instruments.LoadAsync(si.MarketKey, ct).ConfigureAwait(false);
+                }
+
+                if (_instruments.Find(si.MarketKey) is { } loaded)
+                {
+                    HandleInstrument(loaded);
+                }
+
+                return;
+            case SubscribeQuoteTicks q:
+                AddStream($"{Lower(q.MarketKey)}@bookTicker");
+                break;
+            case SubscribeTradeTicks t:
+                AddStream($"{Lower(t.MarketKey)}@trade");
+                break;
+            case SubscribeBars b when b.CandleSeries.IsProvider:
+                {
+                    string stream = $"{Lower(b.CandleSeries.MarketKey)}@kline_{BinanceVenue.Interval(b.CandleSeries.Spec)}";
+                    _klineStreams[stream] = b.CandleSeries;
+                    AddStream(stream);
+                    break;
+                }
+
+            case SubscribeOrderBookDeltas d:
+                AddStream($"{Lower(d.MarketKey)}@depth@{BinanceVenue.BookStreamInterval}");
+                await SendBookSnapshotAsync(d.MarketKey, d.Depth, ct).ConfigureAwait(false);
+                break;
+            // One stream carries all three on either futures family: measured on the coin-margined host, a
+            // markPriceUpdate frame arrives each second with the mark price in p, the index price in i and the
+            // funding rate in r, exactly as on the USD-margined one. Spot has none of the three to subscribe to.
+            case SubscribeMarkPrices m when BinanceVenue.IsFutures(_config.AccountType):
+                AddStream($"{Lower(m.MarketKey)}@markPrice@1s");
+                break;
+            case SubscribeIndexPrices i when BinanceVenue.IsFutures(_config.AccountType):
+                AddStream($"{Lower(i.MarketKey)}@markPrice@1s");
+                break;
+            case SubscribeFundingRates f when BinanceVenue.IsFutures(_config.AccountType):
+                AddStream($"{Lower(f.MarketKey)}@markPrice@1s");
+                break;
+            default:
+                Sink.OnSubscriptionFailed(ClientId, command, $"{command.GetType().Name} is not supported by the Binance {_config.AccountType} data client");
+                break;
+        }
+    }
+
+    public override Task UnsubscribeAsync(UnsubscribeCommand command, CancellationToken ct)
+    {
+        string? stream = command switch
+        {
+            UnsubscribeQuoteTicks q => $"{Lower(q.MarketKey)}@bookTicker",
+            UnsubscribeTradeTicks t => $"{Lower(t.MarketKey)}@trade",
+            UnsubscribeBars b => $"{Lower(b.CandleSeries.MarketKey)}@kline_{BinanceVenue.Interval(b.CandleSeries.Spec)}",
+            UnsubscribeOrderBookDeltas d => $"{Lower(d.MarketKey)}@depth@{BinanceVenue.BookStreamInterval}",
+            UnsubscribeMarkPrices m => $"{Lower(m.MarketKey)}@markPrice@1s",
+            _ => null,
+        };
+
+        if (stream is not null && _streams.Remove(stream))
+        {
+            _klineStreams.Remove(stream);
+            Send(IsMarketStream(stream), new { method = "UNSUBSCRIBE", @params = new[] { stream }, id = Interlocked.Increment(ref _requestId) });
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void AddStream(string stream)
+    {
+        if (_streams.Add(stream))
+        {
+            SendSubscribe([stream]);
+        }
+    }
+
+    private void SendSubscribe(IReadOnlyList<string> streams)
+    {
+        foreach (IGrouping<bool, string> route in streams.GroupBy(IsMarketStream))
+        {
+            Send(route.Key, new { method = "SUBSCRIBE", @params = route.ToList(), id = Interlocked.Increment(ref _requestId) });
+        }
+    }
+
+    private void Send(bool market, object message) => (market ? _wsMarket : _ws)?.SendText(JsonSerializer.Serialize(message));
+
+    private static string Lower(MarketKey id) => BinanceVenue.ToRawSymbol(id).ToLowerInvariant();
+
+    private MarketKey? Resolve(string rawSymbol)
+    {
+        MarketKey id = BinanceVenue.ToMarketKey(rawSymbol, _config.AccountType);
+        if (_instruments.Find(id) is not null)
+        {
+            return id;
+        }
+
+        return Services.Cache.Instrument(id) is not null ? id : null;
+    }
+
+    private Instrument? InstrumentFor(string rawSymbol)
+    {
+        MarketKey? id = Resolve(rawSymbol);
+        return id is null ? null : _instruments.Find(id.Value) ?? Services.Cache.Instrument(id.Value);
+    }
+
+    // ----- Stream handling -----
+
+    private Task HandleMessageAsync(string text)
+    {
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(text);
+            JsonElement root = doc.RootElement;
+            if (!root.TryGetProperty("data", out JsonElement data))
+            {
+                return Task.CompletedTask; // subscription acknowledgements
+            }
+
+            string stream = root.Str("stream");
+            if (stream.EndsWith("@bookTicker", StringComparison.Ordinal))
+            {
+                HandleBookTicker(data);
+            }
+            else if (stream.EndsWith("@trade", StringComparison.Ordinal))
+            {
+                HandleTrade(data);
+            }
+            else if (stream.Contains("@kline_", StringComparison.Ordinal))
+            {
+                HandleKline(stream, data);
+            }
+            else if (stream.Contains("@depth", StringComparison.Ordinal))
+            {
+                HandleDepth(data);
+            }
+            else if (stream.Contains("@markPrice", StringComparison.Ordinal))
+            {
+                HandleMarkPrice(data);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.LogWarning(e, "Failed to parse Binance message: {Text}", LogText.Truncate(text, LogText.MaxMessageLength));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void HandleBookTicker(JsonElement d)
+    {
+        Instrument? instrument = InstrumentFor(d.Str("s"));
+        if (instrument is null)
+        {
+            return;
+        }
+
+        UnixNanos now = Clock.Timestamp;
+        UnixNanos eventTime = d.Has("E") ? d.Ms("E") : now;
+        HandleData(new QuoteTick(instrument.Id, instrument.MakePrice(d.Dec("b")), instrument.MakePrice(d.Dec("a")),
+            instrument.MakeQuantity(d.Dec("B")), instrument.MakeQuantity(d.Dec("A")), eventTime, now));
+    }
+
+    private void HandleTrade(JsonElement d)
+    {
+        Instrument? instrument = InstrumentFor(d.Str("s"));
+        if (instrument is null)
+        {
+            return;
+        }
+
+        bool buyerIsMaker = d.Bool("m");
+        HandleData(new TradeTick(instrument.Id, instrument.MakePrice(d.Dec("p")), instrument.MakeQuantity(d.Dec("q")),
+            buyerIsMaker ? AggressorSide.Seller : AggressorSide.Buyer, new TradeId(d.Long("t").ToString(CultureInfo.InvariantCulture)), d.Ms("T"), Clock.Timestamp));
+    }
+
+    private void HandleKline(string stream, JsonElement d)
+    {
+        if (!_klineStreams.TryGetValue(stream, out CandleSeries candleSeries))
+        {
+            return;
+        }
+
+        JsonElement k = d.GetProperty("k");
+        bool closed = k.Bool("x");
+        if (!closed && !_config.HandleRevisedBars)
+        {
+            return;
+        }
+
+        Instrument? instrument = InstrumentFor(k.Str("s"));
+        if (instrument is null)
+        {
+            return;
+        }
+
+        HandleData(new Bar(candleSeries, instrument.MakePrice(k.Dec("o")), instrument.MakePrice(k.Dec("h")), instrument.MakePrice(k.Dec("l")), instrument.MakePrice(k.Dec("c")),
+            instrument.MakeQuantity(k.Dec("v")), UnixNanos.FromMilliseconds(k.Long("T") + 1), Clock.Timestamp, IsRevision: !closed));
+    }
+
+    private void HandleDepth(JsonElement d)
+    {
+        Instrument? instrument = InstrumentFor(d.Str("s"));
+        if (instrument is null)
+        {
+            return;
+        }
+
+        UnixNanos eventTime = d.Has("E") ? d.Ms("E") : Clock.Timestamp;
+        ulong sequence = (ulong)d.Long("u");
+        List<OrderBookDelta> deltas = new();
+        ulong orderId = 0;
+        foreach (JsonElement level in d.GetProperty("b").EnumerateArray())
+        {
+            deltas.Add(Delta(instrument, OrderSide.Buy, level, sequence, eventTime, ++orderId));
+        }
+
+        foreach (JsonElement level in d.GetProperty("a").EnumerateArray())
+        {
+            deltas.Add(Delta(instrument, OrderSide.Sell, level, sequence, eventTime, ++orderId));
+        }
+
+        if (deltas.Count > 0)
+        {
+            HandleData(new OrderBookDeltas(instrument.Id, deltas, RecordFlags.Last, sequence, eventTime, Clock.Timestamp));
+        }
+    }
+
+    private OrderBookDelta Delta(Instrument instrument, OrderSide side, JsonElement level, ulong sequence, UnixNanos eventTime, ulong orderId)
+    {
+        decimal price = level[0].DecValue();
+        decimal size = level[1].DecValue();
+        BookAction action = size == 0m ? BookAction.Delete : BookAction.Update;
+        return new OrderBookDelta(instrument.Id, action, new BookOrder(side, instrument.MakePrice(price), instrument.MakeQuantity(size), orderId), RecordFlags.None, sequence, eventTime, Clock.Timestamp);
+    }
+
+    private void HandleMarkPrice(JsonElement d)
+    {
+        Instrument? instrument = InstrumentFor(d.Str("s"));
+        if (instrument is null)
+        {
+            return;
+        }
+
+        UnixNanos eventTime = d.Ms("E");
+        UnixNanos now = Clock.Timestamp;
+        HandleData(new MarkPriceUpdate(instrument.Id, instrument.MakePrice(d.Dec("p")), eventTime, now));
+        if (d.Has("i"))
+        {
+            HandleData(new IndexPriceUpdate(instrument.Id, instrument.MakePrice(d.Dec("i")), eventTime, now));
+        }
+
+        if (d.Has("r"))
+        {
+            HandleData(new FundingRateUpdate(instrument.Id, d.Dec("r"), d.Has("T") ? d.Ms("T") : null, eventTime, now));
+        }
+    }
+
+    private async Task SendBookSnapshotAsync(MarketKey marketKey, int depth, CancellationToken ct)
+    {
+        Instrument? instrument = _instruments.Find(marketKey) ?? Services.Cache.Instrument(marketKey);
+        if (instrument is null)
+        {
+            return;
+        }
+
+        Dictionary<string, string> query = new()
+        {
+            ["symbol"] = BinanceVenue.ToRawSymbol(marketKey),
+            ["limit"] = (depth <= 0 ? BinanceVenue.DefaultBookDepth : Math.Min(depth, BinanceVenue.MaxBookDepth)).ToString(CultureInfo.InvariantCulture),
+        };
+        using JsonDocument doc = await _http.GetPublicAsync(_http.Prefix + "/depth", query, BinanceVenue.Weights.BookSnapshot, ct).ConfigureAwait(false);
+        JsonElement root = doc.RootElement;
+        ulong sequence = (ulong)root.Long("lastUpdateId");
+        UnixNanos now = Clock.Timestamp;
+        List<OrderBookDelta> deltas = [OrderBookDelta.Clear(marketKey, sequence, now, now)];
+        ulong orderId = 0;
+        foreach (JsonElement level in root.GetProperty("bids").EnumerateArray())
+        {
+            deltas.Add(new OrderBookDelta(marketKey, BookAction.Add, new BookOrder(OrderSide.Buy, instrument.MakePrice(level[0].DecValue()), instrument.MakeQuantity(level[1].DecValue()), ++orderId), RecordFlags.None, sequence, now, now));
+        }
+
+        foreach (JsonElement level in root.GetProperty("asks").EnumerateArray())
+        {
+            deltas.Add(new OrderBookDelta(marketKey, BookAction.Add, new BookOrder(OrderSide.Sell, instrument.MakePrice(level[0].DecValue()), instrument.MakeQuantity(level[1].DecValue()), ++orderId), RecordFlags.None, sequence, now, now));
+        }
+
+        HandleData(new OrderBookDeltas(marketKey, deltas, RecordFlags.Snapshot | RecordFlags.Last, sequence, now, now));
+    }
+
+    // ----- Historical requests -----
+
+    public override async Task RequestAsync(RequestCommand command, CancellationToken ct)
+    {
+        try
+        {
+            switch (command)
+            {
+                case RequestInstrument ri:
+                    await _instruments.LoadAsync(ri.MarketKey, ct).ConfigureAwait(false);
+                    SendResponse(ri, typeof(Instrument), _instruments.Find(ri.MarketKey) is { } inst ? [new InstrumentData(inst)] : []);
+                    break;
+                case RequestInstruments ris:
+                    await _instruments.LoadAllAsync(ct).ConfigureAwait(false);
+                    foreach (Instrument instrument in _instruments.GetAll())
+                    {
+                        HandleInstrument(instrument);
+                    }
+
+                    SendResponse(ris, typeof(Instrument), _instruments.GetAll().Select(i => (IData)new InstrumentData(i)).ToList());
+                    break;
+                case RequestBars rb:
+                    SendResponse(rb, typeof(Bar), await FetchBarsAsync(rb, ct).ConfigureAwait(false));
+                    break;
+                case RequestTradeTicks rt:
+                    SendResponse(rt, typeof(TradeTick), await FetchTradesAsync(rt, ct).ConfigureAwait(false));
+                    break;
+                case RequestFundingRates rf:
+                    SendResponse(rf, typeof(FundingRateUpdate), await FetchFundingRatesAsync(rf, ct).ConfigureAwait(false));
+                    break;
+                default:
+                    SendErrorResponse(command, $"{command.GetType().Name} is not supported by the Binance data client");
+                    break;
+            }
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            Log.LogError(e, "Binance request {Request} failed", command.GetType().Name);
+            SendErrorResponse(command, e.Message);
+        }
+    }
+
+    /// <summary>
+    /// The candle history the venue holds. The paging, the direction it is walked and the page sizes live in
+    /// <see cref="BinanceHistory"/>, which a catalog download calls as well, so stored bars and a node's bars come
+    /// from one piece of code rather than two that agree until the venue changes a default.
+    /// </summary>
+    private async Task<IReadOnlyList<IData>> FetchBarsAsync(RequestBars request, CancellationToken ct)
+    {
+        Instrument instrument = RequireLoaded(_instruments.Find(request.CandleSeries.MarketKey) ?? Services.Cache.Instrument(request.CandleSeries.MarketKey), request.CandleSeries.MarketKey);
+
+        return [.. await BinanceHistory.FetchBarsAsync(_http, instrument, request.CandleSeries, request.Start, request.End, request.Limit, Clock.Timestamp, ct).ConfigureAwait(false)];
+    }
+
+    /// <summary>
+    /// The funding a perpetual has charged. The paging and ordering live in <see cref="BinanceHistory"/>, which a
+    /// catalog download calls as well, so stored rates and a node's rates come from one piece of code. A spot client
+    /// has nothing to answer with: spot pays no funding, and the endpoint is not on its host.
+    /// </summary>
+    private async Task<IReadOnlyList<IData>> FetchFundingRatesAsync(RequestFundingRates request, CancellationToken ct)
+    {
+        if (_config.AccountType == BinanceAccountType.Spot)
+        {
+            Log.LogWarning("Funding rates were asked of a spot client; spot instruments pay no funding");
+            return [];
+        }
+
+        IReadOnlyList<FundingRateUpdate> rates = await BinanceHistory.FetchFundingRatesAsync(
+            _http,
+            request.MarketKey,
+            request.Start?.ToMilliseconds(),
+            request.End?.ToMilliseconds(),
+            request.Limit,
+            ct).ConfigureAwait(false);
+        return rates.Cast<IData>().ToList();
+    }
+
+    private async Task<IReadOnlyList<IData>> FetchTradesAsync(RequestTradeTicks request, CancellationToken ct)
+    {
+        Instrument instrument = RequireLoaded(_instruments.Find(request.MarketKey) ?? Services.Cache.Instrument(request.MarketKey), request.MarketKey);
+
+        string path = _http.Prefix + (_config.UseAggTrades ? "/aggTrades" : "/trades");
+        Dictionary<string, string> query = new()
+        {
+            ["symbol"] = BinanceVenue.ToRawSymbol(request.MarketKey),
+            ["limit"] = Math.Min(BinanceVenue.TradePage, request.Limit ?? BinanceVenue.TradePage).ToString(CultureInfo.InvariantCulture),
+        };
+        if (_config.UseAggTrades)
+        {
+            if (request.Start is { } s)
+            {
+                query["startTime"] = s.ToMilliseconds().ToString(CultureInfo.InvariantCulture);
+            }
+
+            if (request.End is { } e)
+            {
+                query["endTime"] = e.ToMilliseconds().ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        using JsonDocument doc = await _http.GetPublicAsync(path, query, BinanceVenue.Weights.Trades, ct).ConfigureAwait(false);
+        List<IData> trades = new();
+        foreach (JsonElement t in doc.RootElement.EnumerateArray())
+        {
+            bool buyerIsMaker = t.Bool("m") || t.Bool("isBuyerMaker");
+            string id = t.Has("a") ? t.Long("a").ToString(CultureInfo.InvariantCulture) : t.Long("id").ToString(CultureInfo.InvariantCulture);
+            UnixNanos ts = t.Has("T") ? t.Ms("T") : t.Ms("time");
+            trades.Add(new TradeTick(instrument.Id, instrument.MakePrice(t.Has("p") ? t.Dec("p") : t.Dec("price")), instrument.MakeQuantity(t.Has("q") ? t.Dec("q") : t.Dec("qty")),
+                buyerIsMaker ? AggressorSide.Seller : AggressorSide.Buyer, new TradeId(id), ts, ts));
+        }
+
+        return trades;
+    }
+}
+
+/// <summary>
+/// Wraps an instrument so it can travel in a <see cref="DataResponse"/>.
+/// </summary>
+public sealed record InstrumentData(Instrument Instrument) : IData
+{
+    public MarketKey? MarketKey => Instrument.Id;
+
+    public UnixNanos EventTime => Instrument.EventTime;
+
+    public UnixNanos CreatedTime => Instrument.CreatedTime;
+}
+
+public sealed class BinanceDataClientFactory : IDataClientFactory
+{
+    public string Name => "BINANCE";
+
+    public Type ConfigType => typeof(BinanceDataClientConfig);
+
+    public IDataClient Create(ClientId clientId, DataClientConfig config, TradingRuntimeServices services) =>
+        new BinanceDataClient(clientId, (BinanceDataClientConfig)config, services);
+}

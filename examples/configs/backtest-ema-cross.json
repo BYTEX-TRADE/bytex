@@ -1,0 +1,43 @@
+{
+  "engine": {
+    "runId": "ema-cross-sample",
+    "tradingRuntime": {
+      "moduleHostId": "BACKTESTER-001",
+      "environment": "backtest",
+      "loadState": false,
+      "saveState": false,
+      "orderCoordinator": { "logEvents": false }
+    }
+  },
+  "venues": [
+    {
+      "venue": "SIM",
+      "omsType": "netting",
+      "accountType": "cash",
+      "startingBalances": ["1000000 USDT", "10 BTC"],
+      "barExecution": "ohlcPath"
+    }
+  ],
+  "data": [
+    {
+      "catalogPath": "./catalog",
+      "dataKind": "bars",
+      "candleSeries": "bx-candle:v2/SIM/BTCUSDT/minute/1/last/provider"
+    }
+  ],
+  "strategies": [
+    {
+      "providerId": "bytex.importable",
+      "name": "Bytex.Examples.Strategies.EmaCross",
+      "payload": {
+        "strategyId": "EmaCross-001",
+        "marketKey": "bx-market:v2/SIM/BTCUSDT",
+        "candleSeries": "bx-candle:v2/SIM/BTCUSDT/minute/1/last/provider",
+        "fastPeriod": 10,
+        "slowPeriod": 30,
+        "tradeSize": 0.5
+      }
+    }
+  ],
+  "outputDirectory": "./reports"
+}

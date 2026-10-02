@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "2.0",
+  "id": "example-first-wide-bar",
+  "name": "First wide bar of the day",
+  "description": "Buys the first bar of each day whose range is wide enough, stops out one percent below the fill and targets two. It is here to show what a document that uses a plugin's node types looks like: the 'requires' block names the plugin, and the two example.* nodes do the work built-in nodes would otherwise do.",
+  "metadata": { "template": false, "tags": ["example", "plugin"], "difficulty": "simple", "runMode": "constant" },
+  "requires": [ { "prefix": "example", "package": "Bytex.Examples.Nodes", "minVersion": "1.0" } ],
+  "instruments": [ { "ref": "primary", "marketKey": "bx-market:v2/SIM/BTCUSDT" } ],
+  "candleSeriesDefinitions": [ { "ref": "main", "instrument": "primary", "step": 1, "aggregation": "minute", "priceType": "last", "source": "provider" } ],
+  "parameters": [
+    { "name": "wideAbove", "type": "decimal", "label": "Wide above", "value": "0.002", "min": "0", "max": "0.5", "step": "0.0005" },
+    { "name": "size", "type": "decimal", "label": "Trade size (BTC)", "value": "0.01", "min": "0.001", "max": "10", "step": "0.01" },
+    { "name": "stopPercent", "type": "decimal", "label": "Stop (% of the fill)", "value": "1", "min": "0.1", "max": "50", "step": "0.1" },
+    { "name": "targetPercent", "type": "decimal", "label": "Target (% from the entry)", "value": "2", "min": "0.1", "max": "100", "step": "0.1" }
+  ],
+  "nodes": [
+    { "id": "bars", "type": "data.bars", "params": { "candleSeries": "main" } },
+    { "id": "range", "type": "example.range", "params": { "threshold": { "$param": "wideAbove" } } },
+    { "id": "firstToday", "type": "example.oncePerSession" },
+    { "id": "buy", "type": "act.order", "params": { "side": "buy", "orderType": "market", "sizing": { "mode": "fixed", "value": { "$param": "size" } }, "onlyWhenFlat": true } },
+    { "id": "protect", "type": "risk.exit", "params": { "stop": { "anchor": "percent", "offset": { "value": { "$param": "stopPercent" } } }, "target": { "unit": "percent", "value": { "$param": "targetPercent" } }, "trail": { "enabled": false }, "timeStopBars": 0 } }
+  ],
+  "edges": [
+    { "from": "bars:bars", "to": "range:bars" },
+    { "from": "range:wide", "to": "firstToday:in" },
+    { "from": "firstToday:out", "to": "buy:trigger" },
+    { "from": "buy:position", "to": "protect:position" }
+  ],
+  "repeat": { "enabled": true }
+}

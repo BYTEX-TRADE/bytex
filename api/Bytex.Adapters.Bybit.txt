@@ -1,0 +1,160 @@
+class Bytex.Adapters.Bybit.BybitApiException : System.Exception, System.Runtime.Serialization.ISerializable
+    .ctor(System.Int32 code, System.String message)
+    Code : System.Int32 { get; }
+    RetMsg : System.String { get; }
+class Bytex.Adapters.Bybit.BybitDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Bybit.BybitDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Instruments : Bytex.Adapters.Bybit.BybitInstrumentProvider { get; }
+    OnDispose() -> System.Void
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubscribeAsync(Bytex.Core.Model.Commands.SubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    UnsubscribeAsync(Bytex.Core.Model.Commands.UnsubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Bybit.BybitDataClientConfig : Bytex.Core.Adapters.DataClientConfig, Bytex.Adapters.Bybit.IBybitSettings, System.IEquatable<Bytex.Adapters.Bybit.BybitDataClientConfig>, System.IEquatable<Bytex.Core.Adapters.DataClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Bybit.BybitDataClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.DataClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ProductType : Bytex.Adapters.Bybit.BybitProductType { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Bybit.BybitDataClientConfig left, Bytex.Adapters.Bybit.BybitDataClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Bybit.BybitDataClientConfig left, Bytex.Adapters.Bybit.BybitDataClientConfig right) -> System.Boolean
+class Bytex.Adapters.Bybit.BybitDataClientFactory : Bytex.Core.Adapters.IDataClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.DataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IDataClient
+    Name : System.String { get; }
+class Bytex.Adapters.Bybit.BybitExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Bybit.BybitExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    CancelAllOrdersAsync(Bytex.Core.Model.Commands.CancelAllOrders command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    GenerateFillReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.FillReport>>
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    GenerateOrderStatusReportAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId> clientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.OrderStatusReport>
+    GenerateOrderStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Boolean openOnly, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.OrderStatusReport>>
+    GeneratePositionStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.PositionStatusReport>>
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    OnDispose() -> System.Void
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Bybit.BybitExecutionClientConfig : Bytex.Core.Adapters.ExecutionClientConfig, Bytex.Adapters.Bybit.IBybitSettings, System.IEquatable<Bytex.Adapters.Bybit.BybitExecutionClientConfig>, System.IEquatable<Bytex.Core.Adapters.ExecutionClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    DefaultTriggerType : Bytex.Core.Model.TriggerType { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Bybit.BybitExecutionClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.ExecutionClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ProductType : Bytex.Adapters.Bybit.BybitProductType { get; init; }
+    RecvWindowMs : System.Int32 { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Bybit.BybitExecutionClientConfig left, Bytex.Adapters.Bybit.BybitExecutionClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Bybit.BybitExecutionClientConfig left, Bytex.Adapters.Bybit.BybitExecutionClientConfig right) -> System.Boolean
+class Bytex.Adapters.Bybit.BybitExecutionClientFactory : Bytex.Core.Adapters.IExecutionClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.ExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IExecutionClient
+    Name : System.String { get; }
+class Bytex.Adapters.Bybit.BybitHistory
+    FetchBarsAsync(Bytex.Adapters.Bybit.BybitHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.DateTimeOffset start, System.DateTimeOffset end, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchBarsAsync(Bytex.Adapters.Bybit.BybitHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, Bytex.Core.Model.Primitives.UnixNanos now, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchFundingRatesAsync(Bytex.Adapters.Bybit.BybitHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.DateTimeOffset start, System.Nullable<System.DateTimeOffset> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+class Bytex.Adapters.Bybit.BybitHttp : System.IDisposable
+    .ctor(Bytex.Adapters.Bybit.IBybitSettings settings, Microsoft.Extensions.Logging.ILogger logger = null, System.Boolean requireCredentials = False, System.Int32 recvWindowMs = 5000, System.String brokerId = null)
+    Category : System.String { get; }
+    Dispose() -> System.Void
+    GetPublicAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    GetSignedAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    HasCredentials : System.Boolean { get; }
+    MeasureClockAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    PostSignedAsync(System.String path, System.Object body, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    ProductType : Bytex.Adapters.Bybit.BybitProductType { get; }
+class Bytex.Adapters.Bybit.BybitInstrumentProvider : Bytex.Core.Adapters.InstrumentProviderBase, Bytex.Core.Adapters.IInstrumentProvider
+    .ctor(Bytex.Adapters.Bybit.BybitHttp http, Bytex.Adapters.Bybit.BybitProductType productType, Bytex.Core.Adapters.InstrumentProviderConfig config = null, Microsoft.Extensions.Logging.ILogger logger = null)
+    LoadAllAsync(System.Threading.CancellationToken ct, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> filters = null) -> System.Threading.Tasks.Task
+    LoadAsync(Bytex.Core.Model.Identifiers.MarketKey id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Bybit.BybitPlugin : Bytex.Core.Adapters.IVenuePlugin, Bytex.Core.Plugins.IPlugin
+    .ctor()
+    Describe() -> Bytex.Core.Adapters.VenueDescriptor
+    Id : System.String { get; }
+    Register(Bytex.Core.Plugins.IPluginRegistry registry) -> System.Void
+    Version : System.String { get; }
+enum Bytex.Adapters.Bybit.BybitProductType : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Inverse = 3 : Bytex.Adapters.Bybit.BybitProductType
+    Linear = 2 : Bytex.Adapters.Bybit.BybitProductType
+    Option = 4 : Bytex.Adapters.Bybit.BybitProductType
+    Spot = 1 : Bytex.Adapters.Bybit.BybitProductType
+    value__ : System.Int32
+class Bytex.Adapters.Bybit.BybitVenue
+    AppliesLeverage(Bytex.Adapters.Bybit.BybitProductType type) -> System.Boolean
+    AuthExpiry : System.TimeSpan static
+    BrokerIdHeader = X-Referer : System.String
+    Category(Bytex.Adapters.Bybit.BybitProductType type) -> System.String
+    Credentials(Bytex.Adapters.Bybit.IBybitSettings s) -> System.ValueTuple<System.String, System.String>
+    DefaultHttpBase = https://api.bybit.com : System.String
+    DefaultRecvWindowMs = 5000 : System.Int32
+    DefaultWsBase = wss://stream.bybit.com : System.String
+    EnvApiKey = BYBIT_API_KEY : System.String
+    EnvApiSecret = BYBIT_API_SECRET : System.String
+    ErrorLeverageUnchanged = 110043 : System.Int32
+    ErrorParamsInvalid = 10001 : System.Int32
+    FillReportPage = 100 : System.Int32
+    FundingPage = 200 : System.Int32
+    HasCandles(Bytex.Adapters.Bybit.BybitProductType type) -> System.Boolean
+    HttpBase(Bytex.Adapters.Bybit.IBybitSettings s) -> System.String
+    InstrumentPage = 1000 : System.Int32
+    Interval(Bytex.Core.Model.Data.SamplingRule spec) -> System.String
+    InverseMakerFee : System.Decimal static
+    InverseQuoteCoin = USD : System.String
+    InverseTakerFee : System.Decimal static
+    IsTradeExecution(System.String execType) -> System.Boolean
+    KlinePage = 1000 : System.Int32
+    LargeBookDepth = 200 : System.Int32
+    LargeOptionBookDepth = 100 : System.Int32
+    LeveragePath = /v5/position/set-leverage : System.String
+    LinearSettleCoin = USDT : System.String
+    LowestRiskTier = 1 : System.Int32
+    OptionBaseCoinFilter = baseCoin : System.String
+    OptionFeeCapOfPremium : System.Decimal static
+    OptionMakerFee : System.Decimal static
+    OptionTakerFee : System.Decimal static
+    OrderReportPage = 50 : System.Int32
+    PaysFunding(Bytex.Adapters.Bybit.BybitProductType type) -> System.Boolean
+    PerpSuffix = -PERP : System.String
+    PingInterval : System.TimeSpan static
+    PublishesRiskLimits(Bytex.Adapters.Bybit.BybitProductType type) -> System.Boolean
+    RequestWindow : System.TimeSpan static
+    RequestsPerWindow = 100 : System.Int32
+    RiskLimitPage = 1000 : System.Int32
+    RiskLimitPath = /v5/market/risk-limit : System.String
+    SmallBookDepth = 50 : System.Int32
+    SmallOptionBookDepth = 25 : System.Int32
+    TimePath = /v5/market/time : System.String
+    TimestampRefusedCode = 10002 : System.Int32
+    ToMarketKey(System.String rawSymbol, Bytex.Adapters.Bybit.BybitProductType type) -> Bytex.Core.Model.Identifiers.MarketKey
+    ToRawSymbol(Bytex.Core.Model.Identifiers.MarketKey id) -> System.String
+    TopOfBookDepth = 1 : System.Int32
+    TradePage = 1000 : System.Int32
+    Venue : Bytex.Core.Model.Identifiers.Venue static
+    WsPrivate(Bytex.Adapters.Bybit.IBybitSettings s) -> System.String
+    WsPublic(Bytex.Adapters.Bybit.IBybitSettings s) -> System.String
+interface Bytex.Adapters.Bybit.IBybitSettings
+    ApiKey : System.String { get; }
+    ApiSecret : System.String { get; }
+    BaseUrlHttp : System.String { get; }
+    BaseUrlWs : System.String { get; }
+    ProductType : Bytex.Adapters.Bybit.BybitProductType { get; }

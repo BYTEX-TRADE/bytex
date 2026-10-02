@@ -1,0 +1,217 @@
+interface Bytex.Adapters.Kraken.IKrakenSettings
+    ApiKey : System.String { get; }
+    ApiSecret : System.String { get; }
+    BaseUrlHttp : System.String { get; }
+    BaseUrlWs : System.String { get; }
+    ProductType : Bytex.Adapters.Kraken.KrakenProductType { get; }
+class Bytex.Adapters.Kraken.KrakenApiException : System.Exception, System.Runtime.Serialization.ISerializable
+    .ctor(System.String code, System.Int32 httpStatus)
+    Code : System.String { get; }
+    HttpStatus : System.Int32 { get; }
+class Bytex.Adapters.Kraken.KrakenCredentials : System.IEquatable<Bytex.Adapters.Kraken.KrakenCredentials>
+    .ctor(System.String Key, System.String Secret)
+    Deconstruct(System.String& Key, System.String& Secret) -> System.Void
+    Equals(Bytex.Adapters.Kraken.KrakenCredentials other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Key : System.String { get; init; }
+    Secret : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Kraken.KrakenCredentials left, Bytex.Adapters.Kraken.KrakenCredentials right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Kraken.KrakenCredentials left, Bytex.Adapters.Kraken.KrakenCredentials right) -> System.Boolean
+class Bytex.Adapters.Kraken.KrakenDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Kraken.KrakenDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Instruments : Bytex.Adapters.Kraken.KrakenInstrumentProvider { get; }
+    OnDispose() -> System.Void
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubscribeAsync(Bytex.Core.Model.Commands.SubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    UnsubscribeAsync(Bytex.Core.Model.Commands.UnsubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Kraken.KrakenDataClientConfig : Bytex.Core.Adapters.DataClientConfig, Bytex.Adapters.Kraken.IKrakenSettings, System.IEquatable<Bytex.Adapters.Kraken.KrakenDataClientConfig>, System.IEquatable<Bytex.Core.Adapters.DataClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Kraken.KrakenDataClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.DataClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ProductType : Bytex.Adapters.Kraken.KrakenProductType { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Kraken.KrakenDataClientConfig left, Bytex.Adapters.Kraken.KrakenDataClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Kraken.KrakenDataClientConfig left, Bytex.Adapters.Kraken.KrakenDataClientConfig right) -> System.Boolean
+class Bytex.Adapters.Kraken.KrakenDataClientFactory : Bytex.Core.Adapters.IDataClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.DataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IDataClient
+    Name : System.String { get; }
+class Bytex.Adapters.Kraken.KrakenExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Kraken.KrakenExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    GenerateFillReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.FillReport>>
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    GenerateOrderStatusReportAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId> clientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.OrderStatusReport>
+    GenerateOrderStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Boolean openOnly, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.OrderStatusReport>>
+    Instruments : Bytex.Adapters.Kraken.KrakenInstrumentProvider { get; }
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    OnDispose() -> System.Void
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Kraken.KrakenExecutionClientConfig : Bytex.Core.Adapters.ExecutionClientConfig, Bytex.Adapters.Kraken.IKrakenSettings, System.IEquatable<Bytex.Adapters.Kraken.KrakenExecutionClientConfig>, System.IEquatable<Bytex.Core.Adapters.ExecutionClientConfig>
+    .ctor()
+    ApiKey : System.String { get; init; }
+    ApiSecret : System.String { get; init; }
+    BaseUrlHttp : System.String { get; init; }
+    BaseUrlWs : System.String { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Adapters.Kraken.KrakenExecutionClientConfig other) -> System.Boolean
+    Equals(Bytex.Core.Adapters.ExecutionClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ProductType : Bytex.Adapters.Kraken.KrakenProductType { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Adapters.Kraken.KrakenExecutionClientConfig left, Bytex.Adapters.Kraken.KrakenExecutionClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Adapters.Kraken.KrakenExecutionClientConfig left, Bytex.Adapters.Kraken.KrakenExecutionClientConfig right) -> System.Boolean
+class Bytex.Adapters.Kraken.KrakenExecutionClientFactory : Bytex.Core.Adapters.IExecutionClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.ExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IExecutionClient
+    Name : System.String { get; }
+class Bytex.Adapters.Kraken.KrakenFuturesDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Kraken.KrakenDataClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Instruments : Bytex.Adapters.Kraken.KrakenFuturesInstrumentProvider { get; }
+    OnDispose() -> System.Void
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubscribeAsync(Bytex.Core.Model.Commands.SubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    UnsubscribeAsync(Bytex.Core.Model.Commands.UnsubscribeCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Kraken.KrakenFuturesExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Adapters.Kraken.KrakenExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    CancelAllOrdersAsync(Bytex.Core.Model.Commands.CancelAllOrders command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    GenerateFillReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.FillReport>>
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    GenerateOrderStatusReportAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Identifiers.ClientOrderId> clientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> venueOrderId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.OrderStatusReport>
+    GenerateOrderStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Boolean openOnly, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.OrderStatusReport>>
+    GeneratePositionStatusReportsAsync(System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Reports.PositionStatusReport>>
+    Instruments : Bytex.Adapters.Kraken.KrakenFuturesInstrumentProvider { get; }
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    OnDispose() -> System.Void
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Kraken.KrakenFuturesInstrumentProvider : Bytex.Core.Adapters.InstrumentProviderBase, Bytex.Core.Adapters.IInstrumentProvider
+    .ctor(Bytex.Adapters.Kraken.KrakenHttp http, Bytex.Core.Adapters.InstrumentProviderConfig config = null, Microsoft.Extensions.Logging.ILogger logger = null)
+    LoadAllAsync(System.Threading.CancellationToken ct, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> filters = null) -> System.Threading.Tasks.Task
+    LoadAsync(Bytex.Core.Model.Identifiers.MarketKey id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    MarginTiersInfo = krakenMarginTiers : System.String
+    MaxLeverageInfo = krakenMaxLeverage : System.String
+class Bytex.Adapters.Kraken.KrakenFuturesVenue
+    AccountsPath = /derivatives/api/v3/accounts : System.String
+    ApiV3 = /derivatives/api/v3 : System.String
+    ApiV4 = /derivatives/api/v4 : System.String
+    CancelAllOrdersPath = /derivatives/api/v3/cancelallorders : System.String
+    CancelOrderPath = /derivatives/api/v3/cancelorder : System.String
+    CandlePage = 2000 : System.Int32
+    ChartsPath = /api/charts/v1 : System.String
+    ContractTierField = contracts : System.String
+    DefaultHttpBase = https://futures.kraken.com : System.String
+    DefaultMakerFee : System.Decimal static
+    DefaultTakerFee : System.Decimal static
+    DefaultWsBase = wss://futures.kraken.com : System.String
+    DerivativesPrefix = /derivatives : System.String
+    EditOrderPath = /derivatives/api/v3/editorder : System.String
+    ExpiryField = lastTradingTime : System.String
+    FeePercent : System.Decimal static
+    FeeSchedulesPath = /derivatives/api/v3/feeschedules : System.String
+    FeesFor(System.Text.Json.JsonElement schedules, System.String uid) -> System.Nullable<System.ValueTuple<System.Decimal, System.Decimal>>
+    FillsPath = /derivatives/api/v3/fills : System.String
+    FirstFeeTierVolume : System.Decimal static
+    FirstMarginTier(System.Text.Json.JsonElement instrument) -> System.ValueTuple<System.Decimal, System.Decimal, System.Decimal>
+    FlexibleFutures = flexible_futures : System.String
+    FundingInterval : System.TimeSpan static
+    InstrumentsPath = /derivatives/api/v3/instruments : System.String
+    InverseFutures = futures_inverse : System.String
+    LeveragePreferencesPath = /derivatives/api/v3/leveragepreferences : System.String
+    MaxLeverageField = maxLeverage : System.String
+    MultiCollateralAccount = flex : System.String
+    OpenOrdersPath = /derivatives/api/v3/openorders : System.String
+    OpenPositionsPath = /derivatives/api/v3/openpositions : System.String
+    PrivateFeeds : System.Collections.Generic.IReadOnlyList<System.String> static
+    RelativeRateField = relativeFundingRate : System.String
+    RequestWindow : System.TimeSpan static
+    RequestsPerWindow = 100 : System.Int32
+    Resolution(Bytex.Core.Model.Data.SamplingRule spec) -> System.String
+    SendOrderPath = /derivatives/api/v3/sendorder : System.String
+    ToMarketKey(System.String rawSymbol) -> Bytex.Core.Model.Identifiers.MarketKey
+    ToRawSymbol(Bytex.Core.Model.Identifiers.MarketKey id) -> System.String
+    TradeCandles = trade : System.String
+    UnitTierField = numNonContractUnits : System.String
+    WsPath = /ws/v1 : System.String
+class Bytex.Adapters.Kraken.KrakenHistory
+    FetchBarsAsync(Bytex.Adapters.Kraken.KrakenHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.DateTimeOffset start, System.DateTimeOffset end, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchBarsAsync(Bytex.Adapters.Kraken.KrakenHttp http, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, Bytex.Core.Model.Primitives.UnixNanos now, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    FetchFundingRatesAsync(Bytex.Adapters.Kraken.KrakenHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.DateTimeOffset start, System.Nullable<System.DateTimeOffset> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+    FetchFundingRatesAsync(Bytex.Adapters.Kraken.KrakenHttp http, Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end, System.Nullable<System.Int32> limit, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+class Bytex.Adapters.Kraken.KrakenHttp : System.IDisposable
+    .ctor(Bytex.Adapters.Kraken.IKrakenSettings settings, Microsoft.Extensions.Logging.ILogger logger = null, System.Boolean requireCredentials = False)
+    Dispose() -> System.Void
+    GetPublicAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    GetSignedAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    GetUnwrappedAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    HasCredentials : System.Boolean { get; }
+    PostSignedAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> form = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+    ProductType : Bytex.Adapters.Kraken.KrakenProductType { get; }
+    PutSignedAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>
+class Bytex.Adapters.Kraken.KrakenInstrumentProvider : Bytex.Core.Adapters.InstrumentProviderBase, Bytex.Core.Adapters.IInstrumentProvider
+    .ctor(Bytex.Adapters.Kraken.KrakenHttp http, Bytex.Core.Adapters.InstrumentProviderConfig config = null, Microsoft.Extensions.Logging.ILogger logger = null)
+    LoadAllAsync(System.Threading.CancellationToken ct, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> filters = null) -> System.Threading.Tasks.Task
+    LoadAsync(Bytex.Core.Model.Identifiers.MarketKey id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Adapters.Kraken.KrakenPlugin : Bytex.Core.Adapters.IVenuePlugin, Bytex.Core.Plugins.IPlugin
+    .ctor()
+    Describe() -> Bytex.Core.Adapters.VenueDescriptor
+    Id : System.String { get; }
+    Register(Bytex.Core.Plugins.IPluginRegistry registry) -> System.Void
+    Version : System.String { get; }
+enum Bytex.Adapters.Kraken.KrakenProductType : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    Futures = 1 : Bytex.Adapters.Kraken.KrakenProductType
+    Spot = 0 : Bytex.Adapters.Kraken.KrakenProductType
+    value__ : System.Int32
+class Bytex.Adapters.Kraken.KrakenVenue
+    AssetCodesAsync(Bytex.Adapters.Kraken.KrakenHttp http, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>>
+    AssetsPath = /0/public/Assets : System.String
+    CandlePage = 720 : System.Int32
+    Credentials(Bytex.Adapters.Kraken.IKrakenSettings s) -> Bytex.Adapters.Kraken.KrakenCredentials
+    Current(System.String assetCode) -> System.String
+    DefaultHttpBase = https://api.kraken.com : System.String
+    DefaultMakerFee : System.Decimal static
+    DefaultTakerFee : System.Decimal static
+    DefaultWsBase = wss://ws.kraken.com : System.String
+    EnvApiKey = KRAKEN_API_KEY : System.String
+    EnvApiSecret = KRAKEN_API_SECRET : System.String
+    ErrorsThatMeanNoSuchInstrument : System.Collections.Generic.IReadOnlySet<System.String> static
+    HttpBase(Bytex.Adapters.Kraken.IKrakenSettings s) -> System.String
+    Interval(Bytex.Core.Model.Data.SamplingRule spec) -> System.Int32
+    LegacyAssetCodes : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> static
+    OptionalCredentials(Bytex.Adapters.Kraken.IKrakenSettings s) -> Bytex.Adapters.Kraken.KrakenCredentials
+    PrivateWsAddress(Bytex.Adapters.Kraken.IKrakenSettings s) -> System.Uri
+    PrivateWsHost = ws-auth.kraken.com : System.String
+    RequestWindow : System.TimeSpan static
+    RequestsPerWindow = 15 : System.Int32
+    RestVersion = /0 : System.String
+    SymbolSeparator = - : System.Char
+    ToMarketKey(System.String wireSymbol) -> Bytex.Core.Model.Identifiers.MarketKey
+    ToRawSymbol(Bytex.Core.Model.Identifiers.MarketKey id) -> System.String
+    ToWireSymbol(System.String wsName) -> System.String
+    TradingStatus = online : System.String
+    Venue : Bytex.Core.Model.Identifiers.Venue static
+    WireSeparator = / : System.Char
+    WsBase(Bytex.Adapters.Kraken.IKrakenSettings s) -> System.String
+    WsVersion = /v2 : System.String

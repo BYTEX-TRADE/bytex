@@ -1,0 +1,51 @@
+{
+  "tradingRuntime": {
+    "moduleHostId": "LIVE-001",
+    "environment": "live",
+    "loadState": true,
+    "saveState": true,
+    "orderPolicy": {
+      "maxOrderSubmitRate": 10,
+      "maxNotionalPerOrder": { "bx-market:v2/BYBIT/BTCUSDT-PERP": 5000 }
+    }
+  },
+  "dataClients": [
+    {
+      "factory": "BYBIT",
+      "clientId": "BYBIT",
+      "config": {
+        "productType": "linear",
+        "instrumentProvider": { "loadIds": ["bx-market:v2/BYBIT/BTCUSDT-PERP"] }
+      }
+    }
+  ],
+  "executionClients": [
+    {
+      "factory": "BYBIT",
+      "clientId": "BYBIT",
+      "config": {
+        "productType": "linear",
+        "instrumentProvider": { "loadIds": ["bx-market:v2/BYBIT/BTCUSDT-PERP"] },
+        "defaultTriggerType": "markPrice"
+      }
+    }
+  ],
+  "strategies": [
+    {
+      "providerId": "bytex.importable",
+      "name": "Bytex.Examples.Strategies.EmaCross",
+      "payload": {
+        "strategyId": "EmaCross-001",
+        "marketKey": "bx-market:v2/BYBIT/BTCUSDT-PERP",
+        "candleSeries": "bx-candle:v2/BYBIT/BTCUSDT-PERP/minute/1/last/provider",
+        "fastPeriod": 5,
+        "slowPeriod": 13,
+        "tradeSize": 0.001
+      }
+    }
+  ],
+  "reconcileOnStart": true,
+  "reconciliationLookback": "1.00:00:00",
+  "cancelOrdersOnStop": true,
+  "closePositionsOnStop": false
+}

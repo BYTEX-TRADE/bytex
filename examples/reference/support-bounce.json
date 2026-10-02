@@ -1,0 +1,26 @@
+{
+  "name": "support-bounce",
+  "description": "The shipped support-bounce example over the same three thousand bars. The mean-reversion case, sized in base units.",
+  "document": "support-bounce",
+  "bars": 3000,
+  "seed": 7,
+  "startPrice": "50000",
+  "startingBalances": [
+    "1000000 USDT",
+    "10 BTC"
+  ],
+  "currency": "USDT",
+  "expect": {
+    "fills": 86,
+    "positions": 38,
+    "closedPositions": 37,
+    "endingBalance": "986691.24110294",
+    "realizedPnl": "-990.29639706",
+    "commissions": "930.84637247",
+    "maxDrawdown": "998.38406956",
+    "simulation": [
+      "bookDepth",
+      "partialFills"
+    ]
+  }
+}

@@ -1,0 +1,911 @@
+class Bytex.Backtest.AccountReportRow : System.IEquatable<Bytex.Backtest.AccountReportRow>
+    .ctor(Bytex.Core.Model.Identifiers.AccountId AccountId, Bytex.Core.Model.Primitives.UnixNanos Timestamp, Bytex.Core.Model.Primitives.Currency Currency, System.Decimal Total, System.Decimal Locked, System.Decimal Free)
+    AccountId : Bytex.Core.Model.Identifiers.AccountId { get; init; }
+    Currency : Bytex.Core.Model.Primitives.Currency { get; init; }
+    Deconstruct(Bytex.Core.Model.Identifiers.AccountId& AccountId, Bytex.Core.Model.Primitives.UnixNanos& Timestamp, Bytex.Core.Model.Primitives.Currency& Currency, System.Decimal& Total, System.Decimal& Locked, System.Decimal& Free) -> System.Void
+    Equals(Bytex.Backtest.AccountReportRow other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Free : System.Decimal { get; init; }
+    GetHashCode() -> System.Int32
+    Locked : System.Decimal { get; init; }
+    Timestamp : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    ToString() -> System.String
+    Total : System.Decimal { get; init; }
+    op_Equality(Bytex.Backtest.AccountReportRow left, Bytex.Backtest.AccountReportRow right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.AccountReportRow left, Bytex.Backtest.AccountReportRow right) -> System.Boolean
+class Bytex.Backtest.BacktestBatch : System.IEquatable<Bytex.Backtest.BacktestBatch>
+    .ctor()
+    Best(Bytex.Core.Model.Primitives.Currency currency, System.Func<Bytex.Backtest.BacktestBatchRow, System.Decimal> by) -> System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestBatchRow>
+    Completed : System.Int32 { get; }
+    Equals(Bytex.Backtest.BacktestBatch other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Failed : System.Int32 { get; }
+    GetHashCode() -> System.Int32
+    Rows(Bytex.Core.Model.Primitives.Currency currency) -> System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestBatchRow>
+    Runs : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestBatchRun> { get; init; }
+    Summary(Bytex.Core.Model.Primitives.Currency currency) -> System.String
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.BacktestBatch left, Bytex.Backtest.BacktestBatch right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestBatch left, Bytex.Backtest.BacktestBatch right) -> System.Boolean
+class Bytex.Backtest.BacktestBatchConfig : System.IEquatable<Bytex.Backtest.BacktestBatchConfig>
+    .ctor()
+    CandleSeriesPaths : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    Equals(Bytex.Backtest.BacktestBatchConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    InstrumentPaths : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    InstrumentStrategy : System.Int32 { get; init; }
+    Instruments : System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Identifiers.MarketKey> { get; init; }
+    MaxParallel : System.Int32 { get; init; }
+    ParameterSets : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestParameterSet> { get; init; }
+    Periods : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestPeriod> { get; init; }
+    ReportName : System.String { get; init; }
+    Run : Bytex.Backtest.BacktestRunConfig { get; init; }
+    StopOnFailure : System.Boolean { get; init; }
+    Sweeps : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestSweep> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.BacktestBatchConfig left, Bytex.Backtest.BacktestBatchConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestBatchConfig left, Bytex.Backtest.BacktestBatchConfig right) -> System.Boolean
+class Bytex.Backtest.BacktestBatchPlanner
+    Expand(Bytex.Backtest.BacktestBatchConfig batch) -> System.Collections.Generic.IReadOnlyList<System.ValueTuple<Bytex.Backtest.BacktestRunConfig, Bytex.Backtest.BacktestBatchRun>>
+    GetText(System.Text.Json.JsonElement payload, System.String path) -> System.String
+    SetValue(System.Text.Json.JsonElement payload, System.String path, System.String value) -> System.Text.Json.JsonElement
+class Bytex.Backtest.BacktestBatchRow : System.IEquatable<Bytex.Backtest.BacktestBatchRow>
+    .ctor(System.Int32 Index, System.String RunId, System.String Instrument, System.String Period, System.String Parameters, System.Int32 Trades, System.Decimal TotalPnl, System.Decimal ReturnPercent, System.Decimal MaxDrawdownPercent, System.Double SharpeRatio, System.Nullable<System.Decimal> ProfitFactor, System.String Failure)
+    Custom : Bytex.Backtest.StatisticFigures { get; init; }
+    Deconstruct(System.Int32& Index, System.String& RunId, System.String& Instrument, System.String& Period, System.String& Parameters, System.Int32& Trades, System.Decimal& TotalPnl, System.Decimal& ReturnPercent, System.Decimal& MaxDrawdownPercent, System.Double& SharpeRatio, System.Nullable<System.Decimal>& ProfitFactor, System.String& Failure) -> System.Void
+    Equals(Bytex.Backtest.BacktestBatchRow other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Failure : System.String { get; init; }
+    GetHashCode() -> System.Int32
+    Index : System.Int32 { get; init; }
+    Instrument : System.String { get; init; }
+    MaxDrawdownPercent : System.Decimal { get; init; }
+    Parameters : System.String { get; init; }
+    Period : System.String { get; init; }
+    ProfitFactor : System.Nullable<System.Decimal> { get; init; }
+    ReturnPercent : System.Decimal { get; init; }
+    RunId : System.String { get; init; }
+    SharpeRatio : System.Double { get; init; }
+    ToString() -> System.String
+    TotalPnl : System.Decimal { get; init; }
+    Trades : System.Int32 { get; init; }
+    op_Equality(Bytex.Backtest.BacktestBatchRow left, Bytex.Backtest.BacktestBatchRow right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestBatchRow left, Bytex.Backtest.BacktestBatchRow right) -> System.Boolean
+class Bytex.Backtest.BacktestBatchRun : System.IEquatable<Bytex.Backtest.BacktestBatchRun>
+    .ctor()
+    Equals(Bytex.Backtest.BacktestBatchRun other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Failure : System.String { get; init; }
+    GetHashCode() -> System.Int32
+    Index : System.Int32 { get; init; }
+    Instrument : System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> { get; init; }
+    ParameterText : System.String { get; }
+    Parameters : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    Period : Bytex.Backtest.BacktestPeriod { get; init; }
+    Result : Bytex.Backtest.BacktestResult { get; init; }
+    RunId : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.BacktestBatchRun left, Bytex.Backtest.BacktestBatchRun right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestBatchRun left, Bytex.Backtest.BacktestBatchRun right) -> System.Boolean
+class Bytex.Backtest.BacktestDataClient : Bytex.Core.Adapters.DataClientBase, Bytex.Core.Adapters.IDataClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.Venue venue, Bytex.Core.Adapters.TradingRuntimeServices services, System.Func<Bytex.Core.Model.Commands.RequestCommand, System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.IData>> history)
+    RequestAsync(Bytex.Core.Model.Commands.RequestCommand command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Backtest.BacktestDataConfig : System.IEquatable<Bytex.Backtest.BacktestDataConfig>
+    .ctor()
+    CandleSeries : System.Nullable<Bytex.Core.Model.Data.CandleSeries> { get; init; }
+    CatalogPath : System.String { get; init; }
+    DataKind : System.String { get; init; }
+    End : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    Equals(Bytex.Backtest.BacktestDataConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    MarketKey : System.Nullable<Bytex.Core.Model.Identifiers.MarketKey> { get; init; }
+    Start : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.BacktestDataConfig left, Bytex.Backtest.BacktestDataConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestDataConfig left, Bytex.Backtest.BacktestDataConfig right) -> System.Boolean
+class Bytex.Backtest.BacktestEngine : System.IDisposable
+    .ctor(Bytex.Backtest.BacktestEngineConfig config = null, Microsoft.Extensions.Logging.ILoggerFactory loggerFactory = null)
+    AddData(System.Collections.Generic.IEnumerable<Bytex.Core.Model.Data.IData> data) -> System.Void
+    AddInstrument(Bytex.Core.Model.Instruments.Instrument instrument) -> System.Void
+    AddOrderSchedule(Bytex.Core.Trading.OrderSchedule algorithm) -> System.Void
+    AddRuntimeModule(Bytex.Core.Trading.RuntimeModule runtimeModule) -> System.Void
+    AddStrategy(Bytex.Core.Trading.Strategy strategy) -> System.Void
+    AddVenue(Bytex.Backtest.SimulatedVenueConfig config) -> Bytex.Backtest.SimulatedExchange
+    BacktestEnd : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; }
+    BacktestStart : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; }
+    Cache : Bytex.Core.Caching.Cache { get; }
+    ClearData() -> System.Void
+    ClearStrategies() -> System.Void
+    Clock : Bytex.Core.Timing.TestClock { get; }
+    Config : Bytex.Backtest.BacktestEngineConfig { get; }
+    Data : System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.IData> { get; }
+    Dispose() -> System.Void
+    Elapsed : System.TimeSpan { get; }
+    End() -> System.Void
+    Exchanges : System.Collections.Generic.IReadOnlyDictionary<Bytex.Core.Model.Identifiers.Venue, Bytex.Backtest.SimulatedExchange> { get; }
+    GetResult() -> Bytex.Backtest.BacktestResult
+    Iteration : System.Int64 { get; }
+    LoggerFactory : Microsoft.Extensions.Logging.ILoggerFactory { get; }
+    ModuleHost : Bytex.Core.Trading.ModuleHost { get; }
+    ReleaseDispatched() -> System.Int32
+    Reset() -> System.Void
+    Run(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Boolean streaming = False) -> System.Void
+    RunFinished : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; }
+    RunStarted : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; }
+    TradingRuntime : Bytex.Core.TradingRuntime.TradingRuntime { get; }
+class Bytex.Backtest.BacktestEngineConfig : System.IEquatable<Bytex.Backtest.BacktestEngineConfig>
+    .ctor()
+    Equals(Bytex.Backtest.BacktestEngineConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    LogData : System.Boolean { get; init; }
+    RunId : System.String { get; init; }
+    Statistics : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.IPerformanceStatistic> { get; init; }
+    StopOnRuntimeModuleFault : System.Boolean { get; init; }
+    ToString() -> System.String
+    TradingRuntime : Bytex.Core.TradingRuntime.TradingRuntimeConfig { get; init; }
+    op_Equality(Bytex.Backtest.BacktestEngineConfig left, Bytex.Backtest.BacktestEngineConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestEngineConfig left, Bytex.Backtest.BacktestEngineConfig right) -> System.Boolean
+class Bytex.Backtest.BacktestExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Backtest.SimulatedExchange exchange, Bytex.Core.Adapters.TradingRuntimeServices services)
+    CancelAllOrdersAsync(Bytex.Core.Model.Commands.CancelAllOrders command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Exchange : Bytex.Backtest.SimulatedExchange { get; }
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubmitOrderListAsync(Bytex.Core.Model.Commands.SubmitOrderList command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Backtest.BacktestNode
+    .ctor(Bytex.Core.Plugins.PluginRegistry registry = null, Microsoft.Extensions.Logging.ILoggerFactory loggerFactory = null)
+    BuildEngineAsync(Bytex.Backtest.BacktestRunConfig run, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<Bytex.Backtest.BacktestEngine>
+    Registry : Bytex.Core.Plugins.PluginRegistry { get; }
+    RunAsync(Bytex.Backtest.BacktestRunConfig run, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<Bytex.Backtest.BacktestResult>
+    RunAsync(System.Collections.Generic.IEnumerable<Bytex.Backtest.BacktestRunConfig> runs, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestResult>>
+    RunBatchAsync(Bytex.Backtest.BacktestBatchConfig batch, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<Bytex.Backtest.BacktestBatch>
+    RunSearchAsync(Bytex.Backtest.BacktestSearchConfig search, Bytex.Core.Model.Primitives.Currency currency, System.Func<Bytex.Backtest.BacktestBatchRow, System.Decimal> fitness, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<Bytex.Backtest.BacktestSearch>
+    RunSearchAsync(Bytex.Backtest.BacktestSearchConfig search, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<Bytex.Backtest.BacktestSearch>
+class Bytex.Backtest.BacktestParameterSet : System.IEquatable<Bytex.Backtest.BacktestParameterSet>
+    .ctor()
+    Equals(Bytex.Backtest.BacktestParameterSet other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Strategy : System.Int32 { get; init; }
+    ToString() -> System.String
+    Values : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    op_Equality(Bytex.Backtest.BacktestParameterSet left, Bytex.Backtest.BacktestParameterSet right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestParameterSet left, Bytex.Backtest.BacktestParameterSet right) -> System.Boolean
+class Bytex.Backtest.BacktestPeriod : System.IEquatable<Bytex.Backtest.BacktestPeriod>
+    .ctor(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> Start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> End, System.String Label = null)
+    Deconstruct(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos>& Start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos>& End, System.String& Label) -> System.Void
+    End : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    Equals(Bytex.Backtest.BacktestPeriod other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Label : System.String { get; init; }
+    Name : System.String { get; }
+    Start : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.BacktestPeriod left, Bytex.Backtest.BacktestPeriod right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestPeriod left, Bytex.Backtest.BacktestPeriod right) -> System.Boolean
+class Bytex.Backtest.BacktestResult
+    .ctor()
+    Accounts : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.AccountReportRow> { get; init; }
+    Applied : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    BacktestEnd : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    BacktestStart : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    Currencies : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.CurrencyStatistics> { get; init; }
+    Elapsed : System.TimeSpan { get; init; }
+    EquityCurves : System.Collections.Generic.IReadOnlyDictionary<Bytex.Core.Model.Primitives.Currency, System.Collections.Generic.IReadOnlyList<Bytex.Backtest.EquityPoint>> { get; init; }
+    FaultedStrategies : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    Fills : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.FillReportRow> { get; init; }
+    From(Bytex.Backtest.BacktestEngine engine) -> Bytex.Backtest.BacktestResult
+    Funding : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.FundingReportRow> { get; init; }
+    Iterations : System.Int64 { get; init; }
+    Leverages : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.LeverageReportRow> { get; init; }
+    Liquidations : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.LiquidationReportRow> { get; init; }
+    MarginSources : System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Instruments.MarginSource> { get; init; }
+    ModuleCharges : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.ModuleChargeReportRow> { get; init; }
+    ModuleHostId : Bytex.Core.Model.Identifiers.ModuleHostId { get; init; }
+    Orders : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.OrderReportRow> { get; init; }
+    Participation : Bytex.Backtest.ParticipationSummary { get; init; }
+    Positions : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.PositionReportRow> { get; init; }
+    RunFinished : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    RunId : System.String { get; init; }
+    RunStarted : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    Simulation : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    Summary() -> System.String
+    TotalEvents : System.Int32 { get; init; }
+    TotalOrders : System.Int32 { get; init; }
+    TotalPositions : System.Int32 { get; init; }
+    Trades : Bytex.Backtest.TradeStatistics { get; init; }
+class Bytex.Backtest.BacktestRunConfig : System.IEquatable<Bytex.Backtest.BacktestRunConfig>
+    .ctor()
+    ChunkSize : System.Nullable<System.Int32> { get; init; }
+    Data : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestDataConfig> { get; init; }
+    End : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    Engine : Bytex.Backtest.BacktestEngineConfig { get; init; }
+    Equals(Bytex.Backtest.BacktestRunConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    OutputDirectory : System.String { get; init; }
+    RuntimeModules : System.Collections.Generic.IReadOnlyList<Bytex.Core.Plugins.RuntimeModuleDefinition> { get; init; }
+    Start : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    Strategies : System.Collections.Generic.IReadOnlyList<Bytex.Core.Plugins.StrategyDefinition> { get; init; }
+    ToString() -> System.String
+    Venues : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestVenueConfig> { get; init; }
+    op_Equality(Bytex.Backtest.BacktestRunConfig left, Bytex.Backtest.BacktestRunConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestRunConfig left, Bytex.Backtest.BacktestRunConfig right) -> System.Boolean
+class Bytex.Backtest.BacktestSearch
+    Best : Bytex.Backtest.BacktestSearchCandidate { get; }
+    Candidates : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestSearchCandidate> { get; }
+    Config : Bytex.Backtest.BacktestSearchConfig { get; }
+    Generations : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestSearchGeneration> { get; }
+    Ran : System.Int32 { get; }
+    StoppedEarly : System.Boolean { get; }
+    Summary() -> System.String
+class Bytex.Backtest.BacktestSearchCandidate : System.IEquatable<Bytex.Backtest.BacktestSearchCandidate>
+    .ctor()
+    Equals(Bytex.Backtest.BacktestSearchCandidate other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Fitness : System.Nullable<System.Decimal> { get; init; }
+    Generation : System.Int32 { get; init; }
+    GetHashCode() -> System.Int32
+    Index : System.Int32 { get; init; }
+    Point : Bytex.Backtest.BacktestParameterSet { get; init; }
+    PointText : System.String { get; }
+    Reused : System.Boolean { get; init; }
+    Run : Bytex.Backtest.BacktestBatchRun { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.BacktestSearchCandidate left, Bytex.Backtest.BacktestSearchCandidate right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestSearchCandidate left, Bytex.Backtest.BacktestSearchCandidate right) -> System.Boolean
+class Bytex.Backtest.BacktestSearchConfig : System.IEquatable<Bytex.Backtest.BacktestSearchConfig>
+    .ctor()
+    CrossoverRate : System.Double { get; init; }
+    Elites : System.Int32 { get; init; }
+    Equals(Bytex.Backtest.BacktestSearchConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Generations : System.Int32 { get; init; }
+    GetHashCode() -> System.Int32
+    MaxParallel : System.Int32 { get; init; }
+    MutationRate : System.Double { get; init; }
+    Objective : Bytex.Backtest.BacktestSearchObjective { get; init; }
+    Population : System.Int32 { get; init; }
+    Run : Bytex.Backtest.BacktestRunConfig { get; init; }
+    Seed : System.Int32 { get; init; }
+    Space : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestSearchParameter> { get; init; }
+    StopAfterGenerationsWithoutImprovement : System.Nullable<System.Int32> { get; init; }
+    StopOnFailure : System.Boolean { get; init; }
+    ToString() -> System.String
+    TournamentSize : System.Int32 { get; init; }
+    op_Equality(Bytex.Backtest.BacktestSearchConfig left, Bytex.Backtest.BacktestSearchConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestSearchConfig left, Bytex.Backtest.BacktestSearchConfig right) -> System.Boolean
+class Bytex.Backtest.BacktestSearchGeneration : System.IEquatable<Bytex.Backtest.BacktestSearchGeneration>
+    .ctor()
+    Best : Bytex.Backtest.BacktestSearchCandidate { get; }
+    Candidates : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestSearchCandidate> { get; init; }
+    Equals(Bytex.Backtest.BacktestSearchGeneration other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Index : System.Int32 { get; init; }
+    Ran : System.Int32 { get; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.BacktestSearchGeneration left, Bytex.Backtest.BacktestSearchGeneration right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestSearchGeneration left, Bytex.Backtest.BacktestSearchGeneration right) -> System.Boolean
+class Bytex.Backtest.BacktestSearchObjective : System.IEquatable<Bytex.Backtest.BacktestSearchObjective>
+    .ctor()
+    Currency : System.String { get; init; }
+    Custom : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    Equals(Bytex.Backtest.BacktestSearchObjective other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Figure : System.String { get; init; }
+    Figures : System.Collections.Generic.IReadOnlyDictionary<System.String, System.Func<Bytex.Backtest.BacktestBatchRow, System.Decimal>> { get; }
+    Fitness() -> System.Func<Bytex.Backtest.BacktestBatchRow, System.Decimal>
+    GetHashCode() -> System.Int32
+    Minimize : System.Boolean { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.BacktestSearchObjective left, Bytex.Backtest.BacktestSearchObjective right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestSearchObjective left, Bytex.Backtest.BacktestSearchObjective right) -> System.Boolean
+class Bytex.Backtest.BacktestSearchParameter : System.IEquatable<Bytex.Backtest.BacktestSearchParameter>
+    .ctor()
+    Choices : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    Equals(Bytex.Backtest.BacktestSearchParameter other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    IsRange : System.Boolean { get; }
+    Max : System.Nullable<System.Decimal> { get; init; }
+    Min : System.Nullable<System.Decimal> { get; init; }
+    Path : System.String { get; init; }
+    Step : System.Decimal { get; init; }
+    Strategy : System.Int32 { get; init; }
+    ToString() -> System.String
+    Values() -> System.Collections.Generic.IReadOnlyList<System.String>
+    op_Equality(Bytex.Backtest.BacktestSearchParameter left, Bytex.Backtest.BacktestSearchParameter right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestSearchParameter left, Bytex.Backtest.BacktestSearchParameter right) -> System.Boolean
+class Bytex.Backtest.BacktestSearchPlanner
+    FirstGeneration(Bytex.Backtest.BacktestSearchConfig search, System.Random random) -> System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestParameterSet>
+    NextGeneration(Bytex.Backtest.BacktestSearchConfig search, System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestSearchCandidate> judged, System.Random random) -> System.Collections.Generic.IReadOnlyList<Bytex.Backtest.BacktestParameterSet>
+    Validate(Bytex.Backtest.BacktestSearchConfig search) -> System.Void
+class Bytex.Backtest.BacktestSweep : System.IEquatable<Bytex.Backtest.BacktestSweep>
+    .ctor()
+    Equals(Bytex.Backtest.BacktestSweep other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Path : System.String { get; init; }
+    Strategy : System.Int32 { get; init; }
+    ToString() -> System.String
+    Values : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    op_Equality(Bytex.Backtest.BacktestSweep left, Bytex.Backtest.BacktestSweep right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestSweep left, Bytex.Backtest.BacktestSweep right) -> System.Boolean
+class Bytex.Backtest.BacktestVenueConfig : System.IEquatable<Bytex.Backtest.BacktestVenueConfig>
+    .ctor()
+    AccountType : Bytex.Core.Model.AccountType { get; init; }
+    BarExecution : Bytex.Backtest.BarExecutionMode { get; init; }
+    BarVolumeShare : System.Nullable<System.Decimal> { get; init; }
+    BaseCurrency : System.String { get; init; }
+    BookType : Bytex.Core.Model.BookType { get; init; }
+    DefaultLeverage : System.Decimal { get; init; }
+    Equals(Bytex.Backtest.BacktestVenueConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    FeeModel : Bytex.Backtest.FeeModelConfig { get; init; }
+    Fees : Bytex.Core.Model.FeeSettings { get; init; }
+    FillModelSeed : System.Int32 { get; init; }
+    FillSizing : Bytex.Backtest.FillSizing { get; init; }
+    GetHashCode() -> System.Int32
+    Latency : System.TimeSpan { get; init; }
+    Liquidate : System.Boolean { get; init; }
+    MarginModel : Bytex.Backtest.MarginModelConfig { get; init; }
+    MaxBarWalkSteps : System.Int32 { get; init; }
+    Modules : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.SimulationModuleConfig> { get; init; }
+    OmsType : Bytex.Core.Model.OmsType { get; init; }
+    ProbFillOnLimit : System.Decimal { get; init; }
+    ProbSlippage : System.Decimal { get; init; }
+    RefusesOrderAmends : System.Boolean { get; init; }
+    RejectStopOrdersAtMarket : System.Boolean { get; init; }
+    SessionEndUtc : System.Nullable<System.TimeSpan> { get; init; }
+    StartingBalances : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    SupportContingentOrders : System.Boolean { get; init; }
+    ToString() -> System.String
+    ToVenueConfig() -> Bytex.Backtest.SimulatedVenueConfig
+    ToVenueConfig(System.Collections.Generic.IReadOnlyList<Bytex.Backtest.ISimulationModuleFactory> moduleFactories) -> Bytex.Backtest.SimulatedVenueConfig
+    Venue : System.String { get; init; }
+    op_Equality(Bytex.Backtest.BacktestVenueConfig left, Bytex.Backtest.BacktestVenueConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.BacktestVenueConfig left, Bytex.Backtest.BacktestVenueConfig right) -> System.Boolean
+enum Bytex.Backtest.BarExecutionMode : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    CloseOnly = 2 : Bytex.Backtest.BarExecutionMode
+    HighFirst = 4 : Bytex.Backtest.BarExecutionMode
+    LowFirst = 5 : Bytex.Backtest.BarExecutionMode
+    OhlcPath = 1 : Bytex.Backtest.BarExecutionMode
+    TickSizePath = 3 : Bytex.Backtest.BarExecutionMode
+    value__ : System.Int32
+class Bytex.Backtest.BuiltinSimulationModuleFactory : Bytex.Backtest.ISimulationModuleFactory
+    .ctor()
+    Create(System.String name, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> parameters) -> Bytex.Backtest.ISimulationModule
+    Names : System.Collections.Generic.IReadOnlyList<System.String> { get; }
+class Bytex.Backtest.CurrencyStatistics : System.IEquatable<Bytex.Backtest.CurrencyStatistics>
+    .ctor(Bytex.Core.Model.Primitives.Currency Currency, System.Decimal StartingBalance, System.Decimal EndingBalance, System.Decimal RealizedPnl, System.Decimal UnrealizedPnl, System.Decimal TotalPnl, System.Decimal TotalCommissions, System.Decimal ReturnPercent, System.Decimal MaxDrawdown, System.Decimal MaxDrawdownPercent, System.Double SharpeRatio, System.Double SortinoRatio, System.Nullable<System.Decimal> ProfitFactor, System.Decimal Expectancy)
+    Currency : Bytex.Core.Model.Primitives.Currency { get; init; }
+    Custom : Bytex.Backtest.StatisticFigures { get; init; }
+    Deconstruct(Bytex.Core.Model.Primitives.Currency& Currency, System.Decimal& StartingBalance, System.Decimal& EndingBalance, System.Decimal& RealizedPnl, System.Decimal& UnrealizedPnl, System.Decimal& TotalPnl, System.Decimal& TotalCommissions, System.Decimal& ReturnPercent, System.Decimal& MaxDrawdown, System.Decimal& MaxDrawdownPercent, System.Double& SharpeRatio, System.Double& SortinoRatio, System.Nullable<System.Decimal>& ProfitFactor, System.Decimal& Expectancy) -> System.Void
+    EndingBalance : System.Decimal { get; init; }
+    Equals(Bytex.Backtest.CurrencyStatistics other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Expectancy : System.Decimal { get; init; }
+    GetHashCode() -> System.Int32
+    MaxDrawdown : System.Decimal { get; init; }
+    MaxDrawdownPercent : System.Decimal { get; init; }
+    ProfitFactor : System.Nullable<System.Decimal> { get; init; }
+    RealizedPnl : System.Decimal { get; init; }
+    ReturnPercent : System.Decimal { get; init; }
+    SharpeRatio : System.Double { get; init; }
+    SortinoRatio : System.Double { get; init; }
+    StartingBalance : System.Decimal { get; init; }
+    ToString() -> System.String
+    TotalCommissions : System.Decimal { get; init; }
+    TotalPnl : System.Decimal { get; init; }
+    UnrealizedPnl : System.Decimal { get; init; }
+    op_Equality(Bytex.Backtest.CurrencyStatistics left, Bytex.Backtest.CurrencyStatistics right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.CurrencyStatistics left, Bytex.Backtest.CurrencyStatistics right) -> System.Boolean
+class Bytex.Backtest.EquityPoint : System.IEquatable<Bytex.Backtest.EquityPoint>
+    .ctor(Bytex.Core.Model.Primitives.UnixNanos Timestamp, System.Decimal Equity)
+    Deconstruct(Bytex.Core.Model.Primitives.UnixNanos& Timestamp, System.Decimal& Equity) -> System.Void
+    Equals(Bytex.Backtest.EquityPoint other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Equity : System.Decimal { get; init; }
+    GetHashCode() -> System.Int32
+    Timestamp : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.EquityPoint left, Bytex.Backtest.EquityPoint right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.EquityPoint left, Bytex.Backtest.EquityPoint right) -> System.Boolean
+class Bytex.Backtest.FeeModel
+    .ctor()
+    Commission(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.Quantity lastQty, Bytex.Core.Model.Primitives.Price lastPx, Bytex.Core.Model.LiquiditySide liquiditySide) -> Bytex.Core.Model.Primitives.Money
+    From(Bytex.Core.Model.FeeSettings settings) -> Bytex.Backtest.FeeModel
+class Bytex.Backtest.FeeModelConfig : System.IEquatable<Bytex.Backtest.FeeModelConfig>
+    .ctor()
+    Amount : System.String { get; init; }
+    Build() -> Bytex.Backtest.FeeModel
+    Equals(Bytex.Backtest.FeeModelConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Fixed = fixed : System.String
+    GetHashCode() -> System.Int32
+    Kind : System.String { get; init; }
+    MakerAmount : System.String { get; init; }
+    MakerTaker = makerTaker : System.String
+    PerContract = perContract : System.String
+    Percent = percent : System.String
+    Rate : System.Decimal { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.FeeModelConfig left, Bytex.Backtest.FeeModelConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.FeeModelConfig left, Bytex.Backtest.FeeModelConfig right) -> System.Boolean
+class Bytex.Backtest.FillModel
+    .ctor(System.Decimal probFillOnLimit = 1, System.Decimal probFillOnStop = 1, System.Decimal probSlippage = 0, System.Int32 seed = 42)
+    DefaultSeed = 42 : System.Int32
+    IsLimitFilled() -> System.Boolean
+    IsSlipped() -> System.Boolean
+    IsStopFilled() -> System.Boolean
+    ProbFillOnLimit : System.Decimal { get; }
+    ProbFillOnStop : System.Decimal { get; }
+    ProbSlippage : System.Decimal { get; }
+    Reset() -> System.Void
+class Bytex.Backtest.FillReportRow : System.IEquatable<Bytex.Backtest.FillReportRow>
+    .ctor(Bytex.Core.Model.Identifiers.TradeId TradeId, Bytex.Core.Model.Identifiers.ClientOrderId ClientOrderId, Bytex.Core.Model.Identifiers.StrategyId StrategyId, Bytex.Core.Model.Identifiers.MarketKey MarketKey, Bytex.Core.Model.OrderSide Side, Bytex.Core.Model.Primitives.Quantity LastQty, Bytex.Core.Model.Primitives.Price LastPx, Bytex.Core.Model.Primitives.Money Commission, Bytex.Core.Model.LiquiditySide LiquiditySide, Bytex.Core.Model.Primitives.UnixNanos EventTime)
+    ClientOrderId : Bytex.Core.Model.Identifiers.ClientOrderId { get; init; }
+    Commission : Bytex.Core.Model.Primitives.Money { get; init; }
+    Deconstruct(Bytex.Core.Model.Identifiers.TradeId& TradeId, Bytex.Core.Model.Identifiers.ClientOrderId& ClientOrderId, Bytex.Core.Model.Identifiers.StrategyId& StrategyId, Bytex.Core.Model.Identifiers.MarketKey& MarketKey, Bytex.Core.Model.OrderSide& Side, Bytex.Core.Model.Primitives.Quantity& LastQty, Bytex.Core.Model.Primitives.Price& LastPx, Bytex.Core.Model.Primitives.Money& Commission, Bytex.Core.Model.LiquiditySide& LiquiditySide, Bytex.Core.Model.Primitives.UnixNanos& EventTime) -> System.Void
+    Equals(Bytex.Backtest.FillReportRow other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    EventTime : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    From(Bytex.Core.Model.Events.OrderFilled f) -> Bytex.Backtest.FillReportRow
+    GetHashCode() -> System.Int32
+    LastPx : Bytex.Core.Model.Primitives.Price { get; init; }
+    LastQty : Bytex.Core.Model.Primitives.Quantity { get; init; }
+    LiquiditySide : Bytex.Core.Model.LiquiditySide { get; init; }
+    MarketKey : Bytex.Core.Model.Identifiers.MarketKey { get; init; }
+    Side : Bytex.Core.Model.OrderSide { get; init; }
+    StrategyId : Bytex.Core.Model.Identifiers.StrategyId { get; init; }
+    ToString() -> System.String
+    TradeId : Bytex.Core.Model.Identifiers.TradeId { get; init; }
+    op_Equality(Bytex.Backtest.FillReportRow left, Bytex.Backtest.FillReportRow right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.FillReportRow left, Bytex.Backtest.FillReportRow right) -> System.Boolean
+enum Bytex.Backtest.FillSizing : System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable
+    AvailableSize = 1 : Bytex.Backtest.FillSizing
+    WholeFills = 2 : Bytex.Backtest.FillSizing
+    value__ : System.Int32
+class Bytex.Backtest.FixedFeeModel : Bytex.Backtest.FeeModel
+    .ctor(Bytex.Core.Model.Primitives.Money fee)
+    Commission(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.Quantity lastQty, Bytex.Core.Model.Primitives.Price lastPx, Bytex.Core.Model.LiquiditySide liquiditySide) -> Bytex.Core.Model.Primitives.Money
+class Bytex.Backtest.FixedQuoteFeeModel : Bytex.Backtest.FeeModel
+    .ctor(System.Decimal perFill)
+    Commission(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.Quantity lastQty, Bytex.Core.Model.Primitives.Price lastPx, Bytex.Core.Model.LiquiditySide liquiditySide) -> Bytex.Core.Model.Primitives.Money
+    PerFill : System.Decimal { get; }
+class Bytex.Backtest.FundingPayment : System.IEquatable<Bytex.Backtest.FundingPayment>
+    .ctor(Bytex.Core.Model.Identifiers.MarketKey MarketKey, System.Decimal Rate, System.Decimal SignedQuantity, Bytex.Core.Model.Primitives.Price Price, Bytex.Core.Model.Primitives.Money Amount, Bytex.Core.Model.Primitives.UnixNanos EventTime)
+    Amount : Bytex.Core.Model.Primitives.Money { get; init; }
+    Deconstruct(Bytex.Core.Model.Identifiers.MarketKey& MarketKey, System.Decimal& Rate, System.Decimal& SignedQuantity, Bytex.Core.Model.Primitives.Price& Price, Bytex.Core.Model.Primitives.Money& Amount, Bytex.Core.Model.Primitives.UnixNanos& EventTime) -> System.Void
+    Equals(Bytex.Backtest.FundingPayment other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    EventTime : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    GetHashCode() -> System.Int32
+    MarketKey : Bytex.Core.Model.Identifiers.MarketKey { get; init; }
+    Price : Bytex.Core.Model.Primitives.Price { get; init; }
+    Rate : System.Decimal { get; init; }
+    SignedQuantity : System.Decimal { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.FundingPayment left, Bytex.Backtest.FundingPayment right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.FundingPayment left, Bytex.Backtest.FundingPayment right) -> System.Boolean
+class Bytex.Backtest.FundingReportRow : System.IEquatable<Bytex.Backtest.FundingReportRow>
+    .ctor(Bytex.Core.Model.Primitives.UnixNanos Timestamp, Bytex.Core.Model.Identifiers.MarketKey MarketKey, System.Decimal Rate, System.Decimal Quantity, System.Decimal Price, Bytex.Core.Model.Primitives.Currency Currency, System.Decimal Amount)
+    Amount : System.Decimal { get; init; }
+    Currency : Bytex.Core.Model.Primitives.Currency { get; init; }
+    Deconstruct(Bytex.Core.Model.Primitives.UnixNanos& Timestamp, Bytex.Core.Model.Identifiers.MarketKey& MarketKey, System.Decimal& Rate, System.Decimal& Quantity, System.Decimal& Price, Bytex.Core.Model.Primitives.Currency& Currency, System.Decimal& Amount) -> System.Void
+    Equals(Bytex.Backtest.FundingReportRow other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    From(Bytex.Backtest.FundingPayment payment) -> Bytex.Backtest.FundingReportRow
+    GetHashCode() -> System.Int32
+    MarketKey : Bytex.Core.Model.Identifiers.MarketKey { get; init; }
+    Price : System.Decimal { get; init; }
+    Quantity : System.Decimal { get; init; }
+    Rate : System.Decimal { get; init; }
+    Timestamp : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.FundingReportRow left, Bytex.Backtest.FundingReportRow right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.FundingReportRow left, Bytex.Backtest.FundingReportRow right) -> System.Boolean
+interface Bytex.Backtest.IPerformanceStatistic
+    Compute(Bytex.Backtest.StatisticInput input) -> System.Nullable<System.Decimal>
+    Name : System.String { get; }
+interface Bytex.Backtest.ISimulatedVenueState
+    Charge(System.String module, Bytex.Core.Model.Primitives.Money amount, System.String reason, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    Instrument(Bytex.Core.Model.Identifiers.MarketKey marketKey) -> Bytex.Core.Model.Instruments.Instrument
+    Log : Microsoft.Extensions.Logging.ILogger { get; }
+    Notional(Bytex.Core.Model.Identifiers.MarketKey marketKey) -> System.Nullable<System.Decimal>
+    OpenPositions : System.Collections.Generic.IReadOnlyList<System.ValueTuple<Bytex.Core.Model.Identifiers.MarketKey, System.Decimal>> { get; }
+    Price(Bytex.Core.Model.Identifiers.MarketKey marketKey) -> System.Nullable<System.Decimal>
+    Venue : Bytex.Core.Model.Identifiers.Venue { get; }
+interface Bytex.Backtest.ISimulationModule
+    Name : System.String { get; }
+    OnTime(Bytex.Core.Model.Primitives.UnixNanos now, Bytex.Backtest.ISimulatedVenueState venue) -> System.Void
+interface Bytex.Backtest.ISimulationModuleFactory
+    Create(System.String name, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> parameters) -> Bytex.Backtest.ISimulationModule
+    Names : System.Collections.Generic.IReadOnlyList<System.String> { get; }
+class Bytex.Backtest.LatencyModel : System.IEquatable<Bytex.Backtest.LatencyModel>
+    .ctor(System.TimeSpan Base, System.TimeSpan Insert, System.TimeSpan Update, System.TimeSpan Cancel)
+    Base : System.TimeSpan { get; init; }
+    Cancel : System.TimeSpan { get; init; }
+    CancelLatency : System.TimeSpan { get; }
+    Deconstruct(System.TimeSpan& Base, System.TimeSpan& Insert, System.TimeSpan& Update, System.TimeSpan& Cancel) -> System.Void
+    Equals(Bytex.Backtest.LatencyModel other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Insert : System.TimeSpan { get; init; }
+    InsertLatency : System.TimeSpan { get; }
+    IsZero : System.Boolean { get; }
+    ToString() -> System.String
+    Uniform(System.TimeSpan latency) -> Bytex.Backtest.LatencyModel
+    Update : System.TimeSpan { get; init; }
+    UpdateLatency : System.TimeSpan { get; }
+    Zero : Bytex.Backtest.LatencyModel static
+    op_Equality(Bytex.Backtest.LatencyModel left, Bytex.Backtest.LatencyModel right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.LatencyModel left, Bytex.Backtest.LatencyModel right) -> System.Boolean
+class Bytex.Backtest.LeverageReportRow : System.IEquatable<Bytex.Backtest.LeverageReportRow>
+    .ctor(Bytex.Core.Model.Identifiers.MarketKey MarketKey, System.Decimal Requested, System.Decimal Applied, System.Decimal MarginInit, Bytex.Core.Model.Instruments.MarginSource MarginSource, System.String MarginModel = rate)
+    Applied : System.Decimal { get; init; }
+    Capped : System.Boolean { get; }
+    Deconstruct(Bytex.Core.Model.Identifiers.MarketKey& MarketKey, System.Decimal& Requested, System.Decimal& Applied, System.Decimal& MarginInit, Bytex.Core.Model.Instruments.MarginSource& MarginSource, System.String& MarginModel) -> System.Void
+    Equals(Bytex.Backtest.LeverageReportRow other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    For(Bytex.Core.Model.Instruments.Instrument instrument, System.Decimal requested, Bytex.Core.Model.Accounts.IMarginModel model = null) -> Bytex.Backtest.LeverageReportRow
+    GetHashCode() -> System.Int32
+    MarginInit : System.Decimal { get; init; }
+    MarginModel : System.String { get; init; }
+    MarginSource : Bytex.Core.Model.Instruments.MarginSource { get; init; }
+    MarketKey : Bytex.Core.Model.Identifiers.MarketKey { get; init; }
+    Requested : System.Decimal { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.LeverageReportRow left, Bytex.Backtest.LeverageReportRow right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.LeverageReportRow left, Bytex.Backtest.LeverageReportRow right) -> System.Boolean
+class Bytex.Backtest.Liquidation : System.IEquatable<Bytex.Backtest.Liquidation>
+    .ctor(Bytex.Core.Model.Identifiers.MarketKey MarketKey, System.Decimal SignedQuantity, Bytex.Core.Model.Primitives.Price Price, Bytex.Core.Model.Primitives.Money Equity, Bytex.Core.Model.Primitives.Money MaintenanceMargin, Bytex.Core.Model.Primitives.UnixNanos EventTime)
+    Deconstruct(Bytex.Core.Model.Identifiers.MarketKey& MarketKey, System.Decimal& SignedQuantity, Bytex.Core.Model.Primitives.Price& Price, Bytex.Core.Model.Primitives.Money& Equity, Bytex.Core.Model.Primitives.Money& MaintenanceMargin, Bytex.Core.Model.Primitives.UnixNanos& EventTime) -> System.Void
+    Equals(Bytex.Backtest.Liquidation other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Equity : Bytex.Core.Model.Primitives.Money { get; init; }
+    EventTime : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    GetHashCode() -> System.Int32
+    MaintenanceMargin : Bytex.Core.Model.Primitives.Money { get; init; }
+    MarketKey : Bytex.Core.Model.Identifiers.MarketKey { get; init; }
+    Price : Bytex.Core.Model.Primitives.Price { get; init; }
+    SignedQuantity : System.Decimal { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.Liquidation left, Bytex.Backtest.Liquidation right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.Liquidation left, Bytex.Backtest.Liquidation right) -> System.Boolean
+class Bytex.Backtest.LiquidationReportRow : System.IEquatable<Bytex.Backtest.LiquidationReportRow>
+    .ctor(Bytex.Core.Model.Primitives.UnixNanos Timestamp, Bytex.Core.Model.Identifiers.MarketKey MarketKey, System.Decimal Quantity, System.Decimal Price, Bytex.Core.Model.Primitives.Currency Currency, System.Decimal Equity, System.Decimal MaintenanceMargin)
+    Currency : Bytex.Core.Model.Primitives.Currency { get; init; }
+    Deconstruct(Bytex.Core.Model.Primitives.UnixNanos& Timestamp, Bytex.Core.Model.Identifiers.MarketKey& MarketKey, System.Decimal& Quantity, System.Decimal& Price, Bytex.Core.Model.Primitives.Currency& Currency, System.Decimal& Equity, System.Decimal& MaintenanceMargin) -> System.Void
+    Equals(Bytex.Backtest.LiquidationReportRow other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Equity : System.Decimal { get; init; }
+    From(Bytex.Backtest.Liquidation liquidation) -> Bytex.Backtest.LiquidationReportRow
+    GetHashCode() -> System.Int32
+    MaintenanceMargin : System.Decimal { get; init; }
+    MarketKey : Bytex.Core.Model.Identifiers.MarketKey { get; init; }
+    Price : System.Decimal { get; init; }
+    Quantity : System.Decimal { get; init; }
+    Timestamp : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.LiquidationReportRow left, Bytex.Backtest.LiquidationReportRow right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.LiquidationReportRow left, Bytex.Backtest.LiquidationReportRow right) -> System.Boolean
+class Bytex.Backtest.MakerTakerFeeModel : Bytex.Backtest.FeeModel
+    .ctor()
+    Commission(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.Quantity lastQty, Bytex.Core.Model.Primitives.Price lastPx, Bytex.Core.Model.LiquiditySide liquiditySide) -> Bytex.Core.Model.Primitives.Money
+class Bytex.Backtest.MarginModelConfig : System.IEquatable<Bytex.Backtest.MarginModelConfig>
+    .ctor()
+    Build() -> Bytex.Core.Model.Accounts.IMarginModel
+    Equals(Bytex.Backtest.MarginModelConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Kind : System.String { get; init; }
+    Rate = rate : System.String
+    Tiered = tiered : System.String
+    Tiers : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.MarginTierConfig> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.MarginModelConfig left, Bytex.Backtest.MarginModelConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.MarginModelConfig left, Bytex.Backtest.MarginModelConfig right) -> System.Boolean
+class Bytex.Backtest.MarginTierConfig : System.IEquatable<Bytex.Backtest.MarginTierConfig>
+    .ctor(System.Decimal NotionalFrom, System.Decimal Initial, System.Decimal Maintenance)
+    Deconstruct(System.Decimal& NotionalFrom, System.Decimal& Initial, System.Decimal& Maintenance) -> System.Void
+    Equals(Bytex.Backtest.MarginTierConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Initial : System.Decimal { get; init; }
+    Maintenance : System.Decimal { get; init; }
+    NotionalFrom : System.Decimal { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.MarginTierConfig left, Bytex.Backtest.MarginTierConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.MarginTierConfig left, Bytex.Backtest.MarginTierConfig right) -> System.Boolean
+class Bytex.Backtest.ModuleCharge : System.IEquatable<Bytex.Backtest.ModuleCharge>
+    .ctor(System.String Module, Bytex.Core.Model.Primitives.Money Amount, System.String Reason, Bytex.Core.Model.Primitives.UnixNanos EventTime)
+    Amount : Bytex.Core.Model.Primitives.Money { get; init; }
+    Deconstruct(System.String& Module, Bytex.Core.Model.Primitives.Money& Amount, System.String& Reason, Bytex.Core.Model.Primitives.UnixNanos& EventTime) -> System.Void
+    Equals(Bytex.Backtest.ModuleCharge other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    EventTime : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    GetHashCode() -> System.Int32
+    Module : System.String { get; init; }
+    Reason : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.ModuleCharge left, Bytex.Backtest.ModuleCharge right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.ModuleCharge left, Bytex.Backtest.ModuleCharge right) -> System.Boolean
+class Bytex.Backtest.ModuleChargeReportRow : System.IEquatable<Bytex.Backtest.ModuleChargeReportRow>
+    .ctor(Bytex.Core.Model.Primitives.UnixNanos Timestamp, System.String Module, Bytex.Core.Model.Primitives.Currency Currency, System.Decimal Amount, System.String Reason)
+    Amount : System.Decimal { get; init; }
+    Currency : Bytex.Core.Model.Primitives.Currency { get; init; }
+    Deconstruct(Bytex.Core.Model.Primitives.UnixNanos& Timestamp, System.String& Module, Bytex.Core.Model.Primitives.Currency& Currency, System.Decimal& Amount, System.String& Reason) -> System.Void
+    Equals(Bytex.Backtest.ModuleChargeReportRow other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    From(Bytex.Backtest.ModuleCharge charge) -> Bytex.Backtest.ModuleChargeReportRow
+    GetHashCode() -> System.Int32
+    Module : System.String { get; init; }
+    Reason : System.String { get; init; }
+    Timestamp : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.ModuleChargeReportRow left, Bytex.Backtest.ModuleChargeReportRow right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.ModuleChargeReportRow left, Bytex.Backtest.ModuleChargeReportRow right) -> System.Boolean
+class Bytex.Backtest.OrderReportRow : System.IEquatable<Bytex.Backtest.OrderReportRow>
+    .ctor(Bytex.Core.Model.Identifiers.ClientOrderId ClientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> VenueOrderId, Bytex.Core.Model.Identifiers.StrategyId StrategyId, Bytex.Core.Model.Identifiers.MarketKey MarketKey, Bytex.Core.Model.OrderSide Side, Bytex.Core.Model.OrderType Type, Bytex.Core.Model.Primitives.Quantity Quantity, Bytex.Core.Model.Primitives.Quantity FilledQuantity, System.Nullable<Bytex.Core.Model.Primitives.Price> Price, System.Nullable<Bytex.Core.Model.Primitives.Price> TriggerPrice, Bytex.Core.Model.TimeInForce TimeInForce, Bytex.Core.Model.OrderStatus Status, System.Nullable<System.Decimal> AvgPx, System.Decimal Slippage, Bytex.Core.Model.Primitives.UnixNanos CreatedTime, Bytex.Core.Model.Primitives.UnixNanos TsLast)
+    AvgPx : System.Nullable<System.Decimal> { get; init; }
+    ClientOrderId : Bytex.Core.Model.Identifiers.ClientOrderId { get; init; }
+    CreatedTime : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    Deconstruct(Bytex.Core.Model.Identifiers.ClientOrderId& ClientOrderId, System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId>& VenueOrderId, Bytex.Core.Model.Identifiers.StrategyId& StrategyId, Bytex.Core.Model.Identifiers.MarketKey& MarketKey, Bytex.Core.Model.OrderSide& Side, Bytex.Core.Model.OrderType& Type, Bytex.Core.Model.Primitives.Quantity& Quantity, Bytex.Core.Model.Primitives.Quantity& FilledQuantity, System.Nullable<Bytex.Core.Model.Primitives.Price>& Price, System.Nullable<Bytex.Core.Model.Primitives.Price>& TriggerPrice, Bytex.Core.Model.TimeInForce& TimeInForce, Bytex.Core.Model.OrderStatus& Status, System.Nullable<System.Decimal>& AvgPx, System.Decimal& Slippage, Bytex.Core.Model.Primitives.UnixNanos& CreatedTime, Bytex.Core.Model.Primitives.UnixNanos& TsLast) -> System.Void
+    Equals(Bytex.Backtest.OrderReportRow other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    FilledQuantity : Bytex.Core.Model.Primitives.Quantity { get; init; }
+    From(Bytex.Core.Model.Orders.Order o) -> Bytex.Backtest.OrderReportRow
+    GetHashCode() -> System.Int32
+    MarketKey : Bytex.Core.Model.Identifiers.MarketKey { get; init; }
+    Price : System.Nullable<Bytex.Core.Model.Primitives.Price> { get; init; }
+    Quantity : Bytex.Core.Model.Primitives.Quantity { get; init; }
+    Side : Bytex.Core.Model.OrderSide { get; init; }
+    Slippage : System.Decimal { get; init; }
+    Status : Bytex.Core.Model.OrderStatus { get; init; }
+    StrategyId : Bytex.Core.Model.Identifiers.StrategyId { get; init; }
+    TimeInForce : Bytex.Core.Model.TimeInForce { get; init; }
+    ToString() -> System.String
+    TriggerPrice : System.Nullable<Bytex.Core.Model.Primitives.Price> { get; init; }
+    TsLast : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    Type : Bytex.Core.Model.OrderType { get; init; }
+    VenueOrderId : System.Nullable<Bytex.Core.Model.Identifiers.VenueOrderId> { get; init; }
+    op_Equality(Bytex.Backtest.OrderReportRow left, Bytex.Backtest.OrderReportRow right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.OrderReportRow left, Bytex.Backtest.OrderReportRow right) -> System.Boolean
+class Bytex.Backtest.ParticipationSummary : System.IEquatable<Bytex.Backtest.ParticipationSummary>
+    .ctor(System.Nullable<System.Decimal> BarVolumeShare, System.Int32 BoundedFills, System.Decimal BoundedQuantity)
+    BarVolumeShare : System.Nullable<System.Decimal> { get; init; }
+    BoundedFills : System.Int32 { get; init; }
+    BoundedQuantity : System.Decimal { get; init; }
+    Deconstruct(System.Nullable<System.Decimal>& BarVolumeShare, System.Int32& BoundedFills, System.Decimal& BoundedQuantity) -> System.Void
+    Equals(Bytex.Backtest.ParticipationSummary other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.ParticipationSummary left, Bytex.Backtest.ParticipationSummary right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.ParticipationSummary left, Bytex.Backtest.ParticipationSummary right) -> System.Boolean
+class Bytex.Backtest.PerContractFeeModel : Bytex.Backtest.FeeModel
+    .ctor(Bytex.Core.Model.Primitives.Money perContract)
+    .ctor(Bytex.Core.Model.Primitives.Money taker, Bytex.Core.Model.Primitives.Money maker)
+    Commission(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.Quantity lastQty, Bytex.Core.Model.Primitives.Price lastPx, Bytex.Core.Model.LiquiditySide liquiditySide) -> Bytex.Core.Model.Primitives.Money
+class Bytex.Backtest.PercentFeeModel : Bytex.Backtest.FeeModel
+    .ctor(System.Decimal rate)
+    Commission(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.Quantity lastQty, Bytex.Core.Model.Primitives.Price lastPx, Bytex.Core.Model.LiquiditySide liquiditySide) -> Bytex.Core.Model.Primitives.Money
+class Bytex.Backtest.PerformanceStatistic : Bytex.Backtest.IPerformanceStatistic
+    .ctor(System.String name, System.Func<Bytex.Backtest.StatisticInput, System.Nullable<System.Decimal>> compute)
+    Compute(Bytex.Backtest.StatisticInput input) -> System.Nullable<System.Decimal>
+    Name : System.String { get; }
+class Bytex.Backtest.PositionReportRow : System.IEquatable<Bytex.Backtest.PositionReportRow>
+    .ctor(Bytex.Core.Model.Identifiers.PositionId PositionId, Bytex.Core.Model.Identifiers.StrategyId StrategyId, Bytex.Core.Model.Identifiers.MarketKey MarketKey, Bytex.Core.Model.PositionSide EntrySide, Bytex.Core.Model.PositionSide Side, Bytex.Core.Model.Primitives.Quantity Quantity, Bytex.Core.Model.Primitives.Quantity PeakQuantity, System.Decimal AvgPxOpen, System.Nullable<System.Decimal> AvgPxClose, Bytex.Core.Model.Primitives.Money RealizedPnl, System.Nullable<Bytex.Core.Model.Primitives.Money> UnrealizedPnl, System.Decimal RealizedReturn, Bytex.Core.Model.Primitives.UnixNanos TsOpened, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> TsClosed, System.Nullable<System.TimeSpan> Duration)
+    AvgPxClose : System.Nullable<System.Decimal> { get; init; }
+    AvgPxOpen : System.Decimal { get; init; }
+    Deconstruct(Bytex.Core.Model.Identifiers.PositionId& PositionId, Bytex.Core.Model.Identifiers.StrategyId& StrategyId, Bytex.Core.Model.Identifiers.MarketKey& MarketKey, Bytex.Core.Model.PositionSide& EntrySide, Bytex.Core.Model.PositionSide& Side, Bytex.Core.Model.Primitives.Quantity& Quantity, Bytex.Core.Model.Primitives.Quantity& PeakQuantity, System.Decimal& AvgPxOpen, System.Nullable<System.Decimal>& AvgPxClose, Bytex.Core.Model.Primitives.Money& RealizedPnl, System.Nullable<Bytex.Core.Model.Primitives.Money>& UnrealizedPnl, System.Decimal& RealizedReturn, Bytex.Core.Model.Primitives.UnixNanos& TsOpened, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos>& TsClosed, System.Nullable<System.TimeSpan>& Duration) -> System.Void
+    Duration : System.Nullable<System.TimeSpan> { get; init; }
+    EntrySide : Bytex.Core.Model.PositionSide { get; init; }
+    Equals(Bytex.Backtest.PositionReportRow other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    From(Bytex.Core.Model.Positions.Position p, Bytex.Core.Caching.Cache cache) -> Bytex.Backtest.PositionReportRow
+    GetHashCode() -> System.Int32
+    MarketKey : Bytex.Core.Model.Identifiers.MarketKey { get; init; }
+    PeakQuantity : Bytex.Core.Model.Primitives.Quantity { get; init; }
+    PositionId : Bytex.Core.Model.Identifiers.PositionId { get; init; }
+    Quantity : Bytex.Core.Model.Primitives.Quantity { get; init; }
+    RealizedPnl : Bytex.Core.Model.Primitives.Money { get; init; }
+    RealizedReturn : System.Decimal { get; init; }
+    Side : Bytex.Core.Model.PositionSide { get; init; }
+    StrategyId : Bytex.Core.Model.Identifiers.StrategyId { get; init; }
+    ToString() -> System.String
+    TsClosed : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    TsOpened : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    UnrealizedPnl : System.Nullable<Bytex.Core.Model.Primitives.Money> { get; init; }
+    op_Equality(Bytex.Backtest.PositionReportRow left, Bytex.Backtest.PositionReportRow right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.PositionReportRow left, Bytex.Backtest.PositionReportRow right) -> System.Boolean
+class Bytex.Backtest.RateFeeModel : Bytex.Backtest.FeeModel
+    .ctor(System.Decimal makerRate, System.Decimal takerRate)
+    Commission(Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.Quantity lastQty, Bytex.Core.Model.Primitives.Price lastPx, Bytex.Core.Model.LiquiditySide liquiditySide) -> Bytex.Core.Model.Primitives.Money
+    MakerRate : System.Decimal { get; }
+    TakerRate : System.Decimal { get; }
+class Bytex.Backtest.ReportWriter
+    ToCsv<T>(System.Collections.Generic.IEnumerable<T> rows) -> System.String
+    ToJson(Bytex.Backtest.BacktestResult result, System.Boolean indented = True) -> System.String
+    WriteAll(Bytex.Backtest.BacktestResult result, System.String directory) -> System.Void
+    WriteBatch(Bytex.Backtest.BacktestBatch batch, System.String directory, System.String name = batch) -> System.Void
+    WriteSearch(Bytex.Backtest.BacktestSearch search, System.String directory) -> System.Void
+class Bytex.Backtest.RolloverInterestModule : Bytex.Backtest.ISimulationModule
+    .ctor(System.TimeSpan rolloverTimeOfDay, System.Decimal longDailyRate, System.Decimal shortDailyRate)
+    Name : System.String { get; }
+    OnTime(Bytex.Core.Model.Primitives.UnixNanos now, Bytex.Backtest.ISimulatedVenueState venue) -> System.Void
+class Bytex.Backtest.SimulatedExchange
+    .ctor(Bytex.Backtest.SimulatedVenueConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    AccountId : Bytex.Core.Model.Identifiers.AccountId { get; }
+    AddInstrument(Bytex.Core.Model.Instruments.Instrument instrument) -> System.Void
+    Applied : System.Collections.Generic.IReadOnlyList<System.String> { get; }
+    Balances : System.Collections.Generic.IReadOnlyDictionary<Bytex.Core.Model.Primitives.Currency, System.Decimal> { get; }
+    BarsNotWalked : System.Int32 { get; }
+    Bounded : System.ValueTuple<System.Int32, System.Decimal> { get; }
+    Config : Bytex.Backtest.SimulatedVenueConfig { get; }
+    FundingPayments : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.FundingPayment> { get; }
+    GenerateMassStatus() -> Bytex.Core.Model.Reports.ExecutionMassStatus
+    InitializeAccount() -> System.Void
+    Instruments : System.Collections.Generic.IReadOnlyDictionary<Bytex.Core.Model.Identifiers.MarketKey, Bytex.Core.Model.Instruments.Instrument> { get; }
+    LiquidationTag = LIQUIDATION : System.String
+    Liquidations : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.Liquidation> { get; }
+    ModuleCharges : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.ModuleCharge> { get; }
+    NetPosition(Bytex.Core.Model.Identifiers.MarketKey marketKey) -> System.Decimal
+    NextDueTime : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; }
+    NextTradeId() -> Bytex.Core.Model.Identifiers.TradeId
+    NextVenueOrderId() -> Bytex.Core.Model.Identifiers.VenueOrderId
+    OnAccepted(Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Identifiers.VenueOrderId venueOrderId, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    OnCancelRejected(Bytex.Core.Model.Orders.Order order, System.String reason, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    OnCanceled(Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    OnExpired(Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    OnFilled(Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.Quantity lastQty, Bytex.Core.Model.Primitives.Price lastPx, Bytex.Core.Model.LiquiditySide liquiditySide, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    OnModifyRejected(Bytex.Core.Model.Orders.Order order, System.String reason, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    OnRejected(Bytex.Core.Model.Orders.Order order, System.String reason, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    OnTriggered(Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    OnUpdated(Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Primitives.Quantity quantity, System.Nullable<Bytex.Core.Model.Primitives.Price> price, System.Nullable<Bytex.Core.Model.Primitives.Price> triggerPrice, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    OpenOrderCount : System.Int32 { get; }
+    ProcessBar(Bytex.Core.Model.Data.Bar bar) -> System.Void
+    ProcessDueCommands(Bytex.Core.Model.Primitives.UnixNanos now) -> System.Void
+    ProcessFundingRate(Bytex.Core.Model.Data.FundingRateUpdate update) -> System.Void
+    ProcessOrderBook(Bytex.Core.Model.Data.OrderBook book, Bytex.Core.Model.Primitives.UnixNanos ts) -> System.Void
+    ProcessQuoteTick(Bytex.Core.Model.Data.QuoteTick quote) -> System.Void
+    ProcessTradeTick(Bytex.Core.Model.Data.TradeTick trade) -> System.Void
+    QueuePosition(Bytex.Core.Model.Orders.Order order) -> System.Nullable<System.Int32>
+    Reset() -> System.Void
+    RestoreOrder(Bytex.Core.Model.Orders.Order order, Bytex.Core.Model.Identifiers.VenueOrderId venueOrderId, System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Identifiers.ClientOrderId> linkedOrderIds = null) -> System.Void
+    RestorePosition(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Decimal signedQuantity, System.Decimal avgPx) -> System.Void
+    SizeAhead(Bytex.Core.Model.Orders.Order order) -> System.Nullable<System.Decimal>
+    ToString() -> System.String
+    Venue : Bytex.Core.Model.Identifiers.Venue { get; }
+class Bytex.Backtest.SimulatedVenueConfig : System.IEquatable<Bytex.Backtest.SimulatedVenueConfig>
+    .ctor()
+    AccountType : Bytex.Core.Model.AccountType { get; init; }
+    BarExecution : Bytex.Backtest.BarExecutionMode { get; init; }
+    BarVolumeShare : System.Nullable<System.Decimal> { get; init; }
+    BaseCurrency : Bytex.Core.Model.Primitives.Currency { get; init; }
+    BookType : Bytex.Core.Model.BookType { get; init; }
+    DefaultBarVolumeShare : System.Decimal static
+    DefaultLeverage : System.Decimal { get; init; }
+    Equals(Bytex.Backtest.SimulatedVenueConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    FeeModel : Bytex.Backtest.FeeModel { get; init; }
+    FillModel : Bytex.Backtest.FillModel { get; init; }
+    FillSizing : Bytex.Backtest.FillSizing { get; init; }
+    GetHashCode() -> System.Int32
+    LatencyModel : Bytex.Backtest.LatencyModel { get; init; }
+    Leverages : System.Collections.Generic.IReadOnlyDictionary<Bytex.Core.Model.Identifiers.MarketKey, System.Decimal> { get; init; }
+    Liquidate : System.Boolean { get; init; }
+    MarginModel : Bytex.Core.Model.Accounts.IMarginModel { get; init; }
+    MaxBarWalkSteps : System.Int32 { get; init; }
+    Modules : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.ISimulationModule> { get; init; }
+    OmsType : Bytex.Core.Model.OmsType { get; init; }
+    RefusesOrderAmends : System.Boolean { get; init; }
+    RejectStopOrdersAtMarket : System.Boolean { get; init; }
+    Session : Bytex.Backtest.TradingSession { get; init; }
+    StartingBalances : System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Primitives.Money> { get; init; }
+    SupportContingentOrders : System.Boolean { get; init; }
+    ToString() -> System.String
+    Venue : Bytex.Core.Model.Identifiers.Venue { get; init; }
+    op_Equality(Bytex.Backtest.SimulatedVenueConfig left, Bytex.Backtest.SimulatedVenueConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.SimulatedVenueConfig left, Bytex.Backtest.SimulatedVenueConfig right) -> System.Boolean
+class Bytex.Backtest.SimulationCapabilities
+    BarWalkBounded = barWalkBounded : System.String
+    BookDepth = bookDepth : System.String
+    Funding = funding : System.String
+    Liquidation = liquidation : System.String
+    Of(Bytex.Backtest.SimulatedVenueConfig config) -> System.Collections.Generic.IReadOnlyList<System.String>
+    PartialFills = partialFills : System.String
+    RolloverInterest = rolloverInterest : System.String
+    StatedBarOrder = statedBarOrder : System.String
+    TickSizePath = tickSizePath : System.String
+class Bytex.Backtest.SimulationModuleConfig : System.IEquatable<Bytex.Backtest.SimulationModuleConfig>
+    .ctor()
+    Equals(Bytex.Backtest.SimulationModuleConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Name : System.String { get; init; }
+    Parameters : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.SimulationModuleConfig left, Bytex.Backtest.SimulationModuleConfig right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.SimulationModuleConfig left, Bytex.Backtest.SimulationModuleConfig right) -> System.Boolean
+class Bytex.Backtest.StatisticFigures : System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<System.String, System.Nullable<System.Decimal>>>, System.Collections.Generic.IReadOnlyCollection<System.Collections.Generic.KeyValuePair<System.String, System.Nullable<System.Decimal>>>, System.Collections.Generic.IReadOnlyDictionary<System.String, System.Nullable<System.Decimal>>, System.Collections.IEnumerable, System.IEquatable<Bytex.Backtest.StatisticFigures>
+    .ctor(System.Collections.Generic.IReadOnlyDictionary<System.String, System.Nullable<System.Decimal>> figures)
+    ContainsKey(System.String key) -> System.Boolean
+    Count : System.Int32 { get; }
+    Equals(Bytex.Backtest.StatisticFigures other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetEnumerator() -> System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<System.String, System.Nullable<System.Decimal>>>
+    GetHashCode() -> System.Int32
+    Item : System.Nullable<System.Decimal> { get; }
+    Keys : System.Collections.Generic.IEnumerable<System.String> { get; }
+    None : Bytex.Backtest.StatisticFigures static
+    ToString() -> System.String
+    TryGetValue(System.String key, System.Nullable<System.Decimal>& value) -> System.Boolean
+    Values : System.Collections.Generic.IEnumerable<System.Nullable<System.Decimal>> { get; }
+class Bytex.Backtest.StatisticInput : System.IEquatable<Bytex.Backtest.StatisticInput>
+    .ctor(Bytex.Core.Model.Primitives.Currency Currency, System.Decimal StartingBalance, System.Decimal EndingBalance, System.Collections.Generic.IReadOnlyList<Bytex.Backtest.EquityPoint> EquityCurve, System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Positions.Position> Positions, Bytex.Backtest.CurrencyStatistics Built)
+    Built : Bytex.Backtest.CurrencyStatistics { get; init; }
+    Closed : System.Collections.Generic.IEnumerable<Bytex.Core.Model.Positions.Position> { get; }
+    Currency : Bytex.Core.Model.Primitives.Currency { get; init; }
+    Deconstruct(Bytex.Core.Model.Primitives.Currency& Currency, System.Decimal& StartingBalance, System.Decimal& EndingBalance, System.Collections.Generic.IReadOnlyList<Bytex.Backtest.EquityPoint>& EquityCurve, System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Positions.Position>& Positions, Bytex.Backtest.CurrencyStatistics& Built) -> System.Void
+    EndingBalance : System.Decimal { get; init; }
+    Equals(Bytex.Backtest.StatisticInput other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    EquityCurve : System.Collections.Generic.IReadOnlyList<Bytex.Backtest.EquityPoint> { get; init; }
+    GetHashCode() -> System.Int32
+    Positions : System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Positions.Position> { get; init; }
+    StartingBalance : System.Decimal { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.StatisticInput left, Bytex.Backtest.StatisticInput right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.StatisticInput left, Bytex.Backtest.StatisticInput right) -> System.Boolean
+class Bytex.Backtest.TearsheetWriter
+    FileName = tearsheet.html : System.String
+    ToHtml(Bytex.Backtest.BacktestResult result) -> System.String
+    Write(Bytex.Backtest.BacktestResult result, System.String path) -> System.Void
+class Bytex.Backtest.TradeStatistics : System.IEquatable<Bytex.Backtest.TradeStatistics>
+    .ctor(System.Int32 TotalPositions, System.Int32 ClosedPositions, System.Int32 OpenPositions, System.Int32 Winners, System.Int32 Losers, System.Int32 Breakeven, System.Decimal WinRate, System.Decimal AverageWinner, System.Decimal AverageLoser, System.Decimal LargestWinner, System.Decimal LargestLoser, System.Decimal AverageReturn, System.TimeSpan AverageDuration, System.Int32 LongPositions, System.Int32 ShortPositions)
+    AverageDuration : System.TimeSpan { get; init; }
+    AverageLoser : System.Decimal { get; init; }
+    AverageReturn : System.Decimal { get; init; }
+    AverageWinner : System.Decimal { get; init; }
+    Breakeven : System.Int32 { get; init; }
+    ClosedPositions : System.Int32 { get; init; }
+    Deconstruct(System.Int32& TotalPositions, System.Int32& ClosedPositions, System.Int32& OpenPositions, System.Int32& Winners, System.Int32& Losers, System.Int32& Breakeven, System.Decimal& WinRate, System.Decimal& AverageWinner, System.Decimal& AverageLoser, System.Decimal& LargestWinner, System.Decimal& LargestLoser, System.Decimal& AverageReturn, System.TimeSpan& AverageDuration, System.Int32& LongPositions, System.Int32& ShortPositions) -> System.Void
+    Equals(Bytex.Backtest.TradeStatistics other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    LargestLoser : System.Decimal { get; init; }
+    LargestWinner : System.Decimal { get; init; }
+    LongPositions : System.Int32 { get; init; }
+    Losers : System.Int32 { get; init; }
+    OpenPositions : System.Int32 { get; init; }
+    ShortPositions : System.Int32 { get; init; }
+    ToString() -> System.String
+    TotalPositions : System.Int32 { get; init; }
+    WinRate : System.Decimal { get; init; }
+    Winners : System.Int32 { get; init; }
+    op_Equality(Bytex.Backtest.TradeStatistics left, Bytex.Backtest.TradeStatistics right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.TradeStatistics left, Bytex.Backtest.TradeStatistics right) -> System.Boolean
+struct Bytex.Backtest.TradingSession : System.IEquatable<Bytex.Backtest.TradingSession>
+    .ctor(System.TimeSpan End)
+    Continuous : Bytex.Backtest.TradingSession static
+    Deconstruct(System.TimeSpan& End) -> System.Void
+    End : System.TimeSpan { get; init; }
+    EndingAt(System.TimeSpan endOfDayUtc) -> Bytex.Backtest.TradingSession
+    Equals(Bytex.Backtest.TradingSession other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    HasEnded(Bytex.Core.Model.Primitives.UnixNanos placed, Bytex.Core.Model.Primitives.UnixNanos now) -> System.Boolean
+    IsContinuous : System.Boolean { get; }
+    SessionOf(Bytex.Core.Model.Primitives.UnixNanos timestamp) -> System.DateOnly
+    ToString() -> System.String
+    op_Equality(Bytex.Backtest.TradingSession left, Bytex.Backtest.TradingSession right) -> System.Boolean
+    op_Inequality(Bytex.Backtest.TradingSession left, Bytex.Backtest.TradingSession right) -> System.Boolean

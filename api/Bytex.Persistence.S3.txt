@@ -1,0 +1,53 @@
+class Bytex.Persistence.S3.S3Credentials : System.IEquatable<Bytex.Persistence.S3.S3Credentials>
+    .ctor(System.String AccessKey, System.String SecretKey, System.String SessionToken = null)
+    AccessKey : System.String { get; init; }
+    Deconstruct(System.String& AccessKey, System.String& SecretKey, System.String& SessionToken) -> System.Void
+    EnvAccessKey = AWS_ACCESS_KEY_ID : System.String
+    EnvSecretKey = AWS_SECRET_ACCESS_KEY : System.String
+    EnvSessionToken = AWS_SESSION_TOKEN : System.String
+    Equals(Bytex.Persistence.S3.S3Credentials other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    FromEnvironment() -> Bytex.Persistence.S3.S3Credentials
+    GetHashCode() -> System.Int32
+    SecretKey : System.String { get; init; }
+    SessionToken : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Persistence.S3.S3Credentials left, Bytex.Persistence.S3.S3Credentials right) -> System.Boolean
+    op_Inequality(Bytex.Persistence.S3.S3Credentials left, Bytex.Persistence.S3.S3Credentials right) -> System.Boolean
+class Bytex.Persistence.S3.S3Location
+    EnvEndpoint = AWS_ENDPOINT_URL_S3 : System.String
+    EnvEndpointAny = AWS_ENDPOINT_URL : System.String
+    EnvRegion = AWS_REGION : System.String
+    EnvRegionDefault = AWS_DEFAULT_REGION : System.String
+    Open(System.String location) -> Bytex.Data.IObjectStore
+    Register() -> System.Void
+    Scheme = s3 : System.String
+class Bytex.Persistence.S3.S3ObjectStore : Bytex.Data.IObjectStore, System.IDisposable
+    .ctor(Bytex.Persistence.S3.S3ObjectStoreConfig config, Bytex.Persistence.S3.S3Credentials credentials = null, System.Net.Http.HttpClient http = null)
+    CreateBucketIfMissingAsync(System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    Delete(System.String key) -> System.Void
+    Dispose() -> System.Void
+    Exists(System.String key) -> System.Boolean
+    List(System.String prefix) -> System.Collections.Generic.IReadOnlyList<Bytex.Data.StoredObject>
+    Location : System.String { get; }
+    Move(System.String fromKey, System.String toKey) -> System.Void
+    OpenReadAsync(System.String key, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.IO.Stream>
+    ReadText(System.String key) -> System.String
+    WriteAsync(System.String key, System.Func<System.IO.Stream, System.Threading.Tasks.Task> write, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    WriteTextAsync(System.String key, System.String text, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+class Bytex.Persistence.S3.S3ObjectStoreConfig : System.IEquatable<Bytex.Persistence.S3.S3ObjectStoreConfig>
+    .ctor()
+    Bucket : System.String { get; init; }
+    Endpoint : System.String { get; init; }
+    Equals(Bytex.Persistence.S3.S3ObjectStoreConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    MaxObjectBytes : System.Int64 { get; init; }
+    PageSize : System.Int32 { get; init; }
+    Prefix : System.String { get; init; }
+    Region : System.String { get; init; }
+    SpoolThresholdBytes : System.Int32 { get; init; }
+    ToString() -> System.String
+    UsePathStyle : System.Nullable<System.Boolean> { get; init; }
+    op_Equality(Bytex.Persistence.S3.S3ObjectStoreConfig left, Bytex.Persistence.S3.S3ObjectStoreConfig right) -> System.Boolean
+    op_Inequality(Bytex.Persistence.S3.S3ObjectStoreConfig left, Bytex.Persistence.S3.S3ObjectStoreConfig right) -> System.Boolean

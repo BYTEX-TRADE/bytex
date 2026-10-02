@@ -1,0 +1,244 @@
+class Bytex.Data.ArchiveRecoveryObject : System.IEquatable<Bytex.Data.ArchiveRecoveryObject>
+    .ctor(System.String ObjectKey, System.String State, System.Int64 Bytes)
+    Bytes : System.Int64 { get; init; }
+    Deconstruct(System.String& ObjectKey, System.String& State, System.Int64& Bytes) -> System.Void
+    Equals(Bytex.Data.ArchiveRecoveryObject other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    ObjectKey : System.String { get; init; }
+    State : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Data.ArchiveRecoveryObject left, Bytex.Data.ArchiveRecoveryObject right) -> System.Boolean
+    op_Inequality(Bytex.Data.ArchiveRecoveryObject left, Bytex.Data.ArchiveRecoveryObject right) -> System.Boolean
+class Bytex.Data.ArchiveSegment : System.IEquatable<Bytex.Data.ArchiveSegment>
+    .ctor(System.String ObjectKey, System.Int64 Start, System.Int64 End, System.Int32 Rows, System.Int64 Bytes, System.String Sha256, System.Int32 Ordinal)
+    Bytes : System.Int64 { get; init; }
+    Deconstruct(System.String& ObjectKey, System.Int64& Start, System.Int64& End, System.Int32& Rows, System.Int64& Bytes, System.String& Sha256, System.Int32& Ordinal) -> System.Void
+    End : System.Int64 { get; init; }
+    Equals(Bytex.Data.ArchiveSegment other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    ObjectKey : System.String { get; init; }
+    Ordinal : System.Int32 { get; init; }
+    Rows : System.Int32 { get; init; }
+    Sha256 : System.String { get; init; }
+    Start : System.Int64 { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Data.ArchiveSegment left, Bytex.Data.ArchiveSegment right) -> System.Boolean
+    op_Inequality(Bytex.Data.ArchiveSegment left, Bytex.Data.ArchiveSegment right) -> System.Boolean
+class Bytex.Data.CatalogEntry : System.IEquatable<Bytex.Data.CatalogEntry>
+    .ctor(System.String Kind, System.String Key, System.Int32 FileCount, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> Start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> End, System.Int64 SizeBytes)
+    Deconstruct(System.String& Kind, System.String& Key, System.Int32& FileCount, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos>& Start, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos>& End, System.Int64& SizeBytes) -> System.Void
+    End : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    Equals(Bytex.Data.CatalogEntry other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    FileCount : System.Int32 { get; init; }
+    GetHashCode() -> System.Int32
+    Key : System.String { get; init; }
+    Kind : System.String { get; init; }
+    Rows : System.Nullable<System.Int64> { get; init; }
+    SizeBytes : System.Int64 { get; init; }
+    Start : System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Data.CatalogEntry left, Bytex.Data.CatalogEntry right) -> System.Boolean
+    op_Inequality(Bytex.Data.CatalogEntry left, Bytex.Data.CatalogEntry right) -> System.Boolean
+class Bytex.Data.CatalogProblem : System.IEquatable<Bytex.Data.CatalogProblem>
+    .ctor(System.String Kind, System.String Key, System.String File, System.String Detail)
+    Deconstruct(System.String& Kind, System.String& Key, System.String& File, System.String& Detail) -> System.Void
+    Detail : System.String { get; init; }
+    Equals(Bytex.Data.CatalogProblem other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    File : System.String { get; init; }
+    GetHashCode() -> System.Int32
+    Key : System.String { get; init; }
+    Kind : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Data.CatalogProblem left, Bytex.Data.CatalogProblem right) -> System.Boolean
+    op_Inequality(Bytex.Data.CatalogProblem left, Bytex.Data.CatalogProblem right) -> System.Boolean
+class Bytex.Data.CsvColumns : System.IEquatable<Bytex.Data.CsvColumns>
+    .ctor()
+    Ask : System.String { get; init; }
+    AskSize : System.String { get; init; }
+    Bid : System.String { get; init; }
+    BidSize : System.String { get; init; }
+    Close : System.String { get; init; }
+    Equals(Bytex.Data.CsvColumns other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    HasHeader : System.Boolean { get; init; }
+    High : System.String { get; init; }
+    Low : System.String { get; init; }
+    Open : System.String { get; init; }
+    Price : System.String { get; init; }
+    Separator : System.Char { get; init; }
+    Side : System.String { get; init; }
+    Size : System.String { get; init; }
+    Timestamp : System.String { get; init; }
+    TimestampFormat : System.String { get; init; }
+    ToString() -> System.String
+    TradeId : System.String { get; init; }
+    Volume : System.String { get; init; }
+    op_Equality(Bytex.Data.CsvColumns left, Bytex.Data.CsvColumns right) -> System.Boolean
+    op_Inequality(Bytex.Data.CsvColumns left, Bytex.Data.CsvColumns right) -> System.Boolean
+class Bytex.Data.CsvLoader
+    LoadBars(System.String path, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Core.Model.Data.CandleSeries candleSeries, Bytex.Data.CsvColumns columns = null) -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>
+    LoadQuoteTicks(System.String path, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Data.CsvColumns columns = null) -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.QuoteTick>
+    LoadTradeTicks(System.String path, Bytex.Core.Model.Instruments.Instrument instrument, Bytex.Data.CsvColumns columns = null) -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.TradeTick>
+    ParseTimestamp(System.String text, System.String format) -> Bytex.Core.Model.Primitives.UnixNanos
+interface Bytex.Data.IObjectStore
+    Delete(System.String key) -> System.Void
+    Exists(System.String key) -> System.Boolean
+    List(System.String prefix) -> System.Collections.Generic.IReadOnlyList<Bytex.Data.StoredObject>
+    Location : System.String { get; }
+    Move(System.String fromKey, System.String toKey) -> System.Void
+    OpenReadAsync(System.String key, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.IO.Stream>
+    ReadText(System.String key) -> System.String
+    WriteAsync(System.String key, System.Func<System.IO.Stream, System.Threading.Tasks.Task> write, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    WriteTextAsync(System.String key, System.String text, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+class Bytex.Data.InstrumentJson
+    Deserialize(System.String json) -> Bytex.Core.Model.Instruments.Instrument
+    Serialize(Bytex.Core.Model.Instruments.Instrument instrument) -> System.String
+class Bytex.Data.LegacyArchiveMigration
+    ConvertAsync(Bytex.Data.IObjectStore source, Bytex.Data.IObjectStore destination, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Int32>
+class Bytex.Data.LocalObjectStore : Bytex.Data.IObjectStore
+    .ctor(System.String rootPath)
+    Delete(System.String key) -> System.Void
+    Exists(System.String key) -> System.Boolean
+    List(System.String prefix) -> System.Collections.Generic.IReadOnlyList<Bytex.Data.StoredObject>
+    Location : System.String { get; }
+    Move(System.String fromKey, System.String toKey) -> System.Void
+    OpenReadAsync(System.String key, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.IO.Stream>
+    ReadText(System.String key) -> System.String
+    WriteAsync(System.String key, System.Func<System.IO.Stream, System.Threading.Tasks.Task> write, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    WriteTextAsync(System.String key, System.String text, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+class Bytex.Data.MarketArchive
+    .ctor(Bytex.Data.IObjectStore store)
+    .ctor(System.String rootPath)
+    BarsAsync(Bytex.Core.Model.Data.CandleSeries candleSeries, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.Bar>>
+    CandleSeriesDefinitions() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.CandleSeries>
+    Check() -> System.Collections.Generic.IReadOnlyList<Bytex.Data.CatalogProblem>
+    ConsolidateAsync(System.String dataKind, System.String key, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Int32>
+    Entries() -> System.Collections.Generic.IReadOnlyList<Bytex.Data.CatalogEntry>
+    Entries(System.Boolean rows) -> System.Collections.Generic.IReadOnlyList<Bytex.Data.CatalogEntry>
+    FundingRatesAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.FundingRateUpdate>>
+    Instrument(Bytex.Core.Model.Identifiers.MarketKey id) -> Bytex.Core.Model.Instruments.Instrument
+    Instruments(System.Nullable<Bytex.Core.Model.Identifiers.Venue> venue = null) -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Instruments.Instrument>
+    MaxRowsPerFile = 100000 : System.Int32
+    OrderBookDeltaInstruments() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Identifiers.MarketKey>
+    OrderBookDeltasAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.OrderBookDelta>>
+    OrderBookDepthAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.OrderBookDepth>>
+    OrderBookDepthInstruments() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Identifiers.MarketKey>
+    QuoteTickInstruments() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Identifiers.MarketKey>
+    QuoteTicksAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.QuoteTick>>
+    RecoveryObjects() -> System.Collections.Generic.IReadOnlyList<Bytex.Data.ArchiveRecoveryObject>
+    RootPath : System.String { get; }
+    Segments(System.String kind, System.String key) -> System.Collections.Generic.IReadOnlyList<Bytex.Data.ArchiveSegment>
+    Store : Bytex.Data.IObjectStore { get; }
+    StreamBarsAsync(Bytex.Core.Model.Data.CandleSeries candleSeries, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Collections.Generic.IAsyncEnumerable<Bytex.Core.Model.Data.Bar>
+    StreamFundingRatesAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Collections.Generic.IAsyncEnumerable<Bytex.Core.Model.Data.FundingRateUpdate>
+    StreamOrderBookDeltasAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Collections.Generic.IAsyncEnumerable<Bytex.Core.Model.Data.OrderBookDelta>
+    StreamOrderBookDepthAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Collections.Generic.IAsyncEnumerable<Bytex.Core.Model.Data.OrderBookDepth>
+    StreamQuoteTicksAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Collections.Generic.IAsyncEnumerable<Bytex.Core.Model.Data.QuoteTick>
+    StreamTradeTicksAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Collections.Generic.IAsyncEnumerable<Bytex.Core.Model.Data.TradeTick>
+    TradeTickInstruments() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Identifiers.MarketKey>
+    TradeTicksAsync(Bytex.Core.Model.Identifiers.MarketKey marketKey, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> start = null, System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> end = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Data.TradeTick>>
+    WriteAsync(System.Collections.Generic.IEnumerable<Bytex.Core.Model.Data.IData> data, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    WriteBarsAsync(System.Collections.Generic.IEnumerable<Bytex.Core.Model.Data.Bar> bars, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    WriteFundingRatesAsync(System.Collections.Generic.IEnumerable<Bytex.Core.Model.Data.FundingRateUpdate> rates, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    WriteInstrumentsAsync(System.Collections.Generic.IEnumerable<Bytex.Core.Model.Instruments.Instrument> instruments, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    WriteOrderBookDeltasAsync(System.Collections.Generic.IEnumerable<Bytex.Core.Model.Data.OrderBookDelta> deltas, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    WriteOrderBookDepthAsync(System.Collections.Generic.IEnumerable<Bytex.Core.Model.Data.OrderBookDepth> depth, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    WriteQuoteTicksAsync(System.Collections.Generic.IEnumerable<Bytex.Core.Model.Data.QuoteTick> ticks, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    WriteTradeTicksAsync(System.Collections.Generic.IEnumerable<Bytex.Core.Model.Data.TradeTick> ticks, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+class Bytex.Data.MarketArchive+BarRow
+    .ctor()
+    Close : System.Decimal { get; set; }
+    CreatedTime : System.Int64 { get; set; }
+    EventTime : System.Int64 { get; set; }
+    From(Bytex.Core.Model.Data.Bar b) -> Bytex.Data.MarketArchive+BarRow
+    High : System.Decimal { get; set; }
+    IsRevision : System.Boolean { get; set; }
+    Low : System.Decimal { get; set; }
+    Open : System.Decimal { get; set; }
+    PricePrecision : System.Byte { get; set; }
+    SizePrecision : System.Byte { get; set; }
+    ToBar(Bytex.Core.Model.Data.CandleSeries candleSeries) -> Bytex.Core.Model.Data.Bar
+    Volume : System.Decimal { get; set; }
+class Bytex.Data.MarketArchive+DeltaRow
+    .ctor()
+    Action : System.Int32 { get; set; }
+    CreatedTime : System.Int64 { get; set; }
+    EventTime : System.Int64 { get; set; }
+    Flags : System.Byte { get; set; }
+    From(Bytex.Core.Model.Data.OrderBookDelta d) -> Bytex.Data.MarketArchive+DeltaRow
+    OrderId : System.Int64 { get; set; }
+    Price : System.Decimal { get; set; }
+    PricePrecision : System.Byte { get; set; }
+    Sequence : System.Int64 { get; set; }
+    Side : System.Int32 { get; set; }
+    Size : System.Decimal { get; set; }
+    SizePrecision : System.Byte { get; set; }
+    ToDelta(Bytex.Core.Model.Identifiers.MarketKey id) -> Bytex.Core.Model.Data.OrderBookDelta
+class Bytex.Data.MarketArchive+DepthRow
+    .ctor()
+    AskCounts : System.Collections.Generic.List<System.Int32> { get; set; }
+    AskPrices : System.Collections.Generic.List<System.Decimal> { get; set; }
+    AskSizes : System.Collections.Generic.List<System.Decimal> { get; set; }
+    BidCounts : System.Collections.Generic.List<System.Int32> { get; set; }
+    BidPrices : System.Collections.Generic.List<System.Decimal> { get; set; }
+    BidSizes : System.Collections.Generic.List<System.Decimal> { get; set; }
+    CreatedTime : System.Int64 { get; set; }
+    EventTime : System.Int64 { get; set; }
+    Flags : System.Byte { get; set; }
+    From(Bytex.Core.Model.Data.OrderBookDepth d) -> Bytex.Data.MarketArchive+DepthRow
+    PricePrecision : System.Byte { get; set; }
+    Sequence : System.Int64 { get; set; }
+    SizePrecision : System.Byte { get; set; }
+    ToDepth(Bytex.Core.Model.Identifiers.MarketKey marketKey) -> Bytex.Core.Model.Data.OrderBookDepth
+class Bytex.Data.MarketArchive+FundingRow
+    .ctor()
+    CreatedTime : System.Int64 { get; set; }
+    EventTime : System.Int64 { get; set; }
+    From(Bytex.Core.Model.Data.FundingRateUpdate update) -> Bytex.Data.MarketArchive+FundingRow
+    NextFundingTime : System.Int64 { get; set; }
+    Rate : System.Decimal { get; set; }
+    ToUpdate(Bytex.Core.Model.Identifiers.MarketKey marketKey) -> Bytex.Core.Model.Data.FundingRateUpdate
+class Bytex.Data.MarketArchive+QuoteRow
+    .ctor()
+    Ask : System.Decimal { get; set; }
+    AskSize : System.Decimal { get; set; }
+    Bid : System.Decimal { get; set; }
+    BidSize : System.Decimal { get; set; }
+    CreatedTime : System.Int64 { get; set; }
+    EventTime : System.Int64 { get; set; }
+    From(Bytex.Core.Model.Data.QuoteTick t) -> Bytex.Data.MarketArchive+QuoteRow
+    PricePrecision : System.Byte { get; set; }
+    SizePrecision : System.Byte { get; set; }
+    ToTick(Bytex.Core.Model.Identifiers.MarketKey id) -> Bytex.Core.Model.Data.QuoteTick
+class Bytex.Data.MarketArchive+TradeRow
+    .ctor()
+    Aggressor : System.Int32 { get; set; }
+    CreatedTime : System.Int64 { get; set; }
+    EventTime : System.Int64 { get; set; }
+    From(Bytex.Core.Model.Data.TradeTick t) -> Bytex.Data.MarketArchive+TradeRow
+    Price : System.Decimal { get; set; }
+    PricePrecision : System.Byte { get; set; }
+    Size : System.Decimal { get; set; }
+    SizePrecision : System.Byte { get; set; }
+    ToTick(Bytex.Core.Model.Identifiers.MarketKey id) -> Bytex.Core.Model.Data.TradeTick
+    TradeId : System.String { get; set; }
+class Bytex.Data.ObjectStores
+    Open(System.String location) -> Bytex.Data.IObjectStore
+    Register(System.String scheme, System.Func<System.String, Bytex.Data.IObjectStore> open) -> System.Void
+    Registered() -> System.Collections.Generic.IReadOnlyList<System.String>
+struct Bytex.Data.StoredObject : System.IEquatable<Bytex.Data.StoredObject>
+    .ctor(System.String Key, System.Int64 Size)
+    Deconstruct(System.String& Key, System.Int64& Size) -> System.Void
+    Equals(Bytex.Data.StoredObject other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Key : System.String { get; init; }
+    Size : System.Int64 { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Data.StoredObject left, Bytex.Data.StoredObject right) -> System.Boolean
+    op_Inequality(Bytex.Data.StoredObject left, Bytex.Data.StoredObject right) -> System.Boolean

@@ -1,0 +1,428 @@
+class Bytex.Live.ClientEntry : System.IEquatable<Bytex.Live.ClientEntry>
+    .ctor(System.String Factory, System.String ClientId, System.Object Config)
+    ClientId : System.String { get; init; }
+    Config : System.Object { get; init; }
+    Deconstruct(System.String& Factory, System.String& ClientId, System.Object& Config) -> System.Void
+    Equals(Bytex.Live.ClientEntry other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Factory : System.String { get; init; }
+    GetHashCode() -> System.Int32
+    ToString() -> System.String
+    op_Equality(Bytex.Live.ClientEntry left, Bytex.Live.ClientEntry right) -> System.Boolean
+    op_Inequality(Bytex.Live.ClientEntry left, Bytex.Live.ClientEntry right) -> System.Boolean
+class Bytex.Live.Control.ControlMessage : System.IEquatable<Bytex.Live.Control.ControlMessage>
+    .ctor(System.String Type, System.Nullable<System.Text.Json.JsonElement> Payload, System.Int64 Ts)
+    Deconstruct(System.String& Type, System.Nullable<System.Text.Json.JsonElement>& Payload, System.Int64& Ts) -> System.Void
+    Equals(Bytex.Live.Control.ControlMessage other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Of(System.String type, System.Object payload, System.Int64 ts) -> Bytex.Live.Control.ControlMessage
+    Parse(System.String line) -> Bytex.Live.Control.ControlMessage
+    Payload : System.Nullable<System.Text.Json.JsonElement> { get; init; }
+    ToLine() -> System.String
+    ToString() -> System.String
+    Ts : System.Int64 { get; init; }
+    Type : System.String { get; init; }
+    op_Equality(Bytex.Live.Control.ControlMessage left, Bytex.Live.Control.ControlMessage right) -> System.Boolean
+    op_Inequality(Bytex.Live.Control.ControlMessage left, Bytex.Live.Control.ControlMessage right) -> System.Boolean
+class Bytex.Live.Control.ControlProtocol
+    Bye = bye : System.String
+    CmdAddStrategy = add-strategy : System.String
+    CmdCancelAll = cancel-all : System.String
+    CmdFlatten = flatten : System.String
+    CmdHalt = halt : System.String
+    CmdLimits = limits : System.String
+    CmdRemoveStrategy = remove-strategy : System.String
+    CmdResume = resume : System.String
+    CmdStartStrategy = start-strategy : System.String
+    CmdStatus = status : System.String
+    CmdStop = stop : System.String
+    CmdStopStrategy = stop-strategy : System.String
+    CmdStrategies = strategies : System.String
+    CmdView = view : System.String
+    Event = event : System.String
+    Heartbeat = heartbeat : System.String
+    Hello = hello : System.String
+    Status = status : System.String
+    Strategies = strategies : System.String
+    Version = 6 : System.Int32
+    View = view : System.String
+class Bytex.Live.Control.ControlTransport
+    AcceptAsync(System.String name, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.IO.Stream>
+    ConnectAsync(System.String name, System.TimeSpan timeout, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.IO.Stream>
+    SocketPath(System.String name) -> System.String
+    UseNamedPipes : System.Boolean { get; }
+class Bytex.Live.Control.ControllerOutcome : System.IEquatable<Bytex.Live.Control.ControllerOutcome>
+    .ctor(System.Boolean Done, System.String Refused, System.Collections.Generic.IReadOnlyList<Bytex.Live.Control.StrategyStatus> Strategies)
+    Deconstruct(System.Boolean& Done, System.String& Refused, System.Collections.Generic.IReadOnlyList<Bytex.Live.Control.StrategyStatus>& Strategies) -> System.Void
+    Done : System.Boolean { get; init; }
+    Equals(Bytex.Live.Control.ControllerOutcome other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    No(System.String reason, System.Collections.Generic.IReadOnlyList<Bytex.Live.Control.StrategyStatus> strategies) -> Bytex.Live.Control.ControllerOutcome
+    Ok(System.Collections.Generic.IReadOnlyList<Bytex.Live.Control.StrategyStatus> strategies) -> Bytex.Live.Control.ControllerOutcome
+    Refused : System.String { get; init; }
+    Strategies : System.Collections.Generic.IReadOnlyList<Bytex.Live.Control.StrategyStatus> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Live.Control.ControllerOutcome left, Bytex.Live.Control.ControllerOutcome right) -> System.Boolean
+    op_Inequality(Bytex.Live.Control.ControllerOutcome left, Bytex.Live.Control.ControllerOutcome right) -> System.Boolean
+class Bytex.Live.Control.NodeControlClient : System.IAsyncDisposable
+    AddStrategyAsync(System.String path) -> System.Threading.Tasks.Task
+    CancelAllAsync() -> System.Threading.Tasks.Task
+    ConnectAsync(System.String name, System.Nullable<System.TimeSpan> timeout = null, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<Bytex.Live.Control.NodeControlClient>
+    DefaultConnectTimeout : System.TimeSpan static
+    DisposeAsync() -> System.Threading.Tasks.ValueTask
+    FlattenAsync() -> System.Threading.Tasks.Task
+    HaltAsync(System.Boolean cancelOrders = False, System.Boolean closePositions = False) -> System.Threading.Tasks.Task
+    ReadAsync(System.Threading.CancellationToken ct = null) -> System.Collections.Generic.IAsyncEnumerable<Bytex.Live.Control.ControlMessage>
+    RemoveStrategyAsync(System.String id) -> System.Threading.Tasks.Task
+    RequestStatusAsync() -> System.Threading.Tasks.Task
+    RequestStrategiesAsync() -> System.Threading.Tasks.Task
+    RequestViewAsync() -> System.Threading.Tasks.Task
+    ResumeAsync() -> System.Threading.Tasks.Task
+    SendAsync(System.String command, System.Object payload = null) -> System.Threading.Tasks.Task
+    SetLimitsAsync(Bytex.Core.Engines.RiskLimits limits) -> System.Threading.Tasks.Task
+    StartStrategyAsync(System.String id) -> System.Threading.Tasks.Task
+    StopAsync(System.Boolean cancelOrders = True, System.Boolean closePositions = False) -> System.Threading.Tasks.Task
+    StopStrategyAsync(System.String id, System.Boolean cancelOrders = False, System.Boolean closePositions = False) -> System.Threading.Tasks.Task
+class Bytex.Live.Control.NodeControlServer : System.IAsyncDisposable
+    .ctor(System.String name, Bytex.Live.TradingNode node, System.Nullable<System.TimeSpan> heartbeat = null, Microsoft.Extensions.Logging.ILoggerFactory loggerFactory = null)
+    DisposeAsync() -> System.Threading.Tasks.ValueTask
+    Start() -> System.Void
+    event StopRequested : System.Action<System.Boolean, System.Boolean>
+class Bytex.Live.Control.NodeController
+    .ctor(Bytex.Live.TradingNode node, Microsoft.Extensions.Logging.ILoggerFactory loggerFactory = null)
+    AddAsync(Bytex.Core.Trading.Strategy strategy) -> System.Threading.Tasks.Task<Bytex.Live.Control.ControllerOutcome>
+    AddFromPathAsync(System.String path) -> System.Threading.Tasks.Task<Bytex.Live.Control.ControllerOutcome>
+    CanReadStrategies : System.Boolean { get; }
+    ListAsync() -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bytex.Live.Control.StrategyStatus>>
+    RemoveAsync(Bytex.Core.Model.Identifiers.StrategyId id) -> System.Threading.Tasks.Task<Bytex.Live.Control.ControllerOutcome>
+    StartAsync(Bytex.Core.Model.Identifiers.StrategyId id) -> System.Threading.Tasks.Task<Bytex.Live.Control.ControllerOutcome>
+    StopAsync(Bytex.Core.Model.Identifiers.StrategyId id, System.Boolean cancelOrders = False, System.Boolean closePositions = False) -> System.Threading.Tasks.Task<Bytex.Live.Control.ControllerOutcome>
+class Bytex.Live.Control.StrategyStatus : System.IEquatable<Bytex.Live.Control.StrategyStatus>
+    .ctor(System.String Id, System.String State, System.Int32 OpenOrders, System.Int32 OpenPositions)
+    Deconstruct(System.String& Id, System.String& State, System.Int32& OpenOrders, System.Int32& OpenPositions) -> System.Void
+    Equals(Bytex.Live.Control.StrategyStatus other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Id : System.String { get; init; }
+    OpenOrders : System.Int32 { get; init; }
+    OpenPositions : System.Int32 { get; init; }
+    State : System.String { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Live.Control.StrategyStatus left, Bytex.Live.Control.StrategyStatus right) -> System.Boolean
+    op_Inequality(Bytex.Live.Control.StrategyStatus left, Bytex.Live.Control.StrategyStatus right) -> System.Boolean
+class Bytex.Live.DispatchingDataSink : Bytex.Core.Adapters.IDataClientSink
+    .ctor(Bytex.Core.Adapters.IDataClientSink inner, Bytex.Live.LiveTradingRuntimeLoop loop)
+    OnConnected(Bytex.Core.Model.Identifiers.ClientId clientId) -> System.Void
+    OnData(Bytex.Core.Model.Data.IData data) -> System.Void
+    OnDisconnected(Bytex.Core.Model.Identifiers.ClientId clientId, System.String reason) -> System.Void
+    OnInstrument(Bytex.Core.Model.Instruments.Instrument instrument) -> System.Void
+    OnResponse(Bytex.Core.Model.Commands.DataResponse response) -> System.Void
+    OnSubscriptionFailed(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Model.Commands.SubscribeCommand command, System.String reason) -> System.Void
+class Bytex.Live.DispatchingExecutionSink : Bytex.Core.Adapters.IExecutionClientSink
+    .ctor(Bytex.Core.Adapters.IExecutionClientSink inner, Bytex.Live.LiveTradingRuntimeLoop loop)
+    OnAccountState(Bytex.Core.Model.Events.AccountState state) -> System.Void
+    OnConnected(Bytex.Core.Model.Identifiers.ClientId clientId) -> System.Void
+    OnDisconnected(Bytex.Core.Model.Identifiers.ClientId clientId, System.String reason) -> System.Void
+    OnOrderEvent(Bytex.Core.Model.Events.OrderEvent e) -> System.Void
+class Bytex.Live.LiveTradingRuntimeLoop : System.IDisposable
+    .ctor(System.Int32 capacity = 100000, Microsoft.Extensions.Logging.ILoggerFactory loggerFactory = null, System.String threadName = bytex-tradingRuntime)
+    DefaultCapacity = 100000 : System.Int32
+    DefaultDrainTimeout : System.TimeSpan static
+    Dispose() -> System.Void
+    InvokeAsync(System.Action action) -> System.Threading.Tasks.Task
+    InvokeAsync<T>(System.Func<T> func) -> System.Threading.Tasks.Task<T>
+    IsOnLoopThread : System.Boolean { get; }
+    ManagedThreadId : System.Int32 { get; }
+    Pending : System.Int32 { get; }
+    Post(System.Action action) -> System.Void
+    Processed : System.Int64 { get; }
+    Start() -> System.Void
+    StopAsync(System.Nullable<System.TimeSpan> timeout = null) -> System.Threading.Tasks.Task
+class Bytex.Live.Network.HmacSigner
+    Sha256Base64(System.String secret, System.String payload) -> System.String
+    Sha256Hex(System.String secret, System.String payload) -> System.String
+    Sha512Base64(System.Byte[] secret, System.Byte[] payload) -> System.String
+    Sha512Hex(System.String secret, System.String payload) -> System.String
+class Bytex.Live.Network.HttpClientWrapper : System.IDisposable
+    .ctor(System.Uri baseUrl, Bytex.Live.Network.RateLimiter limiter = null, Bytex.Live.Network.RetryPolicy retry = null, Microsoft.Extensions.Logging.ILogger logger = null, System.Nullable<System.TimeSpan> timeout = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> defaultHeaders = null)
+    BaseUrl : System.Uri { get; }
+    BuildQuery(System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query) -> System.String
+    ContentTypeOf : System.String { get; }
+    DefaultTimeout : System.TimeSpan static
+    DeleteAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Net.Http.HttpContent body = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.String>
+    Dispose() -> System.Void
+    GetAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.String>
+    GetBytesAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Byte[]>
+    GetJsonAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.Text.Json.JsonDocument>
+    PostAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Net.Http.HttpContent body = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.String>
+    PutAsync(System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query = null, System.Net.Http.HttpContent body = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers = null, System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task<System.String>
+    SendAsync(System.Net.Http.HttpMethod method, System.String path, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> query, System.Net.Http.HttpContent body, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers, System.Int32 weight, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.String>
+class Bytex.Live.Network.LogText
+    MaxBodyLength = 500 : System.Int32
+    MaxMessageLength = 300 : System.Int32
+    Truncate(System.String text, System.Int32 max) -> System.String
+class Bytex.Live.Network.RateLimiter
+    .ctor(System.Int32 capacity, System.TimeSpan interval)
+    WaitAsync(System.Int32 weight = 1, System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+class Bytex.Live.Network.RetryPolicy : System.IEquatable<Bytex.Live.Network.RetryPolicy>
+    .ctor(System.Int32 MaxAttempts = 3, System.Nullable<System.TimeSpan> InitialDelay = null, System.Double BackoffFactor = 2, System.Nullable<System.TimeSpan> MaxDelay = null)
+    BackoffFactor : System.Double { get; init; }
+    Deconstruct(System.Int32& MaxAttempts, System.Nullable<System.TimeSpan>& InitialDelay, System.Double& BackoffFactor, System.Nullable<System.TimeSpan>& MaxDelay) -> System.Void
+    DefaultInitialDelay : System.TimeSpan static
+    DefaultMaxDelay : System.TimeSpan static
+    DelayFor(System.Int32 attempt) -> System.TimeSpan
+    Equals(Bytex.Live.Network.RetryPolicy other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Initial : System.TimeSpan { get; }
+    InitialDelay : System.Nullable<System.TimeSpan> { get; init; }
+    Max : System.TimeSpan { get; }
+    MaxAttempts : System.Int32 { get; init; }
+    MaxDelay : System.Nullable<System.TimeSpan> { get; init; }
+    MaxJitterMs = 100 : System.Int32
+    None : Bytex.Live.Network.RetryPolicy static
+    ToString() -> System.String
+    op_Equality(Bytex.Live.Network.RetryPolicy left, Bytex.Live.Network.RetryPolicy right) -> System.Boolean
+    op_Inequality(Bytex.Live.Network.RetryPolicy left, Bytex.Live.Network.RetryPolicy right) -> System.Boolean
+class Bytex.Live.Network.Secrets
+    Optional(System.String value, System.String environmentVariable) -> System.String
+    Require(System.String value, System.String environmentVariable) -> System.String
+class Bytex.Live.Network.VenueClock
+    .ctor(System.String venue, Microsoft.Extensions.Logging.ILogger logger = null)
+    EnsureFreshAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Int64>> readVenueMs, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    IsMeasured : System.Boolean { get; }
+    MarkStale() -> System.Void
+    MeasureAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Int64>> readVenueMs, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    NowMs() -> System.Int64
+    NowSeconds() -> System.Int64
+    OffsetMs : System.Int64 { get; }
+    SyncInterval : System.TimeSpan static
+class Bytex.Live.Network.VenueHttpException : System.Exception, System.Runtime.Serialization.ISerializable
+    .ctor(System.Net.HttpStatusCode statusCode, System.String body, System.String message)
+    Body : System.String { get; }
+    IsRateLimited : System.Boolean { get; }
+    StatusCode : System.Net.HttpStatusCode { get; }
+class Bytex.Live.Network.VenueStatus
+    Teapot = 418 : System.Int32
+class Bytex.Live.Network.WebSocketClient : System.IAsyncDisposable
+    .ctor(Bytex.Live.Network.WebSocketClientConfig config, Microsoft.Extensions.Logging.ILogger logger = null)
+    ConnectAsync(System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    DisconnectAsync() -> System.Threading.Tasks.Task
+    DisposeAsync() -> System.Threading.Tasks.ValueTask
+    IsConnected : System.Boolean { get; }
+    OnBinary : System.Func<System.Byte[], System.Threading.Tasks.Task> { get; set; }
+    OnConnected : System.Func<System.Boolean, System.Threading.Tasks.Task> { get; set; }
+    OnDisconnected : System.Func<System.String, System.Threading.Tasks.Task> { get; set; }
+    OnText : System.Func<System.String, System.Threading.Tasks.Task> { get; set; }
+    SendBinary(System.Byte[] payload) -> System.Void
+    SendText(System.String text) -> System.Void
+    Url : System.Uri { get; }
+class Bytex.Live.Network.WebSocketClientConfig : System.IEquatable<Bytex.Live.Network.WebSocketClientConfig>
+    .ctor()
+    Equals(Bytex.Live.Network.WebSocketClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Headers : System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> { get; init; }
+    MaxReconnectAttempts : System.Int32 { get; init; }
+    MaxReconnectDelay : System.TimeSpan { get; init; }
+    PingInterval : System.TimeSpan { get; init; }
+    PingMessage : System.String { get; init; }
+    ReceiveBufferSize : System.Int32 { get; init; }
+    ReconnectDelay : System.TimeSpan { get; init; }
+    ToString() -> System.String
+    Url : System.Uri { get; init; }
+    UrlProvider : System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Uri>> { get; init; }
+    op_Equality(Bytex.Live.Network.WebSocketClientConfig left, Bytex.Live.Network.WebSocketClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Live.Network.WebSocketClientConfig left, Bytex.Live.Network.WebSocketClientConfig right) -> System.Boolean
+class Bytex.Live.Persistence.JournalRecord : System.IEquatable<Bytex.Live.Persistence.JournalRecord>
+    .ctor(Bytex.Core.Model.Primitives.UnixNanos Ts, System.String Kind, System.String Topic = null, System.String Level = null, System.String Source = null, System.String Message = null, System.Nullable<System.Text.Json.JsonElement> Payload = null)
+    Deconstruct(Bytex.Core.Model.Primitives.UnixNanos& Ts, System.String& Kind, System.String& Topic, System.String& Level, System.String& Source, System.String& Message, System.Nullable<System.Text.Json.JsonElement>& Payload) -> System.Void
+    Equals(Bytex.Live.Persistence.JournalRecord other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Kind : System.String { get; init; }
+    Level : System.String { get; init; }
+    Message : System.String { get; init; }
+    Payload : System.Nullable<System.Text.Json.JsonElement> { get; init; }
+    Source : System.String { get; init; }
+    ToString() -> System.String
+    Topic : System.String { get; init; }
+    Ts : Bytex.Core.Model.Primitives.UnixNanos { get; init; }
+    op_Equality(Bytex.Live.Persistence.JournalRecord left, Bytex.Live.Persistence.JournalRecord right) -> System.Boolean
+    op_Inequality(Bytex.Live.Persistence.JournalRecord left, Bytex.Live.Persistence.JournalRecord right) -> System.Boolean
+class Bytex.Live.Persistence.NodeStore : System.IAsyncDisposable
+    .ctor(Bytex.Live.Persistence.NodeStoreConfig config, Microsoft.Extensions.Logging.ILoggerFactory loggerFactory = null)
+    Append(Bytex.Live.Persistence.JournalRecord record) -> System.Void
+    DefaultFlushTimeout : System.TimeSpan static
+    DisposeAsync() -> System.Threading.Tasks.ValueTask
+    Dropped : System.Int64 { get; }
+    FlushAsync(System.Nullable<System.TimeSpan> timeout = null) -> System.Threading.Tasks.Task
+    JournalDirectory : System.String { get; }
+    LoadComponentState(System.String component) -> System.String
+    LoadState(Bytex.Core.Model.Identifiers.RuntimeModuleId runtimeModuleId) -> System.Collections.Generic.IDictionary<System.String, System.Byte[]>
+    Read(System.Nullable<System.DateOnly> from = null, System.Nullable<System.DateOnly> to = null) -> System.Collections.Generic.IEnumerable<Bytex.Live.Persistence.JournalRecord>
+    RestoresState : System.Boolean { get; }
+    SaveComponentState(System.String component, System.String json) -> System.Void
+    SaveState(Bytex.Core.Model.Identifiers.RuntimeModuleId runtimeModuleId, System.Collections.Generic.IDictionary<System.String, System.Byte[]> state) -> System.Void
+    StateDirectory : System.String { get; }
+class Bytex.Live.Persistence.NodeStoreConfig : System.IEquatable<Bytex.Live.Persistence.NodeStoreConfig>
+    .ctor()
+    Directory : System.String { get; init; }
+    Equals(Bytex.Live.Persistence.NodeStoreConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    JournalDays : System.Int32 { get; init; }
+    RestoreState : System.Boolean { get; init; }
+    SaveInterval : System.TimeSpan { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Live.Persistence.NodeStoreConfig left, Bytex.Live.Persistence.NodeStoreConfig right) -> System.Boolean
+    op_Inequality(Bytex.Live.Persistence.NodeStoreConfig left, Bytex.Live.Persistence.NodeStoreConfig right) -> System.Boolean
+class Bytex.Live.Sandbox.SandboxExecutionClient : Bytex.Core.Adapters.ExecutionClientBase, Bytex.Core.Adapters.IExecutionClient, Bytex.Core.Adapters.IMatchingReport, Bytex.Core.Common.IComponent
+    .ctor(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Live.Sandbox.SandboxExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services)
+    CancelAllOrdersAsync(Bytex.Core.Model.Commands.CancelAllOrders command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    CancelOrderAsync(Bytex.Core.Model.Commands.CancelOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    ConnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    DisconnectAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    Exchange : Bytex.Backtest.SimulatedExchange { get; }
+    GenerateMassStatusAsync(System.Nullable<Bytex.Core.Model.Primitives.UnixNanos> since, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Bytex.Core.Model.Reports.ExecutionMassStatus>
+    Matching() -> System.Collections.Generic.IReadOnlyList<Bytex.Core.Adapters.MatchingAgainst>
+    ModifyOrderAsync(Bytex.Core.Model.Commands.ModifyOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubmitOrderAsync(Bytex.Core.Model.Commands.SubmitOrder command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SubmitOrderListAsync(Bytex.Core.Model.Commands.SubmitOrderList command, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+class Bytex.Live.Sandbox.SandboxExecutionClientConfig : Bytex.Core.Adapters.ExecutionClientConfig, System.IEquatable<Bytex.Core.Adapters.ExecutionClientConfig>, System.IEquatable<Bytex.Live.Sandbox.SandboxExecutionClientConfig>
+    .ctor()
+    AccountType : Bytex.Core.Model.AccountType { get; init; }
+    BarExecution : Bytex.Backtest.BarExecutionMode { get; init; }
+    BaseCurrency : System.String { get; init; }
+    BookDepth : System.Int32 { get; init; }
+    BookType : Bytex.Core.Model.BookType { get; init; }
+    DefaultLeverage : System.Decimal { get; init; }
+    EqualityContract : System.Type { get; }
+    Equals(Bytex.Core.Adapters.ExecutionClientConfig other) -> System.Boolean
+    Equals(Bytex.Live.Sandbox.SandboxExecutionClientConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    Fees : Bytex.Core.Model.FeeSettings { get; init; }
+    GetHashCode() -> System.Int32
+    Latency : System.TimeSpan { get; init; }
+    MatchAgainstBook : System.Boolean { get; init; }
+    OmsType : Bytex.Core.Model.OmsType { get; init; }
+    PrintMembers(System.Text.StringBuilder builder) -> System.Boolean
+    ProbFillOnLimit : System.Decimal { get; init; }
+    ProbSlippage : System.Decimal { get; init; }
+    Restore : Bytex.Live.Sandbox.SandboxRestoreConfig { get; init; }
+    StartingBalances : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    SubscribeOrderBook : System.Boolean { get; init; }
+    ToString() -> System.String
+    Venue : System.String { get; init; }
+    op_Equality(Bytex.Live.Sandbox.SandboxExecutionClientConfig left, Bytex.Live.Sandbox.SandboxExecutionClientConfig right) -> System.Boolean
+    op_Inequality(Bytex.Live.Sandbox.SandboxExecutionClientConfig left, Bytex.Live.Sandbox.SandboxExecutionClientConfig right) -> System.Boolean
+class Bytex.Live.Sandbox.SandboxExecutionClientFactory : Bytex.Core.Adapters.IExecutionClientFactory
+    .ctor()
+    ConfigType : System.Type { get; }
+    Create(Bytex.Core.Model.Identifiers.ClientId clientId, Bytex.Core.Adapters.ExecutionClientConfig config, Bytex.Core.Adapters.TradingRuntimeServices services) -> Bytex.Core.Adapters.IExecutionClient
+    Name : System.String { get; }
+class Bytex.Live.Sandbox.SandboxRestoreConfig : System.IEquatable<Bytex.Live.Sandbox.SandboxRestoreConfig>
+    .ctor()
+    Equals(Bytex.Live.Sandbox.SandboxRestoreConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    Orders : System.Collections.Generic.IReadOnlyList<Bytex.Live.Sandbox.SandboxRestoredOrder> { get; init; }
+    Positions : System.Collections.Generic.IReadOnlyList<Bytex.Live.Sandbox.SandboxRestoredPosition> { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Live.Sandbox.SandboxRestoreConfig left, Bytex.Live.Sandbox.SandboxRestoreConfig right) -> System.Boolean
+    op_Inequality(Bytex.Live.Sandbox.SandboxRestoreConfig left, Bytex.Live.Sandbox.SandboxRestoreConfig right) -> System.Boolean
+class Bytex.Live.Sandbox.SandboxRestoredOrder : System.IEquatable<Bytex.Live.Sandbox.SandboxRestoredOrder>
+    .ctor()
+    ClientOrderId : System.String { get; init; }
+    Equals(Bytex.Live.Sandbox.SandboxRestoredOrder other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    LinkedOrderIds : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    MarketKey : System.String { get; init; }
+    PostOnly : System.Boolean { get; init; }
+    Price : System.Nullable<System.Decimal> { get; init; }
+    Quantity : System.Decimal { get; init; }
+    ReduceOnly : System.Boolean { get; init; }
+    Side : Bytex.Core.Model.OrderSide { get; init; }
+    Tags : System.Collections.Generic.IReadOnlyList<System.String> { get; init; }
+    TimeInForce : Bytex.Core.Model.TimeInForce { get; init; }
+    ToString() -> System.String
+    TrailingOffset : System.Nullable<System.Decimal> { get; init; }
+    TrailingOffsetType : Bytex.Core.Model.TrailingOffsetType { get; init; }
+    TriggerPrice : System.Nullable<System.Decimal> { get; init; }
+    Type : Bytex.Core.Model.OrderType { get; init; }
+    op_Equality(Bytex.Live.Sandbox.SandboxRestoredOrder left, Bytex.Live.Sandbox.SandboxRestoredOrder right) -> System.Boolean
+    op_Inequality(Bytex.Live.Sandbox.SandboxRestoredOrder left, Bytex.Live.Sandbox.SandboxRestoredOrder right) -> System.Boolean
+class Bytex.Live.Sandbox.SandboxRestoredPosition : System.IEquatable<Bytex.Live.Sandbox.SandboxRestoredPosition>
+    .ctor()
+    AvgPx : System.Decimal { get; init; }
+    Equals(Bytex.Live.Sandbox.SandboxRestoredPosition other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    GetHashCode() -> System.Int32
+    MarketKey : System.String { get; init; }
+    Quantity : System.Decimal { get; init; }
+    Side : Bytex.Core.Model.PositionSide { get; init; }
+    ToString() -> System.String
+    op_Equality(Bytex.Live.Sandbox.SandboxRestoredPosition left, Bytex.Live.Sandbox.SandboxRestoredPosition right) -> System.Boolean
+    op_Inequality(Bytex.Live.Sandbox.SandboxRestoredPosition left, Bytex.Live.Sandbox.SandboxRestoredPosition right) -> System.Boolean
+class Bytex.Live.ShutdownHelper
+    Flatten(Bytex.Core.Trading.Strategy strategy, Bytex.Core.TradingRuntime.TradingRuntime tradingRuntime, System.Boolean cancelOrders, System.Boolean closePositions) -> System.Void
+class Bytex.Live.TradingNode : System.IAsyncDisposable
+    .ctor(Bytex.Live.TradingNodeConfig config, Bytex.Core.Plugins.PluginRegistry registry = null, Microsoft.Extensions.Logging.ILoggerFactory loggerFactory = null, Bytex.Core.Caching.ICacheDatabase cacheDatabase = null)
+    AddDataClient(Bytex.Core.Adapters.IDataClient client) -> System.Void
+    AddExecutionClient(Bytex.Core.Adapters.IExecutionClient client) -> System.Void
+    AddInstrument(Bytex.Core.Model.Instruments.Instrument instrument) -> System.Void
+    AddRuntimeModule(Bytex.Core.Trading.RuntimeModule runtimeModule) -> System.Void
+    AddStrategy(Bytex.Core.Trading.Strategy strategy) -> System.Void
+    Build() -> System.Void
+    Config : Bytex.Live.TradingNodeConfig { get; }
+    DataClients : System.Collections.Generic.IReadOnlyList<Bytex.Core.Adapters.IDataClient> { get; }
+    DisplayPriceInstruments : System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Identifiers.MarketKey> { get; }
+    DisposeAsync() -> System.Threading.Tasks.ValueTask
+    ExecutionClients : System.Collections.Generic.IReadOnlyList<Bytex.Core.Adapters.IExecutionClient> { get; }
+    Halt(System.Boolean cancelOrders = False, System.Boolean closePositions = False, System.String reason = null) -> System.Void
+    IsHalted : System.Boolean { get; }
+    IsRunning : System.Boolean { get; }
+    Loop : Bytex.Live.LiveTradingRuntimeLoop { get; }
+    MaxDisplayPriceInstruments = 25 : System.Int32
+    ModuleHostId : Bytex.Core.Model.Identifiers.ModuleHostId { get; }
+    Registry : Bytex.Core.Plugins.PluginRegistry { get; }
+    RemoveStrategy(Bytex.Core.Model.Identifiers.StrategyId id) -> System.Boolean
+    Resume() -> System.Void
+    RunAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task
+    SetLimits(Bytex.Core.Engines.RiskLimits limits) -> System.Void
+    StartAsync(System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    StopAsync(System.Threading.CancellationToken ct = null) -> System.Threading.Tasks.Task
+    Store : Bytex.Live.Persistence.NodeStore { get; }
+    TradingRuntime : Bytex.Core.TradingRuntime.TradingRuntime { get; }
+    TradingState : Bytex.Core.Model.TradingState { get; }
+class Bytex.Live.TradingNodeConfig : System.IEquatable<Bytex.Live.TradingNodeConfig>
+    .ctor()
+    CancelOrdersOnStop : System.Boolean { get; init; }
+    ClosePositionsOnStop : System.Boolean { get; init; }
+    ConnectionTimeout : System.TimeSpan { get; init; }
+    DataClients : System.Collections.Generic.IReadOnlyList<Bytex.Live.ClientEntry> { get; init; }
+    DisplayPriceInstruments : System.Collections.Generic.IReadOnlyList<Bytex.Core.Model.Identifiers.MarketKey> { get; init; }
+    DisplayPrices : System.Boolean { get; init; }
+    Equals(Bytex.Live.TradingNodeConfig other) -> System.Boolean
+    Equals(System.Object obj) -> System.Boolean
+    ExecutionClients : System.Collections.Generic.IReadOnlyList<Bytex.Live.ClientEntry> { get; init; }
+    GetHashCode() -> System.Int32
+    HeartbeatInterval : System.TimeSpan { get; init; }
+    OrderSchedules : System.Collections.Generic.IReadOnlyList<Bytex.Core.Plugins.OrderScheduleDefinition> { get; init; }
+    PluginDirectory : System.String { get; init; }
+    QueueCapacity : System.Int32 { get; init; }
+    ReconcileOnStart : System.Boolean { get; init; }
+    ReconciliationInterval : System.TimeSpan { get; init; }
+    ReconciliationLookback : System.TimeSpan { get; init; }
+    RuntimeModules : System.Collections.Generic.IReadOnlyList<Bytex.Core.Plugins.RuntimeModuleDefinition> { get; init; }
+    StartHalted : System.Boolean { get; init; }
+    Store : Bytex.Live.Persistence.NodeStoreConfig { get; init; }
+    Strategies : System.Collections.Generic.IReadOnlyList<Bytex.Core.Plugins.StrategyDefinition> { get; init; }
+    StrategyFromPath : System.Func<System.String, Bytex.Core.Trading.Strategy> { get; init; }
+    ToString() -> System.String
+    TradingRuntime : Bytex.Core.TradingRuntime.TradingRuntimeConfig { get; init; }
+    op_Equality(Bytex.Live.TradingNodeConfig left, Bytex.Live.TradingNodeConfig right) -> System.Boolean
+    op_Inequality(Bytex.Live.TradingNodeConfig left, Bytex.Live.TradingNodeConfig right) -> System.Boolean
